@@ -1,12 +1,57 @@
-import React, { useState } from 'react';
-import { X, Check, Utensils, Car, Receipt, ShoppingBag, Calendar, CreditCard, AlignLeft, Delete, ArrowRight, Banknote } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, Check, Utensils, Car, Receipt, ShoppingBag, Calendar, CreditCard, AlignLeft, Delete, ArrowRight, Banknote, Coffee, Shield, Gift, Tag } from 'lucide-react';
 import { ViewState, TransactionType } from '../App';
+
+const ICON_MAP: Record<string, React.ReactNode> = {
+  Coffee: <Coffee size={18} />,
+  Utensils: <Utensils size={18} />,
+  Car: <Car size={18} />,
+  Receipt: <Receipt size={18} />,
+  ShoppingBag: <ShoppingBag size={18} />,
+  Shield: <Shield size={18} />,
+  Banknote: <Banknote size={18} />,
+  Gift: <Gift size={18} />,
+};
+
+interface SavedCategory {
+  id: string;
+  name: string;
+  type: 'Expense' | 'Income';
+  iconName: string;
+  color: string;
+}
 
 export function AddTransaction({ onNavigate, onAddTransaction }: { onNavigate: (v: ViewState) => void; onAddTransaction: (t: any) => void }) {
   const [amountStr, setAmountStr] = useState('0');
   const [type, setType] = useState<TransactionType>('Expense');
-  const [category, setCategory] = useState('Food');
+  const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
+  const [userCategories, setUserCategories] = useState<SavedCategory[]>([]);
+  
+  const todayFormatted = new Date().toISOString().split('T')[0];
+  const [date, setDate] = useState(todayFormatted);
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
+
+  // Load categories from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('user_categories');
+    if (saved) {
+      const parsed: SavedCategory[] = JSON.parse(saved);
+      setUserCategories(parsed);
+    }
+  }, []);
+
+  // Filter categories based on selected type (Expense or Income)
+  const filteredCategories = useMemo(() => {
+    return userCategories.filter(c => c.type === type);
+  }, [userCategories, type]);
+
+  // Auto-select first category when type changes
+  useEffect(() => {
+    if (filteredCategories.length > 0 && !filteredCategories.find(c => c.name === category)) {
+      setCategory(filteredCategories[0].name);
+    }
+  }, [filteredCategories, type]);
 
   const handleKeyPress = (key: string | number) => {
     if (key === 'Delete') {
@@ -31,13 +76,15 @@ export function AddTransaction({ onNavigate, onAddTransaction }: { onNavigate: (
     const amt = parseFloat(amountStr);
     if (isNaN(amt) || amt <= 0) return;
     
+    const d = new Date(date + 'T12:00:00Z');
+    
     onAddTransaction({
       type,
       amount: amt,
-      category,
-      note,
-      date: new Date().toISOString(),
-      merchant: category
+      category: category || type,
+      note: note ? note : `Paid via ${paymentMethod}`,
+      date: isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString(),
+      merchant: category || type
     });
     onNavigate('dashboard');
   };
@@ -67,11 +114,11 @@ export function AddTransaction({ onNavigate, onAddTransaction }: { onNavigate: (
         {/* Type Toggle */}
         <div className="flex px-6 py-3">
           <div className="flex h-12 flex-1 items-center justify-center rounded-xl bg-input-bg dark:bg-slate-800 p-1.5">
-            <label className="flex cursor-pointer h-full grow items-center justify-center rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-slate-700 has-[:checked]:shadow-sm text-secondary dark:text-slate-400 has-[:checked]:text-primary text-sm font-bold transition-all">
+            <label className="flex cursor-pointer h-full grow items-center justify-center rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-slate-700 has-[:checked]:shadow-sm text-secondary dark:text-slate-400 has-[:checked]:text-expense text-sm font-bold transition-all">
               <span className="truncate">Expense</span>
               <input type="radio" name="transaction-type" value="Expense" className="hidden" checked={type === 'Expense'} onChange={() => setType('Expense')} />
             </label>
-            <label className="flex cursor-pointer h-full grow items-center justify-center rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-slate-700 has-[:checked]:shadow-sm text-secondary dark:text-slate-400 has-[:checked]:text-primary text-sm font-bold transition-all">
+            <label className="flex cursor-pointer h-full grow items-center justify-center rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-slate-700 has-[:checked]:shadow-sm text-secondary dark:text-slate-400 has-[:checked]:text-income text-sm font-bold transition-all">
               <span className="truncate">Income</span>
               <input type="radio" name="transaction-type" value="Income" className="hidden" checked={type === 'Income'} onChange={() => setType('Income')} />
             </label>
@@ -81,23 +128,64 @@ export function AddTransaction({ onNavigate, onAddTransaction }: { onNavigate: (
         {/* Amount */}
         <div className="flex flex-col items-center px-6 py-6">
           <span className="text-secondary text-xs font-bold uppercase tracking-widest mb-1">Amount</span>
-          <h1 className={`${type === 'Income' ? 'text-primary' : 'text-text-dark dark:text-white'} tracking-tight text-5xl font-extrabold leading-tight font-display`}>${amountStr}</h1>
+          <h1 className={`${type === 'Income' ? 'text-income' : 'text-text-dark dark:text-white'} tracking-tight text-5xl font-extrabold leading-tight font-display`}>${amountStr}</h1>
         </div>
 
-        {/* Categories */}
-        <div className="flex gap-2 px-6 py-2 overflow-x-auto no-scrollbar shrink-0">
-          <div onClick={() => setCategory('Food')}><CategoryChip icon={<Utensils size={18} />} label="Food" active={category === 'Food'} /></div>
-          <div onClick={() => setCategory('Transport')}><CategoryChip icon={<Car size={18} />} label="Transport" active={category === 'Transport'} /></div>
-          <div onClick={() => setCategory('Bills')}><CategoryChip icon={<Receipt size={18} />} label="Bills" active={category === 'Bills'} /></div>
-          <div onClick={() => setCategory('Shop')}><CategoryChip icon={<ShoppingBag size={18} />} label="Shop" active={category === 'Shop'} /></div>
-          <div onClick={() => setCategory('Income')}><CategoryChip icon={<Banknote size={18} />} label="Income" active={category === 'Income'} /></div>
+        {/* Categories - Dynamic from localStorage */}
+        <div className="flex gap-2 px-6 py-2 overflow-x-auto no-scrollbar shrink-0 flex-wrap">
+          {filteredCategories.length > 0 ? (
+            filteredCategories.map(cat => (
+              <div key={cat.id} onClick={() => setCategory(cat.name)}>
+                <CategoryChip 
+                  icon={ICON_MAP[cat.iconName] || <Tag size={18} />} 
+                  label={cat.name} 
+                  active={category === cat.name} 
+                />
+              </div>
+            ))
+          ) : (
+            <p className="text-secondary text-sm py-2">No categories for {type}. Add some in Categories.</p>
+          )}
         </div>
 
         {/* Fields */}
         <div className="px-6 py-4 space-y-3">
-          <FieldRow icon={<Calendar size={20} />} label="Date" value="Today" />
-          <FieldRow icon={<CreditCard size={20} />} label="Payment Method" value="Visa ···· 4242" />
-          <div className="flex items-center gap-3 p-3 bg-input-bg dark:bg-slate-800 rounded-2xl border border-transparent hover:border-border transition-colors">
+          {/* Date Picker */}
+          <div className="flex items-center gap-3 p-3 bg-input-bg dark:bg-slate-800 rounded-2xl border border-transparent focus-within:border-border transition-colors relative">
+            <Calendar className="text-secondary pointer-events-none" size={20} />
+            <div className="flex flex-col flex-1 relative">
+              <span className="text-[10px] text-secondary font-bold uppercase tracking-wider pointer-events-none">Date</span>
+              <input 
+                type="date" 
+                value={date} 
+                onChange={(e) => setDate(e.target.value)} 
+                className="bg-transparent border-none focus:ring-0 text-sm font-semibold w-full p-0 outline-none text-text-dark dark:text-white cursor-pointer" 
+              />
+            </div>
+          </div>
+
+          {/* Payment Method Selector */}
+          <div className="flex items-center gap-3 p-3 bg-input-bg dark:bg-slate-800 rounded-2xl border border-transparent focus-within:border-border transition-colors cursor-pointer">
+            <CreditCard className="text-secondary" size={20} />
+            <div className="flex flex-col flex-1">
+              <span className="text-[10px] text-secondary font-bold uppercase tracking-wider">Payment Method</span>
+              <select 
+                value={paymentMethod} 
+                onChange={(e) => setPaymentMethod(e.target.value)} 
+                className="bg-transparent border-none focus:ring-0 text-sm font-semibold w-full p-0 outline-none text-text-dark dark:text-white appearance-none cursor-pointer"
+              >
+                <option value="Cash">Cash</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Debit Card">Debit Card</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="E-Wallet">E-Wallet</option>
+                <option value="PromptPay">PromptPay</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Note Input */}
+          <div className="flex items-center gap-3 p-3 bg-input-bg dark:bg-slate-800 rounded-2xl border border-transparent focus-within:border-border transition-colors">
             <AlignLeft className="text-secondary" size={20} />
             <input type="text" placeholder="Add a note..." value={note} onChange={e => setNote(e.target.value)} className="bg-transparent border-none focus:ring-0 text-sm font-semibold w-full placeholder:text-secondary p-0 outline-none text-text-dark dark:text-white" />
           </div>
@@ -137,16 +225,3 @@ function CategoryChip({ icon, label, active }: any) {
     </div>
   );
 }
-
-function FieldRow({ icon, label, value }: any) {
-  return (
-    <div className="flex items-center gap-3 p-3 bg-input-bg dark:bg-slate-800 rounded-2xl border border-transparent hover:border-border transition-colors cursor-pointer">
-      <div className="text-secondary">{icon}</div>
-      <div className="flex flex-col">
-        <span className="text-[10px] text-secondary font-bold uppercase tracking-wider">{label}</span>
-        <span className="text-sm font-semibold text-text-dark dark:text-white">{value}</span>
-      </div>
-    </div>
-  );
-}
-

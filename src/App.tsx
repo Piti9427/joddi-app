@@ -30,12 +30,17 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize dark mode from localStorage only. Default to light mode (creamy/minimal).
-    if (localStorage.getItem('theme') === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    // FORCE light mode initially to clear out the old cached state from previous tests
+    document.documentElement.classList.remove('dark');
+    
+    // For now, always start in light mode
+    if (localStorage.getItem('theme_v2_migrated') !== 'true') {
       localStorage.setItem('theme', 'light');
+      localStorage.setItem('theme_v2_migrated', 'true');
+    } else {
+      if (localStorage.getItem('theme') === 'dark') {
+         document.documentElement.classList.add('dark');
+      }
     }
     
     fetchTransactions();
