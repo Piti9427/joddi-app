@@ -1,9 +1,55 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { ArrowLeft, PieChart, TrendingUp, TrendingDown, AlignLeft, Calendar } from 'lucide-react';
-import { ViewState } from '../App';
+import { ViewState, Transaction } from '../App';
 
-export function AnalyticsDashboard({ onNavigate }: { onNavigate: (v: ViewState) => void }) {
+type TimeRange = 'week' | 'month' | 'year';
+
+export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void, transactions: Transaction[] }) {
+  const [timeRange, setTimeRange] = useState<TimeRange>('month');
+
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+
+  const filteredTransactions = useMemo(() => {
+    const now = new Date();
+    return transactions.filter(t => {
+      const date = new Date(t.date);
+      if (timeRange === 'week') {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return date >= weekAgo;
+      } else if (timeRange === 'month') {
+        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+      } else {
+        return date.getFullYear() === now.getFullYear();
+      }
+    });
+  }, [transactions, timeRange]);
+
+  const { totalIncome, totalExpense, topCategories } = useMemo(() => {
+    let inc = 0, exp = 0;
+    const catMap: { [key: string]: number } = {};
+
+    filteredTransactions.forEach(t => {
+      if (t.type === 'Income') {
+        inc += t.amount;
+      } else {
+        exp += t.amount;
+        catMap[t.category] = (catMap[t.category] || 0) + t.amount;
+      }
+    });
+
+    const sortedCats = Object.entries(catMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([label, amount]) => ({
+        label,
+        amount,
+        percent: exp > 0 ? (amount / exp) * 100 : 0
+      }));
+
+    return { totalIncome: inc, totalExpense: exp, topCategories: sortedCats };
+  }, [filteredTransactions]);
+
+  const colors = ['bg-expense', 'bg-expense/80', 'bg-expense/60', 'bg-expense/40', 'bg-expense/20'];
 
   return (
     <div className="flex flex-col min-h-full pb-20 relative bg-background-light dark:bg-background-dark">
@@ -15,9 +61,9 @@ export function AnalyticsDashboard({ onNavigate }: { onNavigate: (v: ViewState) 
       </header>
 
       <div className="flex overflow-x-auto no-scrollbar gap-2 px-4 py-3 bg-surface dark:bg-surface-dark border-b border-border dark:border-slate-800">
-        <GraphTab label="This Week" active />
-        <GraphTab label="This Month" />
-        <GraphTab label="This Year" />
+        <GraphTab label="This Week" active={timeRange === 'week'} onClick={() => setTimeRange('week')} />
+        <GraphTab label="This Month" active={timeRange === 'month'} onClick={() => setTimeRange('month')} />
+        <GraphTab label="This Year" active={timeRange === 'year'} onClick={() => setTimeRange('year')} />
       </div>
 
       <main className="p-4 flex flex-col flex-1 space-y-6">
@@ -41,18 +87,18 @@ export function AnalyticsDashboard({ onNavigate }: { onNavigate: (v: ViewState) 
         {/* Summary */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-surface dark:bg-surface-dark rounded-2xl p-4 shadow-sm border border-border dark:border-slate-800 flex flex-col gap-1">
-            <div className="size-8 rounded-full bg-highlight/50 dark:bg-primary/10 flex items-center justify-center mb-1 text-primary">
+            <div className="size-8 rounded-full bg-income-bg/60 dark:bg-income/10 flex items-center justify-center mb-1 text-income">
               <TrendingUp size={16} />
             </div>
             <p className="text-[11px] font-bold text-secondary uppercase tracking-wider">Total Income</p>
-            <p className="text-lg font-bold text-text-dark dark:text-white">{formatCurrency(4200)}</p>
+            <p className="text-lg font-bold text-text-dark dark:text-white">{formatCurrency(totalIncome)}</p>
           </div>
           <div className="bg-surface dark:bg-surface-dark rounded-2xl p-4 shadow-sm border border-border dark:border-slate-800 flex flex-col gap-1">
-            <div className="size-8 rounded-full bg-input-bg dark:bg-slate-800 flex items-center justify-center mb-1 text-secondary">
+            <div className="size-8 rounded-full bg-expense-bg/60 dark:bg-expense/10 flex items-center justify-center mb-1 text-expense">
               <TrendingDown size={16} />
             </div>
             <p className="text-[11px] font-bold text-secondary uppercase tracking-wider">Total Expense</p>
-            <p className="text-lg font-bold text-text-dark dark:text-white">{formatCurrency(1240)}</p>
+            <p className="text-lg font-bold text-text-dark dark:text-white">{formatCurrency(totalExpense)}</p>
           </div>
         </div>
 
@@ -63,11 +109,13 @@ export function AnalyticsDashboard({ onNavigate }: { onNavigate: (v: ViewState) 
             Top Spending
           </h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800 space-y-4">
-            
-            <CategoryProgress label="Food & Dining" amount={450} percent={65} color="bg-primary" />
-            <CategoryProgress label="Transport" amount={120} percent={25} color="bg-secondary" />
-            <CategoryProgress label="Shopping" amount={80} percent={15} color="bg-grass dark:bg-grass/60" />
-
+            {topCategories.length === 0 ? (
+               <p className="text-center text-sm font-bold text-secondary">No expenses in this period.</p>
+            ) : (
+              topCategories.map((cat, idx) => (
+                <CategoryProgress key={cat.label} label={cat.label} amount={cat.amount} percent={cat.percent} color={colors[idx % colors.length]} />
+              ))
+            )}
           </div>
         </section>
 
@@ -76,9 +124,9 @@ export function AnalyticsDashboard({ onNavigate }: { onNavigate: (v: ViewState) 
   );
 }
 
-function GraphTab({ label, active }: any) {
+function GraphTab({ label, active, onClick }: any) {
   return (
-    <button className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${active ? 'bg-text-dark text-white dark:bg-white dark:text-slate-900 shadow-md' : 'bg-transparent text-secondary hover:bg-input-bg dark:hover:bg-slate-800'}`}>
+    <button onClick={onClick} className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${active ? 'bg-text-dark text-white dark:bg-white dark:text-slate-900 shadow-md' : 'bg-transparent text-secondary hover:bg-input-bg dark:hover:bg-slate-800'}`}>
       {label}
     </button>
   );

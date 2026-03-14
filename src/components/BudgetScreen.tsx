@@ -1,9 +1,67 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ArrowLeft, Target, Plus } from 'lucide-react';
-import { ViewState } from '../App';
+import { ViewState, Transaction } from '../App';
 
-export function BudgetScreen({ onNavigate }: { onNavigate: (v: ViewState) => void }) {
+export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void, transactions: Transaction[] }) {
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+
+  // Hardcode limits for demonstration until a DB table exists
+  const BUDGET_LIMITS: { [key: string]: { limit: number, icon: string } } = {
+    'Food': { limit: 600, icon: '🍔' },
+    'Shopping': { limit: 400, icon: '🛍️' },
+    'Transport': { limit: 300, icon: '🚗' },
+    'Entertainment': { limit: 200, icon: '🍿' },
+    'Lifestyle': { limit: 150, icon: '☕' },
+    'Coffee': { limit: 100, icon: '☕' }
+  };
+  const TOTAL_MONTHLY_BUDGET = 3000;
+
+  const currentMonthName = new Date().toLocaleString('en-US', { month: 'long' });
+
+  const { totalSpent, categorySpending } = useMemo(() => {
+    const now = new Date();
+    let spent = 0;
+    const catMap: { [key: string]: number } = {};
+
+    transactions.forEach(t => {
+      const date = new Date(t.date);
+      if (t.type === 'Expense' && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
+        spent += t.amount;
+        catMap[t.category] = (catMap[t.category] || 0) + t.amount;
+      }
+    });
+
+    const categoryData = Object.entries(BUDGET_LIMITS).map(([category, config]) => {
+      const actualSpent = catMap[category] || 0;
+      return {
+        label: category,
+        spent: actualSpent,
+        limit: config.limit,
+        icon: config.icon,
+        warning: actualSpent > config.limit * 0.8 && actualSpent <= config.limit,
+        over: actualSpent > config.limit
+      };
+    }).sort((a, b) => (b.spent / b.limit) - (a.spent / a.limit));
+
+    // Handle expenses in categories not explicitly budgeted
+    Object.keys(catMap).forEach(cat => {
+      if (!BUDGET_LIMITS[cat]) {
+        categoryData.push({
+          label: cat,
+          spent: catMap[cat],
+          limit: Math.max(catMap[cat], 100), // Dynamic fallback limit
+          icon: '🏷️',
+          warning: false,
+          over: true // Unbudgeted spending is considered over
+        });
+      }
+    });
+
+    return { totalSpent: spent, categorySpending: categoryData };
+  }, [transactions]);
+
+  const totalPercent = Math.min((totalSpent / TOTAL_MONTHLY_BUDGET) * 100, 100);
+  const totalLeft = Math.max(TOTAL_MONTHLY_BUDGET - totalSpent, 0);
 
   return (
     <div className="flex flex-col min-h-full pb-20 relative bg-background-light dark:bg-background-dark">
@@ -24,19 +82,19 @@ export function BudgetScreen({ onNavigate }: { onNavigate: (v: ViewState) => voi
           <div className="absolute -right-6 -top-6 text-white/10">
             <Target size={120} />
           </div>
-          <p className="text-white/80 text-sm font-bold uppercase tracking-wider mb-2 relative z-10">October Budget</p>
+          <p className="text-white/80 text-sm font-bold uppercase tracking-wider mb-2 relative z-10">{currentMonthName} Budget</p>
           <div className="flex items-end gap-2 mb-6 relative z-10">
-            <h2 className="text-4xl font-extrabold tracking-tight">{formatCurrency(1240)}</h2>
-            <p className="text-white/60 text-lg font-medium mb-1">/ {formatCurrency(3000)}</p>
+            <h2 className="text-4xl font-extrabold tracking-tight">{formatCurrency(totalSpent)}</h2>
+            <p className="text-white/60 text-lg font-medium mb-1">/ {formatCurrency(TOTAL_MONTHLY_BUDGET)}</p>
           </div>
           
           <div className="relative z-10">
             <div className="flex justify-between text-xs font-bold mb-2">
-              <span>{formatCurrency(1760)} left</span>
-              <span>41%</span>
+              <span>{formatCurrency(totalLeft)} left</span>
+              <span>{totalPercent.toFixed(0)}%</span>
             </div>
             <div className="h-3 w-full bg-black/20 rounded-full overflow-hidden p-0.5">
-              <div className="h-full bg-white rounded-full shadow-sm" style={{ width: '41%' }}></div>
+              <div className="h-full bg-white rounded-full shadow-sm" style={{ width: `${totalPercent}%` }}></div>
             </div>
           </div>
         </section>
@@ -45,10 +103,17 @@ export function BudgetScreen({ onNavigate }: { onNavigate: (v: ViewState) => voi
         <section className="space-y-4">
           <h3 className="text-sm font-bold text-text-dark dark:text-slate-100">Category Limits</h3>
           <div className="space-y-3">
-            <BudgetCard label="Food & Dining" spent={450} limit={600} icon="🍔" />
-            <BudgetCard label="Shopping" spent={380} limit={400} icon="🛍️" warning />
-            <BudgetCard label="Transport" spent={120} limit={300} icon="🚗" />
-            <BudgetCard label="Entertainment" spent={290} limit={200} icon="🍿" over />
+            {categorySpending.map(cat => (
+              <BudgetCard 
+                key={cat.label}
+                label={cat.label} 
+                spent={cat.spent} 
+                limit={cat.limit} 
+                icon={cat.icon} 
+                warning={cat.warning} 
+                over={cat.over} 
+              />
+            ))}
           </div>
         </section>
 

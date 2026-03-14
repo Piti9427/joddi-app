@@ -1,8 +1,39 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ArrowLeft, Plus, Coffee, Utensils, Car, Receipt, ShoppingBag, Banknote, Gift, Shield, MoreHorizontal } from 'lucide-react';
-import { ViewState } from '../App';
+import { ViewState, Transaction } from '../App';
 
-export function CategoriesManagement({ onNavigate }: { onNavigate: (v: ViewState) => void }) {
+export function CategoriesManagement({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void, transactions: Transaction[] }) {
+  
+  const { expenses, incomes } = useMemo(() => {
+    const expCounts: { [key: string]: number } = {};
+    const incCounts: { [key: string]: number } = {};
+
+    transactions.forEach(t => {
+      if (t.type === 'Expense') {
+        expCounts[t.category] = (expCounts[t.category] || 0) + 1;
+      } else {
+        incCounts[t.category] = (incCounts[t.category] || 0) + 1;
+      }
+    });
+
+    // Default categories if none exist yet
+    const defaultExp = [
+      { name: 'Coffee', icon: <Coffee />, color: 'text-amber-600 dark:text-amber-400', count: expCounts['Coffee'] || 0 },
+      { name: 'Food', icon: <Utensils />, color: 'text-rose-500 dark:text-rose-400', count: expCounts['Food'] || 0 },
+      { name: 'Transport', icon: <Car />, color: 'text-blue-500 dark:text-blue-400', count: expCounts['Transport'] || 0 },
+      { name: 'Bills', icon: <Receipt />, color: 'text-secondary dark:text-slate-400', count: expCounts['Bills'] || 0 },
+      { name: 'Shopping', icon: <ShoppingBag />, color: 'text-primary dark:text-primary', count: expCounts['Shopping'] || 0 },
+      { name: 'Lifestyle', icon: <Shield />, color: 'text-indigo-500 dark:text-indigo-400', count: expCounts['Lifestyle'] || 0 }
+    ];
+
+    const defaultInc = [
+      { name: 'Income', icon: <Banknote />, color: 'text-grass dark:text-grass/80', count: incCounts['Income'] || 0 },
+      { name: 'Gifts', icon: <Gift />, color: 'text-fuchsia-500 dark:text-fuchsia-400', count: incCounts['Gifts'] || 0 }
+    ];
+
+    return { expenses: defaultExp, incomes: defaultInc };
+  }, [transactions]);
+
   return (
     <div className="flex flex-col min-h-full pb-20 relative bg-background-light dark:bg-background-dark">
       <header className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10">
@@ -21,12 +52,9 @@ export function CategoriesManagement({ onNavigate }: { onNavigate: (v: ViewState
         <section className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary pl-2">Expense Categories</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-3 shadow-sm border border-border dark:border-slate-800 space-y-1">
-            <CategoryRow icon={<Coffee />} name="Coffee" color="text-amber-600 dark:text-amber-400" count={24} />
-            <CategoryRow icon={<Utensils />} name="Food & Dining" color="text-rose-500 dark:text-rose-400" count={42} />
-            <CategoryRow icon={<Car />} name="Transport" color="text-blue-500 dark:text-blue-400" count={18} />
-            <CategoryRow icon={<Receipt />} name="Bills & Utilities" color="text-secondary dark:text-slate-400" count={12} />
-            <CategoryRow icon={<ShoppingBag />} name="Shopping" color="text-primary dark:text-primary" count={5} />
-            <CategoryRow icon={<Shield />} name="Insurance" color="text-indigo-500 dark:text-indigo-400" count={2} />
+            {expenses.map(cat => (
+              <CategoryRow key={cat.name} icon={cat.icon} name={cat.name} color={cat.color} count={cat.count} />
+            ))}
           </div>
         </section>
 
@@ -34,8 +62,9 @@ export function CategoriesManagement({ onNavigate }: { onNavigate: (v: ViewState
         <section className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary pl-2">Income Categories</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-3 shadow-sm border border-border dark:border-slate-800 space-y-1">
-            <CategoryRow icon={<Banknote />} name="Salary" color="text-grass dark:text-grass/80" count={2} />
-            <CategoryRow icon={<Gift />} name="Gifts" color="text-fuchsia-500 dark:text-fuchsia-400" count={1} />
+            {incomes.map(cat => (
+              <CategoryRow key={cat.name} icon={cat.icon} name={cat.name} color={cat.color} count={cat.count} />
+            ))}
           </div>
         </section>
 

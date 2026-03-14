@@ -30,6 +30,14 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize dark mode from localStorage only. Default to light mode (creamy/minimal).
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+    
     fetchTransactions();
   }, []);
 
@@ -95,9 +103,9 @@ export default function App() {
       case 'dashboard': return <Dashboard onNavigate={setCurrentView} transactions={transactions} />;
       case 'review_receipt': return <ReviewReceipt onNavigate={setCurrentView} onAddTransaction={handleAddTransaction} />;
       case 'transactions': return <TransactionHistory onNavigate={setCurrentView} transactions={transactions} />;
-      case 'analytics': return <AnalyticsDashboard onNavigate={setCurrentView} />;
-      case 'budget': return <BudgetScreen onNavigate={setCurrentView} />;
-      case 'categories': return <CategoriesManagement onNavigate={setCurrentView} />;
+      case 'analytics': return <AnalyticsDashboard onNavigate={setCurrentView} transactions={transactions} />;
+      case 'budget': return <BudgetScreen onNavigate={setCurrentView} transactions={transactions} />;
+      case 'categories': return <CategoriesManagement onNavigate={setCurrentView} transactions={transactions} />;
       case 'settings': return <Settings onNavigate={setCurrentView} />;
       case 'add_transaction': return <Dashboard onNavigate={setCurrentView} transactions={transactions} />; // AddTransaction is an overlay
       default: return <Dashboard onNavigate={setCurrentView} transactions={transactions} />;

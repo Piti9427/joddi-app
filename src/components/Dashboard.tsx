@@ -57,18 +57,18 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
           <button onClick={() => onNavigate('analytics')} className="text-secondary text-sm font-semibold hover:text-primary transition-colors">View Analytics</button>
         </div>
         <div className="flex px-4 gap-3">
-          <div className="flex flex-1 flex-col gap-3 rounded-2xl p-4 bg-highlight/30 dark:bg-primary/10 border border-highlight dark:border-primary/20">
+          <div className="flex flex-1 flex-col gap-3 rounded-2xl p-4 bg-income-bg/60 dark:bg-income/10 border border-income/20 dark:border-income/20">
             <div className="w-10 h-10 rounded-full bg-white dark:bg-surface-dark flex items-center justify-center shadow-sm">
-              <TrendingUp className="text-primary" size={20} />
+              <TrendingUp className="text-income" size={20} />
             </div>
             <div>
               <p className="text-secondary dark:text-slate-400 text-xs font-semibold uppercase">Income</p>
-              <p className="text-primary dark:text-primary text-lg font-bold">{formatCurrency(totalIncome)}</p>
+              <p className="text-income dark:text-income text-lg font-bold">{formatCurrency(totalIncome)}</p>
             </div>
           </div>
-          <div className="flex flex-1 flex-col gap-3 rounded-2xl p-4 bg-surface dark:bg-surface-dark border border-border dark:border-slate-800 shadow-sm">
-            <div className="w-10 h-10 rounded-full bg-input-bg dark:bg-slate-800 flex items-center justify-center">
-              <TrendingDown className="text-secondary" size={20} />
+          <div className="flex flex-1 flex-col gap-3 rounded-2xl p-4 bg-expense-bg/60 dark:bg-expense/10 border border-expense/20 dark:border-expense/20 shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-white dark:bg-surface-dark flex items-center justify-center shadow-sm">
+              <TrendingDown className="text-expense" size={20} />
             </div>
             <div>
               <p className="text-text-secondary dark:text-slate-400 text-xs font-semibold uppercase">Expenses</p>
@@ -97,12 +97,12 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
           {transactions.slice(0, 10).map(t => {
             const isExpense = t.type === 'Expense';
             let Icon = Banknote;
-            let iconColor = 'text-primary';
-            let bgConfig = 'bg-highlight dark:bg-primary/20';
+            let iconColor = 'text-income';
+            let bgConfig = 'bg-income-bg dark:bg-income/20';
             
             if (isExpense) {
-              iconColor = 'text-secondary';
-              bgConfig = 'bg-input-bg dark:bg-slate-800';
+              iconColor = 'text-expense';
+              bgConfig = 'bg-expense-bg dark:bg-expense/20';
               if (t.category === 'Food') {
                 Icon = ShoppingBasket; 
               } else if (t.category === 'Lifestyle' || t.category === 'Coffee') {
@@ -120,7 +120,7 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
                 title={t.merchant || t.category} 
                 subtitle={`${t.category} • ${new Date(t.date).toLocaleDateString()}`} 
                 amount={`${isExpense ? '-' : '+'}${formatCurrency(t.amount)}`} 
-                amountColor={isExpense ? 'text-text-dark dark:text-slate-100' : 'text-primary dark:text-primary'} 
+                amountColor={isExpense ? 'text-text-dark dark:text-slate-100' : 'text-income dark:text-income'} 
               />
             );
           })}

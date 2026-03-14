@@ -3,21 +3,32 @@ import { ArrowLeft, User, Bell, Shield, Moon, Globe, LogOut, ChevronRight, HelpC
 import { ViewState } from '../App';
 
 export function Settings({ onNavigate }: { onNavigate: (v: ViewState) => void }) {
-  const [darkMode, setDarkMode] = useState(false); // In a real app, bind this to HTML class
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') === 'dark';
+    }
+    return false;
+  });
 
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    if (!darkMode) {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    if (newDarkMode) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   };
 
   return (
     <div className="flex flex-col min-h-full pb-20 relative bg-background-light dark:bg-background-dark">
       <header className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10">
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">Settings</h1>
+        <button onClick={() => onNavigate('dashboard')} className="text-text-dark dark:text-slate-100 flex size-10 items-center justify-center rounded-full hover:bg-input-bg dark:hover:bg-slate-800 transition-colors">
+          <ArrowLeft size={24} />
+        </button>
+        <h1 className="text-lg font-bold leading-tight flex-1 text-center pr-10 text-text-dark dark:text-white">Settings</h1>
       </header>
 
       <main className="p-4 flex flex-col flex-1 space-y-6">
