@@ -182,27 +182,33 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
         </section>
 
         {/* Summary Grid */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2 bg-text-dark dark:bg-surface-dark rounded-3xl p-6 shadow-lg text-white flex flex-col items-center justify-center gap-2">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-60">Net Balance</p>
+            <p className={`text-4xl font-extrabold tracking-tight ${netFlow >= 0 ? 'text-income' : 'text-expense'}`}>
+              {netFlow >= 0 ? '+' : ''}{formatCurrency(netFlow)}
+            </p>
+            <div className="flex items-center gap-6 mt-2">
+              <div className="flex items-center gap-2">
+                 <div className="size-2 rounded-full bg-income"></div>
+                 <span className="text-[10px] font-bold opacity-60 uppercase">Savings Rate: {totalIncome > 0 ? ((netFlow / totalIncome) * 100).toFixed(0) : 0}%</span>
+              </div>
+            </div>
+          </div>
+          
           <div className="bg-surface dark:bg-surface-dark rounded-2xl p-4 shadow-sm border border-border dark:border-slate-800 flex flex-col gap-1">
             <div className="size-8 rounded-full bg-income-bg/60 dark:bg-income/10 flex items-center justify-center mb-1 text-income">
               <TrendingUp size={16} />
             </div>
-            <p className="text-[10px] font-bold text-secondary uppercase tracking-wider">Income</p>
+            <p className="text-[10px] font-bold text-secondary uppercase tracking-wider">Total Income</p>
             <p className="text-sm font-bold text-text-dark dark:text-white">{formatCurrency(totalIncome)}</p>
           </div>
           <div className="bg-surface dark:bg-surface-dark rounded-2xl p-4 shadow-sm border border-border dark:border-slate-800 flex flex-col gap-1">
             <div className="size-8 rounded-full bg-expense-bg/60 dark:bg-expense/10 flex items-center justify-center mb-1 text-expense">
               <TrendingDown size={16} />
             </div>
-            <p className="text-[10px] font-bold text-secondary uppercase tracking-wider">Expense</p>
+            <p className="text-[10px] font-bold text-secondary uppercase tracking-wider">Total Expense</p>
             <p className="text-sm font-bold text-text-dark dark:text-white">{formatCurrency(totalExpense)}</p>
-          </div>
-          <div className={`bg-surface dark:bg-surface-dark rounded-2xl p-4 shadow-sm border flex flex-col gap-1 ${netFlow >= 0 ? 'border-income/30' : 'border-expense/30'}`}>
-            <div className={`size-8 rounded-full flex items-center justify-center mb-1 ${netFlow >= 0 ? 'bg-income-bg/60 text-income' : 'bg-expense-bg/60 text-expense'}`}>
-              {netFlow >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-            </div>
-            <p className="text-[10px] font-bold text-secondary uppercase tracking-wider">Net</p>
-            <p className={`text-sm font-bold ${netFlow >= 0 ? 'text-income' : 'text-expense'}`}>{netFlow >= 0 ? '+' : ''}{formatCurrency(netFlow)}</p>
           </div>
         </div>
 

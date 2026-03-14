@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Coffee, Utensils, Car, Receipt, ShoppingBag, Banknote, Gift, Shield, MoreHorizontal, X, Trash, Check, Tag, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Plus, Coffee, Utensils, Car, Receipt, ShoppingBag, Banknote, Gift, Shield, MoreHorizontal, X, Trash, Check, Tag } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 
 export interface Category {
@@ -62,10 +62,14 @@ const COLOR_OPTIONS = [
 export function CategoriesManagement({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void, transactions: Transaction[] }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // Edit states
   const [editName, setEditName] = useState('');
   const [editIcon, setEditIcon] = useState('Receipt');
   const [editColor, setEditColor] = useState(COLOR_OPTIONS[0].value);
   const [editType, setEditType] = useState<'Expense' | 'Income'>('Expense');
+  
+  // Add states
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<'Expense' | 'Income'>('Expense');
@@ -74,17 +78,25 @@ export function CategoriesManagement({ onNavigate, transactions }: { onNavigate:
 
   useEffect(() => {
     const saved = localStorage.getItem('user_categories');
-    if (saved) {
-      setCategories(JSON.parse(saved));
-    } else {
-      setCategories(DEFAULT_CATEGORIES);
-      localStorage.setItem('user_categories', JSON.stringify(DEFAULT_CATEGORIES));
+    try {
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCategories(parsed);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse", e);
     }
+    setCategories(DEFAULT_CATEGORIES);
+    localStorage.setItem('user_categories', JSON.stringify(DEFAULT_CATEGORIES));
   }, []);
 
   const saveCategories = (cats: Category[]) => {
     setCategories(cats);
     localStorage.setItem('user_categories', JSON.stringify(cats));
+    window.dispatchEvent(new Event('storage'));
   };
 
   const handleEdit = (cat: Category) => {
@@ -93,6 +105,7 @@ export function CategoriesManagement({ onNavigate, transactions }: { onNavigate:
     setEditIcon(cat.iconName);
     setEditColor(cat.color);
     setEditType(cat.type);
+    setShowAddForm(false);
   };
 
   const handleSave = (id: string) => {
@@ -103,7 +116,7 @@ export function CategoriesManagement({ onNavigate, transactions }: { onNavigate:
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this category?')) {
+    if (window.confirm('Delete this category?')) {
       const updated = categories.filter(c => c.id !== id);
       saveCategories(updated);
       setEditingId(null);
@@ -154,75 +167,67 @@ export function CategoriesManagement({ onNavigate, transactions }: { onNavigate:
           <ArrowLeft size={24} />
         </button>
         <h1 className="text-lg font-bold leading-tight flex-1 text-center pr-2 text-text-dark dark:text-white">Categories</h1>
-        <button onClick={() => setShowAddForm(!showAddForm)} className="text-primary hover:text-text-dark transition-colors p-2 bg-highlight dark:bg-primary/20 rounded-full">
+        <button onClick={() => { setShowAddForm(!showAddForm); setEditingId(null); }} className="text-primary hover:text-text-dark transition-colors p-2 bg-highlight dark:bg-primary/20 rounded-full">
           {showAddForm ? <X size={20} /> : <Plus size={20} />}
         </button>
       </header>
 
       <main className="p-4 flex flex-col flex-1 space-y-6">
         
-        {/* Add New Category Form */}
+        {/* ADD FORM */}
         {showAddForm && (
-          <section className="bg-surface dark:bg-surface-dark rounded-3xl p-5 shadow-md border-2 border-primary/30 dark:border-primary/40 space-y-4">
-            <h3 className="text-sm font-bold text-primary flex items-center gap-2"><Plus size={16} /> Add New Category</h3>
+          <section className="bg-surface dark:bg-surface-dark rounded-3xl p-6 shadow-xl border-2 border-primary/40 animate-in fade-in slide-in-from-top-4 duration-200">
+            <div className="flex justify-between items-center mb-4">
+               <h3 className="text-sm font-extrabold text-primary flex items-center gap-2">Create New Category</h3>
+               <button onClick={() => setShowAddForm(false)} className="text-secondary hover:text-rose-500 transition-colors"><X size={18} /></button>
+            </div>
             
-            <input 
-              autoFocus
-              type="text" 
-              placeholder="Category name..."
-              value={newName} 
-              onChange={e => setNewName(e.target.value)} 
-              className="w-full bg-input-bg dark:bg-slate-800 border border-border dark:border-slate-600 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 text-text-dark dark:text-white font-bold text-sm"
-            />
+            <div className="space-y-4">
+              <input 
+                autoFocus
+                type="text" 
+                placeholder="Ex: Groceries, Games, etc."
+                value={newName} 
+                onChange={e => setNewName(e.target.value)} 
+                className="w-full bg-input-bg dark:bg-slate-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/50 text-text-dark dark:text-white font-bold"
+              />
 
-            {/* Type selection */}
-            <div className="flex gap-2">
-              <button onClick={() => setNewType('Expense')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-colors ${newType === 'Expense' ? 'bg-expense text-white' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}>Expense</button>
-              <button onClick={() => setNewType('Income')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-colors ${newType === 'Income' ? 'bg-income text-white' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}>Income</button>
-            </div>
-
-            {/* Icon selection */}
-            <div>
-              <span className="text-[10px] text-secondary font-bold uppercase tracking-wider">Icon</span>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {ICON_OPTIONS.map(opt => (
-                  <button 
-                    key={opt.name} 
-                    onClick={() => setNewIcon(opt.name)} 
-                    className={`size-10 rounded-xl flex items-center justify-center transition-all ${newIcon === opt.name ? 'bg-primary text-white ring-2 ring-primary/30 scale-110' : 'bg-input-bg dark:bg-slate-800 text-secondary hover:bg-highlight'}`}
-                  >
-                    {opt.icon}
-                  </button>
-                ))}
+              <div className="flex gap-2">
+                <button onClick={() => setNewType('Expense')} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${newType === 'Expense' ? 'bg-expense text-white shadow-md' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}>Expense</button>
+                <button onClick={() => setNewType('Income')} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${newType === 'Income' ? 'bg-income text-white shadow-md' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}>Income</button>
               </div>
-            </div>
 
-            {/* Color selection */}
-            <div>
-              <span className="text-[10px] text-secondary font-bold uppercase tracking-wider">Color</span>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {COLOR_OPTIONS.map(opt => (
-                  <button 
-                    key={opt.name} 
-                    onClick={() => setNewColor(opt.value)} 
-                    className={`size-8 rounded-full flex items-center justify-center transition-all ${opt.value.split(' ')[0].replace('text-', 'bg-')} opacity-80 ${newColor === opt.value ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'hover:opacity-100'}`}
-                  />
-                ))}
+              <div>
+                <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-2">Select Icon</p>
+                <div className="flex flex-wrap gap-2">
+                  {ICON_OPTIONS.map(opt => (
+                    <button key={opt.name} onClick={() => setNewIcon(opt.name)} className={`size-10 rounded-xl flex items-center justify-center transition-all ${newIcon === opt.name ? 'bg-primary text-white scale-110 shadow-md shadow-primary/20' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}>
+                      {opt.icon}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <button onClick={handleAddNew} disabled={!newName.trim()} className="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-              <Check size={18} />
-              Add Category
-            </button>
+              <div>
+                <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-2">Select Color</p>
+                <div className="flex flex-wrap gap-2">
+                  {COLOR_OPTIONS.map(opt => (
+                    <button key={opt.name} onClick={() => setNewColor(opt.value)} className={`size-8 rounded-full transition-all ${opt.value.split(' ')[0].replace('text-', 'bg-')} ${newColor === opt.value ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'opacity-60 hover:opacity-100'}`} />
+                  ))}
+                </div>
+              </div>
+
+              <button onClick={handleAddNew} disabled={!newName.trim()} className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all disabled:opacity-30 flex items-center justify-center gap-2">
+                <Check size={20} /> Create Category
+              </button>
+            </div>
           </section>
         )}
 
-        {/* Expenses List */}
+        {/* Expenses */}
         <section className="space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary pl-2">Expense Categories ({expenses.length})</h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-3xl p-3 shadow-sm border border-border dark:border-slate-800 space-y-1">
-            {expenses.length === 0 && <p className="text-center text-sm text-secondary py-4">No expense categories yet</p>}
+          <h3 className="text-xs font-black uppercase tracking-widest text-secondary pl-2">Expenses ({expenses.length})</h3>
+          <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
             {expenses.map(cat => (
               <CategoryRow 
                 key={cat.id} 
@@ -244,11 +249,10 @@ export function CategoriesManagement({ onNavigate, transactions }: { onNavigate:
           </div>
         </section>
 
-        {/* Income List */}
+        {/* Income */}
         <section className="space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary pl-2">Income Categories ({incomes.length})</h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-3xl p-3 shadow-sm border border-border dark:border-slate-800 space-y-1">
-            {incomes.length === 0 && <p className="text-center text-sm text-secondary py-4">No income categories yet</p>}
+          <h3 className="text-xs font-black uppercase tracking-widest text-secondary pl-2">Income ({incomes.length})</h3>
+          <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
             {incomes.map(cat => (
               <CategoryRow 
                 key={cat.id} 
@@ -280,66 +284,56 @@ function CategoryRow({ category, count, editing, editName, editIcon, editColor, 
 
   if (editing) {
     return (
-      <div className="flex flex-col gap-3 p-4 rounded-2xl bg-highlight/30 dark:bg-slate-800/80 transition-colors border border-primary/20">
+      <div className="flex flex-col gap-4 p-5 rounded-2xl bg-highlight/40 dark:bg-slate-800/80 border border-primary/30 mb-2 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center gap-3">
-          <div className={`size-12 rounded-2xl bg-input-bg dark:bg-slate-800 flex items-center justify-center shrink-0 ${editColor}`}>
-            {React.cloneElement((ICONS[editIcon] || <Receipt />) as React.ReactElement, { size: 22 })}
+          <div className={`size-12 rounded-2xl bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm ${editColor}`}>
+            {React.cloneElement((ICONS[editIcon] || <Receipt />) as React.ReactElement, { size: 24 })}
           </div>
           <input 
             autoFocus
             type="text" 
             value={editName} 
             onChange={e => setEditName(e.target.value)} 
-            className="flex-1 bg-surface dark:bg-background-dark border border-border dark:border-slate-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 text-text-dark dark:text-white font-bold"
+            className="flex-1 bg-white dark:bg-slate-900 border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/50 text-text-dark dark:text-white font-bold"
           />
         </div>
         
-        {/* Icon picker row */}
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {ICON_OPTIONS.map(opt => (
-            <button 
-              key={opt.name} 
-              onClick={() => setEditIcon(opt.name)} 
-              className={`size-8 rounded-lg flex items-center justify-center transition-all ${editIcon === opt.name ? 'bg-primary text-white scale-110' : 'bg-input-bg dark:bg-slate-700 text-secondary'}`}
-            >
-              {React.cloneElement(opt.icon as React.ReactElement, { size: 16 })}
+            <button key={opt.name} onClick={() => setEditIcon(opt.name)} className={`size-9 rounded-xl flex items-center justify-center transition-all ${editIcon === opt.name ? 'bg-primary text-white shadow-md' : 'bg-white dark:bg-slate-900 text-secondary'}`}>
+              {React.cloneElement(opt.icon as React.ReactElement, { size: 18 })}
             </button>
           ))}
         </div>
 
-        {/* Color picker row */}
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {COLOR_OPTIONS.map(opt => (
-            <button 
-              key={opt.name} 
-              onClick={() => setEditColor(opt.value)} 
-              className={`size-7 rounded-full transition-all ${opt.value.split(' ')[0].replace('text-', 'bg-')} opacity-80 ${editColor === opt.value ? 'ring-2 ring-offset-1 ring-primary scale-110' : 'hover:opacity-100'}`}
-            />
+            <button key={opt.name} onClick={() => setEditColor(opt.value)} className={`size-7 rounded-full transition-all ${opt.value.split(' ')[0].replace('text-', 'bg-')} ${editColor === opt.value ? 'ring-2 ring-primary scale-110' : 'opacity-60 hover:opacity-100'}`} />
           ))}
         </div>
 
-        <div className="flex items-center gap-2 pt-1">
-          <button onClick={onSave} className="flex-1 py-2 bg-primary text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1 hover:bg-primary/90 transition-colors"><Check size={16} /> Save</button>
-          <button onClick={onDelete} className="py-2 px-4 bg-rose-500/10 text-rose-500 rounded-xl text-sm font-bold hover:bg-rose-500/20 transition-colors"><Trash size={16} /></button>
-          <button onClick={onCancel} className="py-2 px-4 bg-input-bg dark:bg-slate-700 text-secondary rounded-xl text-sm font-bold hover:bg-highlight transition-colors"><X size={16} /></button>
+        <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-slate-700">
+          <button onClick={onSave} className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-primary/20"><Check size={18} /> Save</button>
+          <button onClick={onDelete} className="p-3 text-rose-500 bg-rose-500/10 rounded-xl hover:bg-rose-500/20 transition-colors"><Trash size={18} /></button>
+          <button onClick={onCancel} className="p-3 text-secondary bg-white dark:bg-slate-900 rounded-xl hover:bg-highlight transition-colors"><X size={18} /></button>
         </div>
       </div>
     );
   }
 
   return (
-    <div onClick={onEdit} className="flex items-center gap-4 group cursor-pointer p-3 rounded-2xl hover:bg-input-bg dark:hover:bg-slate-800/50 transition-colors">
-      <div className={`size-12 rounded-2xl bg-input-bg dark:bg-slate-800 flex items-center justify-center shrink-0 ${category.color}`}>
-        {React.cloneElement(iconNode as React.ReactElement, { size: 22 })}
+    <div onClick={onEdit} className="flex items-center gap-4 group cursor-pointer p-4 rounded-2xl hover:bg-highlight/50 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/50">
+      <div className={`size-12 rounded-2xl bg-input-bg dark:bg-slate-800 flex items-center justify-center shrink-0 ${category.color} transition-transform group-hover:scale-105`}>
+        {React.cloneElement(iconNode as React.ReactElement, { size: 24 })}
       </div>
       <div className="flex-1 flex justify-between items-center">
         <div>
-          <p className="text-text-dark dark:text-slate-100 font-bold text-[15px]">{category.name}</p>
-          <p className="text-text-secondary dark:text-slate-500 text-xs font-medium mt-0.5">{count} transactions</p>
+          <p className="text-text-dark dark:text-slate-100 font-extrabold text-[15px]">{category.name}</p>
+          <p className="text-text-secondary dark:text-slate-500 text-[11px] font-bold uppercase tracking-tight mt-0.5">{count} transactions</p>
         </div>
-        <button className="text-secondary hover:text-text-dark dark:hover:text-white transition-colors p-2">
+        <div className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
           <MoreHorizontal size={20} />
-        </button>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Check, Utensils, Car, Receipt, ShoppingBag, Calendar, CreditCard, AlignLeft, Delete, ArrowRight, Banknote, Coffee, Shield, Gift, Tag } from 'lucide-react';
+import { X, Check, Utensils, Car, Receipt, ShoppingBag, Calendar, CreditCard, AlignLeft, Delete, ArrowRight, Banknote, Coffee, Shield, Gift, Tag, Plus } from 'lucide-react';
 import { ViewState, TransactionType } from '../App';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -21,6 +21,20 @@ interface SavedCategory {
   color: string;
 }
 
+const DEFAULT_CATEGORIES: SavedCategory[] = [
+  { id: '1', name: 'Coffee', type: 'Expense', iconName: 'Coffee', color: 'text-amber-600 dark:text-amber-400' },
+  { id: '2', name: 'Food', type: 'Expense', iconName: 'Utensils', color: 'text-rose-500 dark:text-rose-400' },
+  { id: '3', name: 'Transport', type: 'Expense', iconName: 'Car', color: 'text-blue-500 dark:text-blue-400' },
+  { id: '4', name: 'Bills', type: 'Expense', iconName: 'Receipt', color: 'text-secondary dark:text-slate-400' },
+  { id: '5', name: 'Shopping', type: 'Expense', iconName: 'ShoppingBag', color: 'text-primary dark:text-primary' },
+  { id: '6', name: 'Lifestyle', type: 'Expense', iconName: 'Shield', color: 'text-indigo-500 dark:text-indigo-400' },
+  { id: '7', name: 'Entertainment', type: 'Expense', iconName: 'Tag', color: 'text-pink-500 dark:text-pink-400' },
+  { id: '8', name: 'Health', type: 'Expense', iconName: 'Shield', color: 'text-emerald-500 dark:text-emerald-400' },
+  { id: '9', name: 'Income', type: 'Income', iconName: 'Banknote', color: 'text-grass dark:text-grass/80' },
+  { id: '10', name: 'Gifts', type: 'Income', iconName: 'Gift', color: 'text-fuchsia-500 dark:text-fuchsia-400' },
+  { id: '11', name: 'Freelance', type: 'Income', iconName: 'Banknote', color: 'text-blue-500 dark:text-blue-400' },
+];
+
 export function AddTransaction({ onNavigate, onAddTransaction }: { onNavigate: (v: ViewState) => void; onAddTransaction: (t: any) => void }) {
   const [amountStr, setAmountStr] = useState('0');
   const [type, setType] = useState<TransactionType>('Expense');
@@ -34,11 +48,30 @@ export function AddTransaction({ onNavigate, onAddTransaction }: { onNavigate: (
 
   // Load categories from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('user_categories');
-    if (saved) {
-      const parsed: SavedCategory[] = JSON.parse(saved);
-      setUserCategories(parsed);
-    }
+    const loadCategories = () => {
+      const saved = localStorage.getItem('user_categories');
+      try {
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setUserCategories(parsed);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse categories", e);
+      }
+      
+      // Fallback/First run
+      setUserCategories(DEFAULT_CATEGORIES);
+      localStorage.setItem('user_categories', JSON.stringify(DEFAULT_CATEGORIES));
+    };
+
+    loadCategories();
+    
+    // Listen for storage changes if the user updates categories in another screen
+    window.addEventListener('storage', loadCategories);
+    return () => window.removeEventListener('storage', loadCategories);
   }, []);
 
   // Filter categories based on selected type (Expense or Income)
@@ -132,20 +165,22 @@ export function AddTransaction({ onNavigate, onAddTransaction }: { onNavigate: (
         </div>
 
         {/* Categories - Dynamic from localStorage */}
-        <div className="flex gap-2 px-6 py-2 overflow-x-auto no-scrollbar shrink-0 flex-wrap">
-          {filteredCategories.length > 0 ? (
-            filteredCategories.map(cat => (
-              <div key={cat.id} onClick={() => setCategory(cat.name)}>
-                <CategoryChip 
-                  icon={ICON_MAP[cat.iconName] || <Tag size={18} />} 
-                  label={cat.name} 
-                  active={category === cat.name} 
-                />
-              </div>
-            ))
-          ) : (
-            <p className="text-secondary text-sm py-2">No categories for {type}. Add some in Categories.</p>
-          )}
+        <div className="flex gap-2 px-6 py-2 overflow-x-auto no-scrollbar shrink-0 flex-nowrap items-center">
+          {filteredCategories.map(cat => (
+            <div key={cat.id} onClick={() => setCategory(cat.name)}>
+              <CategoryChip 
+                icon={ICON_MAP[cat.iconName] || <Tag size={18} />} 
+                label={cat.name} 
+                active={category === cat.name} 
+              />
+            </div>
+          ))}
+          <button 
+            onClick={() => onNavigate('categories')}
+            className="flex h-10 size-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-secondary text-secondary hover:bg-highlight transition-colors"
+          >
+            <Plus size={20} />
+          </button>
         </div>
 
         {/* Fields */}
