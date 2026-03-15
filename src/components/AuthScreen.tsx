@@ -17,6 +17,7 @@ function mapAuthError(message: string) {
   if (normalized.includes('password should be at least')) return 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
   if (normalized.includes('user already registered')) return 'อีเมลนี้ถูกใช้งานแล้ว';
   if (normalized.includes('unable to validate email address')) return 'รูปแบบอีเมลไม่ถูกต้อง';
+  if (normalized.includes('rate limit exceeded')) return 'ขออภัย! คุณทำรายการบ่อยเกินไป โปรดรอสักครู่แล้วลองใหม่อีกครั้ง';
 
   return message || 'Authentication failed';
 }
@@ -241,23 +242,26 @@ export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, 
           </button>
         </form>
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={handleResetPassword}
-            disabled={loading}
-            className="text-[11px] font-bold rounded-xl py-2 bg-slate-100 dark:bg-slate-800 text-secondary hover:text-text-dark dark:hover:text-white disabled:opacity-60"
-          >
-            Forgot Password
-          </button>
-          <button
-            type="button"
-            onClick={handleResendVerification}
-            disabled={loading}
-            className="text-[11px] font-bold rounded-xl py-2 bg-slate-100 dark:bg-slate-800 text-secondary hover:text-text-dark dark:hover:text-white disabled:opacity-60"
-          >
-            Resend Verify Mail
-          </button>
+        <div className="mt-4 flex justify-center">
+          {isLogin ? (
+            <button
+              type="button"
+              onClick={handleResetPassword}
+              disabled={loading}
+              className="text-[11px] font-bold px-4 py-2 bg-slate-100 dark:bg-slate-800 text-secondary hover:text-text-dark dark:hover:text-white rounded-xl disabled:opacity-60 transition-colors"
+            >
+              Forgot Password?
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResendVerification}
+              disabled={loading}
+              className="text-[11px] font-bold px-4 py-2 bg-slate-100 dark:bg-slate-800 text-secondary hover:text-text-dark dark:hover:text-white rounded-xl disabled:opacity-60 transition-colors"
+            >
+              Didn't receive verification email? Resend
+            </button>
+          )}
         </div>
 
         <div className="mt-6 text-center">
