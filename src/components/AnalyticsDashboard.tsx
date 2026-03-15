@@ -6,18 +6,23 @@ import { formatMoney } from '../lib/formatters';
 
 type ChartType = 'Bar' | 'Line';
 
+const CATEGORY_COLORS = [
+  '#10b981', '#f43f5e', '#3b82f6', '#f59e0b', '#8b5cf6',
+  '#ec4899', '#06b6d4', '#84cc16', '#ef4444', '#6366f1',
+];
+
 export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void, transactions: Transaction[] }) {
   const [timeRange, setTimeRange] = useState<'Week' | 'Month' | 'Year'>('Month');
   const [chartType, setChartType] = useState<ChartType>('Bar');
 
-  const { totalIncome, totalExpense, chartEntries, netBalance, savingsRate } = useMemo(() => {
+  const { totalIncome, totalExpense, chartEntries, netBalance, savingsRate, expenseByCategory } = useMemo(() => {
     const now = new Date();
     let income = 0;
     let expense = 0;
     
-    // 1. Pre-fill chart map to ensure consistent X-axis
     const chartMap: { [key: string]: { income: number, expense: number } } = {};
     const orderedKeys: string[] = [];
+    const catMap: { [key: string]: number } = {};
 
     if (timeRange === 'Week') {
       for (let i = 6; i >= 0; i--) {
@@ -40,7 +45,6 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
       });
     }
 
-    // 2. Filter transactions based on timeRange
     const filtered = transactions.filter(t => {
       const tDate = new Date(t.date);
       if (timeRange === 'Week') {
@@ -58,10 +62,12 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
       return true;
     });
 
-    // 3. Populate metrics
     filtered.forEach(t => {
       if (t.type === 'Income') income += t.amount;
-      else expense += t.amount;
+      else {
+        expense += t.amount;
+        catMap[t.category] = (catMap[t.category] || 0) + t.amount;
+      }
 
       let key = '';
       const d = new Date(t.date);
@@ -69,10 +75,9 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
       if (timeRange === 'Week') {
         key = d.toLocaleDateString('en-US', { weekday: 'short' });
       } else if (timeRange === 'Month') {
-        // Simple week grouping 1-7 = W1, etc.
         const dayOfMonth = d.getDate();
         const weekNum = Math.ceil(dayOfMonth / 7);
-        key = `W${Math.min(weekNum, 5)}`; // Cap at W5
+        key = `W${Math.min(weekNum, 5)}`;
       } else if (timeRange === 'Year') {
         key = d.toLocaleDateString('en-US', { month: 'short' });
       }
@@ -85,12 +90,17 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
 
     const entries = orderedKeys.map(k => [k, chartMap[k]] as [string, { income: number, expense: number }]);
 
+    const expByCat = Object.entries(catMap)
+      .map(([name, amount], i) => ({ name, amount, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
+      .sort((a, b) => b.amount - a.amount);
+
     return {
       totalIncome: income,
       totalExpense: expense,
       chartEntries: entries,
       netBalance: income - expense,
       savingsRate: income > 0 ? ((income - expense) / income) * 100 : 0,
+      expenseByCategory: expByCat,
     };
   }, [transactions, timeRange]);
 
@@ -219,8 +229,91 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
           </div>
         </div>
 
+        {/* ── Donut Chart: Expense Breakdown ── */}
+        <section className="bg-white dark:bg-surface-dark rounded-[2.5rem] p-6 shadow-sm border border-border dark:border-slate-800">
+          <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-5">Expense Breakdown</p>
+          {expenseByCategory.length === 0 ? (
+            <div className="text-center py-10 text-secondary text-sm font-bold opacity-60">No expense data for this period</div>
+          ) : (
+            <div className="flex items-center gap-6">
+              {/* Donut SVG */}
+              <div className="shrink-0">
+                <DonutChart data={expenseByCategory} total={totalExpense} />
+              </div>
+              {/* Legend */}
+              <div className="flex-1 space-y-2.5 min-w-0">
+                {expenseByCategory.slice(0, 5).map((cat) => {
+                  const pct = totalExpense > 0 ? ((cat.amount / totalExpense) * 100).toFixed(1) : '0';
+                  return (
+                    <div key={cat.name} className="flex items-center gap-2.5">
+                      <span className="size-3 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                      <span className="text-xs font-bold text-text-dark dark:text-white truncate flex-1">{cat.name}</span>
+                      <span className="text-[11px] font-black text-secondary tabular-nums">{pct}%</span>
+                    </div>
+                  );
+                })}
+                {expenseByCategory.length > 5 && (
+                  <p className="text-[10px] text-secondary font-bold opacity-60">+{expenseByCategory.length - 5} more</p>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+
       </main>
     </div>
+  );
+}
+
+/* ── Donut Chart Component ── */
+
+function DonutChart({ data, total }: { data: { name: string; amount: number; color: string }[]; total: number }) {
+  const size = 120;
+  const strokeWidth = 18;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const center = size / 2;
+
+  let accumulated = 0;
+  const segments = data.map((item) => {
+    const pct = total > 0 ? item.amount / total : 0;
+    const dashLength = pct * circumference;
+    const dashGap = circumference - dashLength;
+    const offset = -(accumulated * circumference) + circumference * 0.25; // start from top
+    accumulated += pct;
+    return { ...item, dashLength, dashGap, offset };
+  });
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {/* Background ring */}
+      <circle cx={center} cy={center} r={radius} fill="none" stroke="var(--border)" strokeWidth={strokeWidth} opacity={0.4} />
+      {/* Segments */}
+      {segments.map((seg, i) => (
+        <motion.circle
+          key={seg.name}
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke={seg.color}
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${seg.dashLength} ${seg.dashGap}`}
+          strokeDashoffset={seg.offset}
+          strokeLinecap="round"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: i * 0.08, duration: 0.4 }}
+        />
+      ))}
+      {/* Center label */}
+      <text x={center} y={center - 6} textAnchor="middle" className="fill-text-dark dark:fill-white" style={{ fontSize: '14px', fontWeight: 900 }}>
+        {formatMoney(total, { compact: true, maximumFractionDigits: 1 })}
+      </text>
+      <text x={center} y={center + 12} textAnchor="middle" className="fill-secondary" style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Total
+      </text>
+    </svg>
   );
 }
 
@@ -229,12 +322,11 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
 const formatYAxis = (val: number) => formatMoney(val, { compact: true, maximumFractionDigits: 1 });
 
 function BarChart({ entries }: any) {
-  const maxVal = Math.max(...entries.map(([, v]: any) => Math.max(v.income, v.expense)), 100); // minimum scale 100
+  const maxVal = Math.max(...entries.map(([, v]: any) => Math.max(v.income, v.expense)), 100);
   const ticks = [maxVal, maxVal * 0.5, 0];
 
   return (
     <div className="relative h-full flex flex-col pt-2">
-      {/* Y-Axis Grid Background */}
       <div className="absolute inset-0 flex flex-col justify-between pb-6 pointer-events-none z-0">
          {ticks.map((tick, i) => (
            <div key={i} className={`flex-1 border-t border-slate-100 dark:border-slate-800 flex items-start ${i === 2 ? 'border-none' : ''}`}>
@@ -243,12 +335,10 @@ function BarChart({ entries }: any) {
          ))}
       </div>
 
-      {/* Bars Layer */}
       <div className="flex-1 flex justify-between items-end pb-6 z-10 px-2 sm:px-4">
         {entries.map(([key, val]: any, i: number) => (
           <div key={i} className="flex flex-col items-center h-full w-full justify-end group">
             <div className="flex items-end justify-center w-full h-full pb-0 gap-0.5 sm:gap-1">
-              {/* Income Bar */}
               <motion.div 
                 initial={{ height: 0 }} 
                 animate={{ height: `${(val.income / maxVal) * 100}%` }} 
@@ -256,7 +346,6 @@ function BarChart({ entries }: any) {
                 className="w-1.5 sm:w-2.5 bg-primary rounded-t-sm"
                 style={{ minHeight: val.income > 0 ? '4px' : '0' }}
               />
-              {/* Expense Bar */}
               <motion.div 
                 initial={{ height: 0 }} 
                 animate={{ height: `${(val.expense / maxVal) * 100}%` }} 
@@ -269,7 +358,6 @@ function BarChart({ entries }: any) {
         ))}
       </div>
 
-      {/* X-Axis Labels */}
       <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 sm:px-4">
          {entries.map(([key]: any, i: number) => (
            <div key={i} className="flex-1 text-center">
@@ -298,7 +386,6 @@ function TrendChart({ entries }: any) {
   const incPoints = getPoints('income');
   const expPoints = getPoints('expense');
 
-  // Curve smoothing function (Catmull-Rom to Cubic Bezier)
   const spline = (points: {x:number, y:number}[]) => {
     if(points.length === 0) return '';
     if(points.length === 1) return `M ${points[0].x},${points[0].y}`;
@@ -323,7 +410,6 @@ function TrendChart({ entries }: any) {
 
   return (
     <div className="relative h-full flex flex-col pt-2">
-      {/* Y-Axis Grid Background (HTML) */}
       <div className="absolute inset-0 flex flex-col justify-between pb-6 pointer-events-none z-0">
          {ticks.map((tick, i) => (
            <div key={i} className={`flex-1 border-t border-slate-100 dark:border-slate-800 flex items-start ${i === 2 ? 'border-none' : ''}`}>
@@ -334,7 +420,6 @@ function TrendChart({ entries }: any) {
 
       <div className="flex-1 w-full relative z-10 pb-6 overflow-visible">
         <svg viewBox={`0 -10 ${width} ${height + 20}`} preserveAspectRatio="none" className="size-full overflow-visible">
-          {/* Defs for Glow */}
           <defs>
              <filter id="glowInc" x="-20%" y="-20%" width="140%" height="140%">
                <feGaussianBlur stdDeviation="15" result="blur" />
@@ -371,7 +456,6 @@ function TrendChart({ entries }: any) {
         </svg>
       </div>
       
-      {/* X-Axis Labels */}
       <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 sm:px-4">
          {entries.map(([key]: any, i: number) => (
            <div key={i} className="flex-1 text-center">
