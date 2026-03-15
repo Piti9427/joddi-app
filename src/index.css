@@ -1,32 +1,98 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 
-@custom-variant dark (&:where(.dark, .dark *));
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  --color-primary: #4A8166;
-  --color-secondary: #9DAFA3;
-  --color-highlight: #E8EBE4;
-  --color-background-light: #FDFBF7;
-  --color-background-dark: #121614;
-  --color-surface: #FFFFFF;
-  --color-surface-dark: #1A211E;
-  --color-input-bg: #F4F5F1;
-  --color-border: #E8EAE3;
-  --color-text-dark: #2A332E;
-  --color-text-secondary: #79837D;
-  --color-grass: #B8C7A7;
-  --color-expense: #E56B6B;
-  --color-expense-bg: #FDE8E8;
-  --color-income: #509772;
-  --color-income-bg: #E4F4EC;
-  --font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
+:root {
+  /* Warm & Friendly Theme (Minimalistic Creamy) */
+  --primary: #10b981; /* Emerald Green - Standard for Finance */
+  --primary-dark: #059669;
+  --secondary: #64748b;
+  --background-light: #fdfcf9; /* Very slight cream/off-white */
+  --background-dark: #0f172a;
+  --surface: #ffffff;
+  --surface-dark: #1e293b;
+  --text-dark: #0f172a;
+  --text-secondary: #64748b;
+  --income: #10b981;
+  --income-bg: #ecfdf5;
+  --expense: #f43f5e; /* Rose - Standard for Expenses */
+  --expense-bg: #fff1f2;
+  --highlight: #f0fdf4;
+  --input-bg: #f1f5f9;
+  --border: #e2e8f0;
 }
 
-.no-scrollbar::-webkit-scrollbar {
+.dark {
+  --primary: #10b981;
+  --secondary: #94a3b8;
+  --background-light: #0f172a;
+  --background-dark: #080d1a;
+  --surface: #1e293b;
+  --surface-dark: #1e293b;
+  --text-dark: #f8fafc;
+  --text-secondary: #94a3b8;
+  --highlight: #064e3b;
+  --input-bg: #334155;
+  --border: #334155;
+}
+
+@layer base {
+  body {
+    @apply font-display bg-background-light text-slate-900 transition-colors duration-300 antialiased;
+    font-family: 'Outfit', sans-serif;
+  }
+}
+
+@layer components {
+  /* Glassmorphism utility */
+  .glass {
+    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border border-white/20 dark:border-slate-700/30;
+  }
+
+  /* No scrollbar utility */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Keypad visual haptics */
+  .haptic-press:active {
+    @apply scale-90 duration-75 brightness-95 opacity-80;
+  }
+  
+  /* Smooth Slide Transitions */
+  .slide-up {
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+}
+
+/* Custom spacing and typography refinements */
+h1, h2, h3, h4 {
+  @apply tracking-tight;
+}
+
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-calendar-picker-indicator {
   display: none;
+  -webkit-appearance: none;
 }
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+/* Tabular numbers for amounts to prevent shifting */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom Gradient Button */
+.btn-primary {
+  @apply bg-gradient-to-r from-emerald-500 to-primary text-white font-black py-4 px-8 rounded-2xl shadow-lg shadow-primary/20 hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all;
 }

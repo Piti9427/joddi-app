@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Search, Filter, Banknote, ShoppingBasket, Coffee, Receipt, Calendar } from 'lucide-react';
+import { ArrowLeft, Search, Filter, Banknote, ShoppingBasket, Coffee, Receipt, Calendar, TrendingDown, TrendingUp, ChevronRight } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 
 export function TransactionHistory({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void, transactions: Transaction[] }) {
@@ -7,7 +7,6 @@ export function TransactionHistory({ onNavigate, transactions }: { onNavigate: (
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
 
-  // Group transactions by date
   const groupedTransactions = useMemo(() => {
     const groups: { [key: string]: Transaction[] } = {};
     const filtered = transactions.filter(t => 
@@ -21,7 +20,6 @@ export function TransactionHistory({ onNavigate, transactions }: { onNavigate: (
       groups[dateString].push(t);
     });
     
-    // Sort dates descending
     return Object.entries(groups).sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime());
   }, [transactions, search]);
 
@@ -30,82 +28,76 @@ export function TransactionHistory({ onNavigate, transactions }: { onNavigate: (
     const yesterday = new Date(Date.now() - 86400000).toDateString();
     if (dateString === today) return 'Today';
     if (dateString === yesterday) return 'Yesterday';
-    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return new Date(dateString).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   };
 
   return (
-    <div className="flex flex-col min-h-full pb-20 relative bg-background-light dark:bg-background-dark">
-      <header className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10">
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">Transactions</h1>
-        <button className="text-secondary hover:text-primary transition-colors p-2">
-          <Filter size={20} />
-        </button>
-      </header>
-      
-      <div className="p-4 bg-surface dark:bg-surface-dark border-b border-border dark:border-slate-800">
-        <div className="flex items-center gap-2 bg-input-bg dark:bg-slate-800 rounded-2xl p-3 border border-transparent focus-within:border-border transition-colors">
-          <Search size={20} className="text-secondary" />
+    <div className="flex flex-col min-h-full pb-32 relative bg-slate-50 dark:bg-background-dark">
+      <header className="flex flex-col bg-white dark:bg-surface-dark p-6 border-b border-border dark:border-slate-800 sticky top-0 z-20">
+        <div className="flex items-center justify-between mb-6">
+           <h1 className="text-2xl font-black tracking-tight text-text-dark dark:text-white">Activity</h1>
+           <button className="text-primary p-2 bg-primary/10 rounded-full hover:bg-primary/20 transition-colors">
+              <Filter size={20} />
+           </button>
+        </div>
+        
+        <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 focus-within:ring-2 focus-within:ring-primary/20 focus-within:bg-white dark:focus-within:bg-slate-700 transition-all">
+          <Search size={18} className="text-secondary" />
           <input 
             type="text" 
-            placeholder="Search transactions..." 
+            placeholder="Search by merchant or category..." 
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-transparent border-none focus:ring-0 text-sm font-semibold w-full placeholder:text-secondary p-0 outline-none text-text-dark dark:text-white" 
+            className="bg-transparent border-none focus:ring-0 text-[13px] font-bold w-full placeholder:text-secondary/60 outline-none text-text-dark dark:text-white" 
           />
         </div>
-      </div>
-
-      <main className="p-4 flex flex-col flex-1 space-y-6">
-        
+      </header>
+      
+      <main className="p-4 space-y-8 mt-2">
         {groupedTransactions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-secondary">
-            <Receipt size={48} className="mb-4 opacity-50" />
-            <p className="font-bold">No transactions found</p>
+          <div className="flex flex-col items-center justify-center py-20 text-center px-10">
+            <div className="size-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 text-slate-300">
+               <Search size={48} />
+            </div>
+            <h3 className="text-lg font-black text-text-dark dark:text-white mb-2">No matching records</h3>
+            <p className="text-secondary text-sm font-bold opacity-60">Try searching for something else or clear the filters.</p>
           </div>
         ) : (
           groupedTransactions.map(([date, dayTransactions]) => (
-            <div key={date} className="space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-secondary flex items-center gap-2">
-                <Calendar size={14} />
-                {formatDateHeader(date)}
-              </h3>
-              <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
+            <section key={date} className="space-y-4">
+              <div className="flex items-center gap-3 px-2">
+                 <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
+                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary opacity-60">
+                   {formatDateHeader(date)}
+                 </h3>
+                 <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
+              </div>
+
+              <div className="space-y-2">
                 {dayTransactions.map(t => {
                   const isExpense = t.type === 'Expense';
-                  let Icon = Banknote;
-                  let iconColor = 'text-income';
-                  let bgConfig = 'bg-income-bg dark:bg-income/20';
-                  
-                  if (isExpense) {
-                    iconColor = 'text-expense';
-                    bgConfig = 'bg-expense-bg dark:bg-expense/20';
-                    if (t.category === 'Food') Icon = ShoppingBasket; 
-                    else if (t.category === 'Lifestyle' || t.category === 'Coffee') Icon = Coffee; 
-                    else Icon = Receipt;
-                  }
-
                   return (
-                    <div key={t.id} className="flex items-center gap-4 group cursor-pointer p-3 rounded-2xl hover:bg-input-bg dark:hover:bg-slate-800/50 transition-colors">
-                      <div className={`size-12 rounded-2xl ${bgConfig} flex items-center justify-center shrink-0`}>
-                        <Icon className={iconColor} size={22} />
+                    <div key={t.id} className="bg-white dark:bg-surface-dark p-4 rounded-[2rem] shadow-sm border border-border/40 dark:border-slate-800/40 flex items-center gap-4 hover:shadow-md transition-all group active:scale-95 cursor-pointer">
+                      <div className={`size-12 rounded-2xl flex items-center justify-center shrink-0 ${isExpense ? 'bg-expense-bg/60 text-expense' : 'bg-income-bg/60 text-income'}`}>
+                        {isExpense ? <TrendingDown size={22} /> : <TrendingUp size={22} />}
                       </div>
-                      <div className="flex-1 flex justify-between items-center">
-                        <div>
-                          <p className="text-text-dark dark:text-slate-100 font-bold text-[15px]">{t.merchant || t.category}</p>
-                          <p className="text-text-secondary dark:text-slate-500 text-xs font-medium mt-0.5">{t.category}</p>
-                        </div>
-                        <p className={`${isExpense ? 'text-text-dark dark:text-slate-100' : 'text-income max-dark:text-income'} font-bold text-[15px]`}>
-                          {isExpense ? '-' : '+'}{formatCurrency(t.amount)}
-                        </p>
+                      <div className="flex-1 overflow-hidden">
+                         <p className="font-extrabold text-[15px] text-text-dark dark:text-white truncate">{t.merchant || t.category}</p>
+                         <p className="text-[10px] font-bold text-secondary uppercase tracking-tighter opacity-70">{t.category}</p>
+                      </div>
+                      <div className="text-right">
+                         <p className={`font-black text-[15px] ${isExpense ? 'text-text-dark dark:text-white' : 'text-income'}`}>
+                           {isExpense ? '-' : '+'}{formatCurrency(t.amount)}
+                         </p>
+                         {t.note && <p className="text-[9px] font-bold text-secondary opacity-40 truncate max-w-[80px]">{t.note}</p>}
                       </div>
                     </div>
                   );
                 })}
               </div>
-            </div>
+            </section>
           ))
         )}
-
       </main>
     </div>
   );

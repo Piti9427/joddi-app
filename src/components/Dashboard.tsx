@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Bell, Wallet, TrendingUp, TrendingDown, PiggyBank, ShoppingBasket, Coffee, Banknote, Tv, Plus, Home, Receipt, PieChart, Landmark, Settings } from 'lucide-react';
+import { User, Bell, Wallet, TrendingUp, TrendingDown, PiggyBank, ShoppingBasket, Coffee, Banknote, Tv, Plus, Home, Receipt, PieChart, Landmark, Settings, ChevronRight, CreditCard, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 
 export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void; transactions: Transaction[] }) {
@@ -17,143 +17,167 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
 
   return (
-    <div className="flex flex-col min-h-full pb-20 relative bg-background-light dark:bg-background-dark">
-      {/* Header */}
-      <div className="flex items-center bg-surface dark:bg-surface-dark p-4 pb-2 justify-between sticky top-0 z-10 border-b border-border dark:border-slate-800">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-highlight dark:bg-primary/20">
-          <User className="text-primary" size={20} />
+    <div className="flex flex-col min-h-full pb-32 relative bg-slate-50 dark:bg-background-dark">
+      {/* Premium Header */}
+      <header className="flex items-center bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md p-4 pb-3 justify-between sticky top-0 z-20 transition-all">
+        <div className="flex items-center gap-3">
+          <div className="size-10 shrink-0 overflow-hidden rounded-full ring-2 ring-primary/20 bg-primary/10 flex items-center justify-center">
+            <User className="text-primary" size={20} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em]">Good Morning ☀️</p>
+            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">Joddi User</h2>
+          </div>
         </div>
-        <h2 className="text-text-dark dark:text-slate-100 text-lg font-bold leading-tight tracking-tight flex-1 text-center">My Finances</h2>
-        <div className="flex w-10 items-center justify-end">
-          <button onClick={() => onNavigate('settings')} className="flex cursor-pointer items-center justify-center rounded-lg h-10 w-10 bg-transparent text-secondary dark:text-slate-400 hover:bg-input-bg dark:hover:bg-slate-800 transition-colors">
+        <div className="flex gap-1">
+          <button className="flex items-center justify-center rounded-full h-10 w-10 bg-input-bg dark:bg-slate-800 text-secondary hover:text-primary transition-colors relative">
             <Bell size={20} />
+            <span className="absolute top-2 right-2 size-2 bg-rose-500 rounded-full ring-2 ring-white dark:ring-slate-800"></span>
+          </button>
+          <button onClick={() => onNavigate('settings')} className="flex items-center justify-center rounded-full h-10 w-10 bg-input-bg dark:bg-slate-800 text-secondary hover:text-primary transition-colors">
+            <Settings size={20} />
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Top Section */}
-      <div className="grid grid-cols-2 gap-3 p-4">
-        <div className="flex flex-col gap-1 rounded-2xl p-4 bg-surface dark:bg-surface-dark border border-border dark:border-slate-700 shadow-sm">
-          <p className="text-text-secondary dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">Today's Income</p>
-          <p className="text-primary tracking-tight text-xl font-bold leading-tight">{formatCurrency(todayIncome)}</p>
-        </div>
-        <div className="flex flex-col gap-1 rounded-2xl p-4 bg-surface dark:bg-surface-dark border border-border dark:border-slate-700 shadow-sm">
-          <p className="text-text-secondary dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">Today's Expenses</p>
-          <p className="text-text-dark dark:text-slate-200 tracking-tight text-xl font-bold leading-tight">{formatCurrency(todayExpense)}</p>
-        </div>
-        <div className="col-span-2 flex flex-col gap-1 rounded-2xl p-5 bg-primary text-white shadow-xl shadow-primary/10">
-          <p className="text-white/80 text-sm font-medium opacity-90">Current Balance</p>
-          <div className="flex items-center justify-between">
-            <p className="tracking-tight text-4xl font-extrabold leading-tight">{formatCurrency(balance)}</p>
-            <Wallet size={32} className="opacity-70" />
+      {/* Main Wallet Card */}
+      <section className="px-4 py-4">
+        <div className="bg-primary bg-gradient-to-br from-primary to-emerald-600 rounded-[2.5rem] p-8 shadow-2xl shadow-primary/30 text-white relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
+            <Wallet size={160} />
           </div>
-        </div>
-      </div>
-
-      {/* Monthly Summary */}
-      <div className="flex flex-col mt-2">
-        <div className="flex items-center justify-between px-4 pt-4 pb-3">
-          <h3 className="text-text-dark dark:text-slate-100 text-lg font-bold">This Month</h3>
-          <button onClick={() => onNavigate('analytics')} className="text-secondary text-sm font-semibold hover:text-primary transition-colors">View Analytics</button>
-        </div>
-        <div className="flex px-4 gap-3">
-          <div className="flex flex-1 flex-col gap-3 rounded-2xl p-4 bg-income-bg/60 dark:bg-income/10 border border-income/20 dark:border-income/20">
-            <div className="w-10 h-10 rounded-full bg-white dark:bg-surface-dark flex items-center justify-center shadow-sm">
-              <TrendingUp className="text-income" size={20} />
+          <div className="relative z-10">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-white/70 text-xs font-bold uppercase tracking-widest">Available Balance</span>
+              <CreditCard size={18} className="text-white/40" />
             </div>
-            <div>
-              <p className="text-secondary dark:text-slate-400 text-xs font-semibold uppercase">Income</p>
-              <p className="text-income dark:text-income text-lg font-bold">{formatCurrency(totalIncome)}</p>
-            </div>
-          </div>
-          <div className="flex flex-1 flex-col gap-3 rounded-2xl p-4 bg-expense-bg/60 dark:bg-expense/10 border border-expense/20 dark:border-expense/20 shadow-sm">
-            <div className="w-10 h-10 rounded-full bg-white dark:bg-surface-dark flex items-center justify-center shadow-sm">
-              <TrendingDown className="text-expense" size={20} />
-            </div>
-            <div>
-              <p className="text-text-secondary dark:text-slate-400 text-xs font-semibold uppercase">Expenses</p>
-              <p className="text-text-dark dark:text-slate-200 text-lg font-bold">{formatCurrency(totalExpense)}</p>
-            </div>
-          </div>
-          <div className="flex flex-1 flex-col gap-3 rounded-2xl p-4 bg-highlight dark:bg-grass/20 border border-grass dark:border-grass/30">
-            <div className="w-10 h-10 rounded-full bg-white dark:bg-surface-dark flex items-center justify-center shadow-sm">
-              <PiggyBank className="text-primary" size={20} />
-            </div>
-            <div>
-              <p className="text-primary dark:text-grass text-xs font-semibold uppercase">Savings</p>
-              <p className="text-primary dark:text-grass text-lg font-bold">{formatCurrency(savings)}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Transactions */}
-      <div className="flex flex-col px-4 pb-8 mt-2 flex-1">
-        <div className="flex items-center justify-between py-5">
-          <h3 className="text-text-dark dark:text-slate-100 text-lg font-bold">Recent Transactions</h3>
-          <button onClick={() => onNavigate('transactions')} className="text-secondary text-sm font-medium hover:text-primary transition-colors">See All</button>
-        </div>
-        <div className="space-y-3">
-          {transactions.slice(0, 10).map(t => {
-            const isExpense = t.type === 'Expense';
-            let Icon = Banknote;
-            let iconColor = 'text-income';
-            let bgConfig = 'bg-income-bg dark:bg-income/20';
+            <h1 className="text-4xl font-black tracking-tight mb-8">
+              {formatCurrency(balance)}
+            </h1>
             
-            if (isExpense) {
-              iconColor = 'text-expense';
-              bgConfig = 'bg-expense-bg dark:bg-expense/20';
-              if (t.category === 'Food') {
-                Icon = ShoppingBasket; 
-              } else if (t.category === 'Lifestyle' || t.category === 'Coffee') {
-                Icon = Coffee; 
-              } else {
-                Icon = Receipt; 
-              }
-            }
-
-            return (
-              <TransactionItem 
-                key={t.id}
-                icon={<Icon className={iconColor} size={22} />} 
-                bg={bgConfig} 
-                title={t.merchant || t.category} 
-                subtitle={`${t.category} • ${new Date(t.date).toLocaleDateString()}`} 
-                amount={`${isExpense ? '-' : '+'}${formatCurrency(t.amount)}`} 
-                amountColor={isExpense ? 'text-text-dark dark:text-slate-100' : 'text-income dark:text-income'} 
-              />
-            );
-          })}
+            <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1.5 text-white/60">
+                  <ArrowUpRight size={14} className="text-emerald-300" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Total Income</span>
+                </div>
+                <p className="text-lg font-bold">{formatCurrency(totalIncome)}</p>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1.5 text-white/60">
+                  <ArrowDownRight size={14} className="text-rose-300" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Total Expenses</span>
+                </div>
+                <p className="text-lg font-bold">{formatCurrency(totalExpense)}</p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
+      {/* Quick Summary Cards */}
+      <section className="px-4 py-2 grid grid-cols-2 gap-3">
+        <div className="bg-white dark:bg-surface-dark border border-border dark:border-slate-800 p-4 rounded-3xl shadow-sm flex items-center gap-3">
+          <div className="size-10 rounded-2xl bg-income-bg/60 dark:bg-income/10 flex items-center justify-center text-income">
+            <TrendingUp size={18} />
+          </div>
+          <div>
+            <p className="text-secondary text-[10px] font-bold uppercase mb-0.5">Savings</p>
+            <p className="text-sm font-bold text-text-dark dark:text-white">{formatCurrency(savings)}</p>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-surface-dark border border-border dark:border-slate-800 p-4 rounded-3xl shadow-sm flex items-center gap-3">
+          <div className="size-10 rounded-2xl bg-expense-bg/60 dark:bg-expense/10 flex items-center justify-center text-expense">
+            <TrendingDown size={18} />
+          </div>
+          <div>
+            <p className="text-secondary text-[10px] font-bold uppercase mb-0.5">Today's</p>
+            <p className="text-sm font-bold text-text-dark dark:text-white">{formatCurrency(todayExpense)}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Recent Transactions Section */}
+      <section className="flex flex-col px-4 mt-6">
+        <div className="flex items-center justify-between mb-4 px-2">
+          <h3 className="text-text-dark dark:text-slate-100 text-lg font-black tracking-tight">Recent Activity</h3>
+          <button 
+            onClick={() => onNavigate('transactions')} 
+            className="flex items-center gap-1 text-primary text-xs font-bold hover:gap-2 transition-all"
+          >
+            See all
+            <ChevronRight size={14} />
+          </button>
+        </div>
+        
+        <div className="space-y-2 pb-4">
+          {transactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 bg-white dark:bg-input-bg/10 rounded-[2rem] border-2 border-dashed border-border dark:border-slate-800">
+               <div className="size-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
+                 <Receipt size={32} />
+               </div>
+               <p className="text-secondary font-bold text-sm">No transactions yet</p>
+               <button 
+                 onClick={() => onNavigate('add_transaction')}
+                 className="mt-4 text-primary text-xs font-bold underline underline-offset-4"
+               >
+                 Add your first one
+               </button>
+            </div>
+          ) : (
+            transactions.slice(0, 6).map(t => {
+              const isExpense = t.type === 'Expense';
+              return (
+                <TransactionItem 
+                  key={t.id}
+                  type={t.type}
+                  category={t.category}
+                  merchant={t.merchant}
+                  date={t.date}
+                  amount={t.amount}
+                  formatCurrency={formatCurrency}
+                />
+              );
+            })
+          )}
+        </div>
+      </section>
     </div>
   );
 }
 
-function TransactionItem({ icon, bg, title, subtitle, amount, amountColor, onClick }: any) {
+function TransactionItem({ type, category, merchant, date, amount, formatCurrency }: any) {
+  const isExpense = type === 'Expense';
+  
+  // Custom Icon Logic
+  const getIcon = () => {
+    if (category.toLowerCase().includes('food')) return <ShoppingBasket size={22} />;
+    if (category.toLowerCase().includes('coffee')) return <Coffee size={22} />;
+    if (category.toLowerCase().includes('income')) return <Banknote size={22} />;
+    if (category.toLowerCase().includes('transport')) return <TrendingUp size={22} />; // Simplified
+    return <Receipt size={22} />;
+  };
+
   return (
-    <div className="flex items-center gap-4 group cursor-pointer bg-surface dark:bg-surface-dark p-3 rounded-2xl border border-transparent hover:border-border transition-colors" onClick={onClick}>
-      <div className={`size-12 rounded-2xl ${bg} flex items-center justify-center shrink-0`}>
-        {icon}
+    <div className="flex items-center gap-4 bg-white dark:bg-surface-dark p-4 rounded-3xl border border-border/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group scale-100 active:scale-95 cursor-pointer shadow-sm">
+      <div className={`size-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${isExpense ? 'bg-expense-bg/60 text-expense' : 'bg-income-bg/60 text-income'}`}>
+        {getIcon()}
       </div>
-      <div className="flex-1 flex justify-between items-center">
-        <div>
-          <p className="text-text-dark dark:text-slate-100 font-bold text-[15px]">{title}</p>
-          <p className="text-text-secondary dark:text-slate-500 text-xs font-medium mt-0.5">{subtitle}</p>
+      <div className="flex-1 flex justify-between items-center overflow-hidden">
+        <div className="overflow-hidden">
+          <p className="text-text-dark dark:text-slate-100 font-extrabold text-[15px] truncate">{merchant || category}</p>
+          <div className="flex items-center gap-1 mt-0.5">
+            <span className="text-[10px] font-bold text-secondary uppercase tracking-tight">{category}</span>
+            <span className="size-1 bg-slate-200 dark:bg-slate-700 rounded-full"></span>
+            <span className="text-[10px] font-bold text-secondary opacity-60 uppercase">{new Date(date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+          </div>
         </div>
-        <p className={`${amountColor} font-bold text-[15px]`}>{amount}</p>
+        <div className="text-right shrink-0">
+          <p className={`${isExpense ? 'text-text-dark dark:text-slate-100' : 'text-income dark:text-income'} font-black text-[16px]`}>
+            {isExpense ? '-' : '+'}{formatCurrency(amount)}
+          </p>
+        </div>
       </div>
     </div>
   );
 }
-
-function NavItem({ icon, label, active, onClick }: any) {
-  return (
-    <button onClick={onClick} className={`flex flex-col items-center gap-1.5 px-2 ${active ? 'text-primary' : 'text-secondary hover:text-text-dark dark:hover:text-slate-300 transition-colors'}`}>
-      {icon}
-      <p className="text-[10px] font-bold tracking-wide">{label}</p>
-    </button>
-  );
-}
-
