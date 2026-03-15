@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
 import { ArrowLeft, User, Bell, Shield, Moon, Globe, LogOut, ChevronRight, HelpCircle } from 'lucide-react';
 import { ViewState } from '../App';
 
@@ -22,6 +23,11 @@ export function Settings({ onNavigate }: { onNavigate: (v: ViewState) => void })
     }
   };
 
+  // Define generalSettings for the map, as implied by the instruction
+  const generalSettings = [
+    { icon: <HelpCircle />, label: "Help Center" }
+  ];
+
   return (
     <div className="flex flex-col min-h-full pb-20 relative bg-background-light dark:bg-background-dark">
       <header className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10">
@@ -34,7 +40,7 @@ export function Settings({ onNavigate }: { onNavigate: (v: ViewState) => void })
         
         {/* Profile Card */}
         <div className="bg-surface dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800 flex items-center gap-4 cursor-pointer hover:bg-input-bg dark:hover:bg-slate-800/50 transition-colors">
-          <div className="size-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-bold font-display shadow-lg shadow-primary/20">
+          <div className="size-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-primary/20">
             J
           </div>
           <div className="flex-1">
@@ -76,16 +82,21 @@ export function Settings({ onNavigate }: { onNavigate: (v: ViewState) => void })
         {/* Support */}
         <section className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary pl-2">Support</h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
-            <SettingRow icon={<HelpCircle />} label="Help Center" />
-          </div>
+          <div className="bg-surface dark:bg-surface-dark rounded-[2rem] p-2 shadow-sm border border-border dark:border-slate-800">
+           {generalSettings.map((item, index) => (
+             <SettingRow key={index} icon={item.icon} label={item.label} />
+           ))}
+           <button 
+             onClick={() => supabase.auth.signOut()}
+             className="w-full flex items-center gap-4 p-4 hover:bg-input-bg dark:hover:bg-slate-800/50 rounded-2xl transition-colors text-left text-rose-500 group"
+           >
+             <div className="size-10 rounded-[1.2rem] bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center group-hover:bg-rose-100 transition-colors">
+               <LogOut size={20} />
+             </div>
+             <div className="flex-1 font-bold">Sign Out</div>
+           </button>
+        </div>
         </section>
-
-        {/* Logout */}
-        <button className="flex items-center justify-center gap-2 w-full p-4 mt-4 text-rose-500 font-bold rounded-2xl bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors">
-          <LogOut size={20} />
-          Sign Out
-        </button>
 
       </main>
     </div>

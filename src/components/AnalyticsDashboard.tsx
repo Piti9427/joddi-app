@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { ViewState, Transaction } from '../App';
-import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, BarChart3, LineChart } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, BarChart3, LineChart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { formatMoney } from '../lib/formatters';
 
 type ChartType = 'Bar' | 'Line';
 
@@ -9,7 +10,7 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
   const [timeRange, setTimeRange] = useState<'Week' | 'Month' | 'Year'>('Month');
   const [chartType, setChartType] = useState<ChartType>('Bar');
 
-  const { totalIncome, totalExpense, chartEntries, netBalance } = useMemo(() => {
+  const { totalIncome, totalExpense, chartEntries, netBalance, savingsRate } = useMemo(() => {
     const now = new Date();
     let income = 0;
     let expense = 0;
@@ -88,41 +89,45 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
       totalIncome: income,
       totalExpense: expense,
       chartEntries: entries,
-      netBalance: income - expense
+      netBalance: income - expense,
+      savingsRate: income > 0 ? ((income - expense) / income) * 100 : 0,
     };
   }, [transactions, timeRange]);
 
-  const fmt = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+  const fmt = (val: number, maximumFractionDigits = 0) =>
+    formatMoney(val, {
+      maximumFractionDigits,
+      minimumFractionDigits: maximumFractionDigits > 0 ? 2 : 0,
+    });
 
   return (
     <div className="flex flex-col min-h-full pb-32 relative bg-slate-50 dark:bg-background-dark">
-      <header className="bg-white dark:bg-surface-dark px-6 pt-6 pb-4 sticky top-0 z-20 shadow-sm border-b border-border dark:border-slate-800">
-        <h1 className="text-2xl font-black tracking-tight text-text-dark dark:text-white mb-4">Cashflow</h1>
-        
-        {/* Apple/Finance App Style Selector */}
-        <div className="flex bg-slate-100 dark:bg-slate-900 rounded-xl p-1 relative">
-          {(['Week', 'Month', 'Year'] as const).map(range => (
-            <button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={`flex-1 py-1.5 text-xs font-black uppercase tracking-widest transition-all relative z-10 ${timeRange === range ? 'text-text-dark dark:text-slate-900' : 'text-secondary opacity-60 hover:opacity-100'}`}
-            >
-              {range}
-            </button>
-          ))}
-          {/* Active indicator sliding background */}
-          <div className="absolute inset-1 pointer-events-none flex">
-             <div className="flex-1 flex items-center justify-center relative">
-               <motion.div 
-                 layoutId="timeRangeBg" 
-                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                 className="absolute w-full h-full bg-white dark:bg-white rounded-lg shadow-sm"
-                 style={{
-                   left: timeRange === 'Week' ? '0%' : timeRange === 'Month' ? '100%' : '200%'
-                 }}
-               />
-             </div>
-          </div>
+      <header className="safe-top bg-white dark:bg-surface-dark px-6 pb-4 pt-3 sticky top-0 z-20 shadow-sm border-b border-border dark:border-slate-800">
+        <div className="flex items-end justify-between mb-4">
+          <h1 className="text-2xl font-black tracking-tight text-text-dark dark:text-white">Cashflow</h1>
+          <p className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-70">{timeRange} view</p>
+        </div>
+
+        <div className="grid grid-cols-3 bg-slate-100 dark:bg-slate-900 rounded-xl p-1">
+          {(['Week', 'Month', 'Year'] as const).map(range => {
+            const active = timeRange === range;
+            return (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={`relative py-1.5 text-xs font-black uppercase tracking-widest transition-all ${active ? 'text-text-dark dark:text-slate-900' : 'text-secondary opacity-70'}`}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="time-range-pill"
+                    className="absolute inset-0 rounded-lg bg-white dark:bg-white shadow-sm"
+                    transition={{ type: 'spring', bounce: 0.2, duration: 0.45 }}
+                  />
+                )}
+                <span className="relative z-10">{range}</span>
+              </button>
+            );
+          })}
         </div>
       </header>
 
@@ -161,7 +166,7 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
                   transition={{ duration: 0.2 }}
                   className="h-full"
                 >
-                  {chartType === 'Bar' ? <BarChart entries={chartEntries} fmt={fmt} /> : <TrendChart entries={chartEntries} fmt={fmt} />}
+                  {chartType === 'Bar' ? <BarChart entries={chartEntries} /> : <TrendChart entries={chartEntries} />}
                 </motion.div>
              </AnimatePresence>
           </div>
@@ -203,6 +208,17 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
           </motion.div>
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-surface-dark rounded-3xl p-4 border border-border dark:border-slate-800 shadow-sm">
+            <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Savings Rate</p>
+            <p className={`text-lg font-black ${savingsRate >= 0 ? 'text-primary' : 'text-expense'}`}>{savingsRate.toFixed(0)}%</p>
+          </div>
+          <div className="bg-white dark:bg-surface-dark rounded-3xl p-4 border border-border dark:border-slate-800 shadow-sm">
+            <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Avg Expense</p>
+            <p className="text-lg font-black text-text-dark dark:text-white">{fmt(totalExpense / Math.max(chartEntries.length, 1), 2)}</p>
+          </div>
+        </div>
+
       </main>
     </div>
   );
@@ -210,12 +226,9 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
 
 /* ── Pro-Level Standardized Charts ── */
 
-const formatYAxis = (val: number) => {
-  if (val >= 1000) return `$${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}k`;
-  return `$${val}`;
-};
+const formatYAxis = (val: number) => formatMoney(val, { compact: true, maximumFractionDigits: 1 });
 
-function BarChart({ entries, fmt }: any) {
+function BarChart({ entries }: any) {
   const maxVal = Math.max(...entries.map(([, v]: any) => Math.max(v.income, v.expense)), 100); // minimum scale 100
   const ticks = [maxVal, maxVal * 0.5, 0];
 

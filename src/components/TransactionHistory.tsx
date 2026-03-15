@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Filter, TrendingDown, TrendingUp } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
+import { formatMoney } from '../lib/formatters';
 
 export function TransactionHistory({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void, transactions: Transaction[] }) {
   const [search, setSearch] = useState('');
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+  const formatCurrency = (val: number) => formatMoney(val, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
 
   const groupedTransactions = useMemo(() => {
     const groups: { [key: string]: Transaction[] } = {};
@@ -29,12 +30,12 @@ export function TransactionHistory({ onNavigate, transactions }: { onNavigate: (
     const yesterday = new Date(Date.now() - 86400000).toDateString();
     if (dateString === today) return 'Today';
     if (dateString === yesterday) return 'Yesterday';
-    return new Date(dateString).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    return new Date(dateString).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
   };
 
   return (
     <div className="flex flex-col min-h-full pb-32 relative bg-slate-50 dark:bg-background-dark">
-      <header className="flex flex-col bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md p-6 border-b border-border dark:border-slate-800 sticky top-0 z-20">
+      <header className="safe-top flex flex-col bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md p-6 border-b border-border dark:border-slate-800 sticky top-0 z-20">
         <div className="flex items-center justify-between mb-6">
            <h1 className="text-2xl font-black tracking-tight text-text-dark dark:text-white">Activity</h1>
            <motion.button 

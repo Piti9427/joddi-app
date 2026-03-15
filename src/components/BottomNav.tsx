@@ -8,78 +8,86 @@ interface BottomNavProps {
   onNavigate: (view: ViewState) => void;
 }
 
+const NAV_ITEMS: Array<{ view: ViewState; label: string; icon: React.ReactNode }> = [
+  { view: 'dashboard', label: 'Home', icon: <Home size={21} /> },
+  { view: 'transactions', label: 'Activity', icon: <Receipt size={21} /> },
+  { view: 'analytics', label: 'Stats', icon: <PieChart size={21} /> },
+  { view: 'budget', label: 'Budget', icon: <Landmark size={21} /> },
+];
+
 export function BottomNav({ currentView, onNavigate }: BottomNavProps) {
-  const navVisibleViews: ViewState[] = ['dashboard', 'transactions', 'analytics', 'budget', 'settings', 'categories'];
-  if (!navVisibleViews.includes(currentView) && currentView !== 'add_transaction') return null;
+  const navVisibleViews: ViewState[] = ['dashboard', 'transactions', 'analytics', 'budget', 'settings', 'categories', 'add_transaction'];
+  if (!navVisibleViews.includes(currentView)) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 border-t border-border dark:border-slate-800 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-xl pb-8 pt-3 z-40 max-w-md mx-auto rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] transition-all duration-500">
-      <div className="flex justify-around items-center px-1 relative">
-        <NavItem 
-          icon={<Home size={24} />} 
-          label="Home" 
-          active={currentView === 'dashboard'} 
-          onClick={() => onNavigate('dashboard')} 
+    <nav className="fixed bottom-0 left-0 right-0 border-t border-border/80 dark:border-slate-800 bg-white/90 dark:bg-surface-dark/90 backdrop-blur-xl pb-safe-nav pt-2 z-40 max-w-md mx-auto rounded-t-[2rem] shadow-[0_-10px_35px_rgba(15,23,42,0.08)] transition-all duration-300">
+      <div className="flex items-end justify-between px-2 gap-1">
+        <NavItem
+          icon={NAV_ITEMS[0].icon}
+          label={NAV_ITEMS[0].label}
+          active={currentView === NAV_ITEMS[0].view}
+          onClick={() => onNavigate(NAV_ITEMS[0].view)}
         />
-        <NavItem 
-          icon={<Receipt size={24} />} 
-          label="Activity" 
-          active={currentView === 'transactions'} 
-          onClick={() => onNavigate('transactions')} 
+        <NavItem
+          icon={NAV_ITEMS[1].icon}
+          label={NAV_ITEMS[1].label}
+          active={currentView === NAV_ITEMS[1].view}
+          onClick={() => onNavigate(NAV_ITEMS[1].view)}
         />
-        
-        {/* Centered Add Button */}
-        <div className="relative -mt-12 mb-4 px-1 group">
-          <motion.button 
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9, rotate: -90 }}
+
+        <div className="relative -mt-8 mb-1 px-1">
+          <motion.button
+            aria-label="Add transaction"
+            whileTap={{ scale: 0.92, rotate: -15 }}
             onClick={() => onNavigate('add_transaction')}
-            className={`size-16 bg-primary bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-full shadow-xl shadow-emerald-500/30 flex items-center justify-center transition-all border-4 border-white dark:border-background-dark`}
+            className="size-14 bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-full shadow-xl shadow-emerald-500/30 flex items-center justify-center transition-all border-[3px] border-white dark:border-background-dark"
           >
-            <Plus size={36} strokeWidth={3} />
+            <Plus size={28} strokeWidth={2.8} />
           </motion.button>
         </div>
 
-        <NavItem 
-          icon={<PieChart size={24} />} 
-          label="Stats" 
-          active={currentView === 'analytics'} 
-          onClick={() => onNavigate('analytics')} 
+        <NavItem
+          icon={NAV_ITEMS[2].icon}
+          label={NAV_ITEMS[2].label}
+          active={currentView === NAV_ITEMS[2].view}
+          onClick={() => onNavigate(NAV_ITEMS[2].view)}
         />
-        
-        <NavItem 
-          icon={<Landmark size={24} />} 
-          label="Budget" 
-          active={currentView === 'budget'} 
-          onClick={() => onNavigate('budget')} 
+        <NavItem
+          icon={NAV_ITEMS[3].icon}
+          label={NAV_ITEMS[3].label}
+          active={currentView === NAV_ITEMS[3].view}
+          onClick={() => onNavigate(NAV_ITEMS[3].view)}
         />
       </div>
-    </div>
+    </nav>
   );
 }
 
 function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
-    <motion.button 
-      onClick={onClick} 
+    <motion.button
+      aria-label={label}
+      onClick={onClick}
       whileTap={{ y: -2 }}
-      className={`flex flex-col items-center gap-1.5 min-w-[64px] transition-all duration-300 relative group ${active ? 'text-primary' : 'text-secondary hover:text-text-dark dark:hover:text-slate-300'}`}
+      className={`relative flex flex-col items-center justify-center gap-1 h-14 min-w-[62px] rounded-2xl transition-all duration-300 ${active ? 'text-primary' : 'text-secondary hover:text-text-dark dark:hover:text-slate-300'}`}
     >
-      <motion.div 
-        animate={active ? { y: -4, scale: 1.2 } : { y: 0, scale: 1 }}
+      {active && (
+        <motion.span
+          layoutId="nav-active-pill"
+          className="absolute inset-0 rounded-2xl bg-primary/10"
+          transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+        />
+      )}
+      <motion.div
+        className="relative z-10"
+        animate={active ? { y: -1, scale: 1.12 } : { y: 0, scale: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 15 }}
       >
         {icon}
       </motion.div>
-      <p className={`text-[10px] font-black tracking-widest uppercase transition-all duration-300 ${active ? 'opacity-100' : 'opacity-0 scale-75 group-hover:opacity-40'}`}>
+      <p className={`relative z-10 text-[10px] font-black tracking-wide uppercase transition-all duration-300 ${active ? 'opacity-100' : 'opacity-70'}`}>
         {label}
       </p>
-      {active && (
-        <motion.span 
-          layoutId="nav-dot"
-          className="absolute -bottom-1 size-1 bg-primary rounded-full"
-        ></motion.span>
-      )}
     </motion.button>
   );
 }

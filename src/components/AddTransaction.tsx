@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Check, Coffee, Utensils, Car, Receipt, ShoppingBag, Banknote, Gift, Shield, ChevronDown, Calendar, Tag, Plus, CreditCard, Wallet, Smartphone } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
 import { Category } from './CategoriesManagement';
+import { getCurrencySymbol } from '../lib/formatters';
 
 const PAYMENT_METHODS = [
   { id: 'cash', label: 'Cash', icon: <Banknote size={16} /> },
@@ -10,6 +11,8 @@ const PAYMENT_METHODS = [
   { id: 'ewallet', label: 'E-Wallet', icon: <Wallet size={16} /> },
   { id: 'promptpay', label: 'PromptPay', icon: <Smartphone size={16} /> }
 ];
+
+const QUICK_ADD_TYPE_KEY = 'quick_add_type';
 
 function LandmarkIcon({ size }: { size: number }) {
   return (
@@ -26,9 +29,10 @@ function LandmarkIcon({ size }: { size: number }) {
   );
 }
 
-export function AddTransaction({ onNavigate, onAddTransaction }: { 
+export function AddTransaction({ onNavigate, onAddTransaction, returnView = 'dashboard' }: { 
   onNavigate: (v: ViewState) => void, 
-  onAddTransaction: (t: Omit<Transaction, 'id'>) => void 
+  onAddTransaction: (t: Omit<Transaction, 'id'>) => void,
+  returnView?: ViewState,
 }) {
   const [amount, setAmount] = useState('0');
   const [type, setType] = useState<TransactionType>('Expense');
@@ -37,6 +41,19 @@ export function AddTransaction({ onNavigate, onAddTransaction }: {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [userCategories, setUserCategories] = useState<Category[]>([]);
+  const currencySymbol = getCurrencySymbol();
+
+  useEffect(() => {
+    try {
+      const presetType = window.sessionStorage.getItem(QUICK_ADD_TYPE_KEY);
+      if (presetType === 'Expense' || presetType === 'Income') {
+        setType(presetType);
+      }
+      window.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
+    } catch {
+      // sessionStorage can fail in private browsing contexts, ignore safely.
+    }
+  }, []);
 
   useEffect(() => {
     const loadCategories = () => {
@@ -105,15 +122,30 @@ export function AddTransaction({ onNavigate, onAddTransaction }: {
       date,
       merchant: note || category
     });
-    onNavigate('dashboard');
+    try {
+      window.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
+    } catch {
+      // Ignore non-critical storage errors.
+    }
+    onNavigate(returnView);
   };
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-background-dark rounded-t-[3rem] shadow-2xl overflow-hidden border-t border-border dark:border-slate-800 animate-in slide-in-from-bottom-full duration-500">
       {/* Dynamic Background Header */}
-      <div className={`pt-6 px-4 pb-12 transition-colors duration-500 ${type === 'Expense' ? 'bg-expense/10 dark:bg-expense/20' : 'bg-primary/10 dark:bg-primary/20'}`}>
+      <div className={`pt-6 px-4 pb-12 safe-top transition-colors duration-500 ${type === 'Expense' ? 'bg-expense/10 dark:bg-expense/20' : 'bg-primary/10 dark:bg-primary/20'}`}>
         <div className="flex justify-between items-center mb-8 px-2">
-          <button onClick={() => onNavigate('dashboard')} className="size-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow-sm text-secondary hover:text-text-dark transition-colors">
+          <button
+            onClick={() => {
+              try {
+                window.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
+              } catch {
+                // Ignore non-critical storage errors.
+              }
+              onNavigate(returnView);
+            }}
+            className="size-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow-sm text-secondary hover:text-text-dark transition-colors"
+          >
             <X size={20} />
           </button>
           
@@ -138,7 +170,7 @@ export function AddTransaction({ onNavigate, onAddTransaction }: {
         <div className="text-center group">
           <p className="text-secondary text-xs font-black uppercase tracking-[0.2em] mb-2 opacity-60">Amount</p>
           <div className="flex items-center justify-center gap-2 group-active:scale-110 transition-transform">
-            <span className={`text-4xl font-black ${type === 'Expense' ? 'text-expense' : 'text-primary'}`}>$</span>
+            <span className={`text-4xl font-black ${type === 'Expense' ? 'text-expense' : 'text-primary'}`}>{currencySymbol}</span>
             <span className="text-6xl font-black tracking-tighter text-text-dark dark:text-white transition-all tabular-nums whitespace-nowrap overflow-hidden max-w-full">
               {amount}
             </span>
@@ -219,7 +251,7 @@ export function AddTransaction({ onNavigate, onAddTransaction }: {
       </div>
 
       {/* Numeric Keypad & Submit */}
-      <div className="bg-slate-50 dark:bg-slate-900/80 backdrop-blur-md p-6 border-t border-border dark:border-slate-800">
+      <div className="bg-slate-50 dark:bg-slate-900/80 backdrop-blur-md p-6 safe-bottom border-t border-border dark:border-slate-800">
         <div className="grid grid-cols-4 gap-3 max-w-sm mx-auto">
           <div className="col-span-3 grid grid-cols-3 gap-3">
             {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'delete'].map(key => (

@@ -40,15 +40,29 @@
 
 @layer base {
   body {
-    @apply font-display bg-background-light text-slate-900 transition-colors duration-300 antialiased;
+    background-color: var(--background-light);
+    color: var(--text-dark);
+    transition: background-color 0.3s, color 0.3s;
     font-family: 'Outfit', sans-serif;
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
 @layer components {
   /* Glassmorphism utility */
   .glass {
-    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border border-white/20 dark:border-slate-700/30;
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  .dark .glass {
+    border-color: rgba(51, 65, 85, 0.3);
+    background: rgba(15, 23, 42, 0.7);
   }
 
   /* No scrollbar utility */
@@ -63,13 +77,17 @@
   /* Keypad visual haptics */
   .haptic-press:active,
   button:active {
-    @apply scale-95 duration-75 brightness-90 opacity-90 transition-all;
+    transform: scale(0.95);
+    transition-duration: 75ms;
+    filter: brightness(0.9);
+    opacity: 0.9;
   }
 
   /* Only apply hover effects on devices that support it (Desktop) */
   @media (hover: hover) {
     .hover-effect:hover {
-      @apply opacity-80 brightness-110;
+      opacity: 0.8;
+      filter: brightness(1.1);
     }
   }
   
@@ -84,9 +102,23 @@
   }
 }
 
+@layer utilities {
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .pb-safe-nav {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.85rem);
+  }
+}
+
 /* Custom spacing and typography refinements */
 h1, h2, h3, h4 {
-  @apply tracking-tight;
+  letter-spacing: -0.025em;
 }
 
 input[type="date"]::-webkit-inner-spin-button,
@@ -102,5 +134,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* Custom Gradient Button */
 .btn-primary {
-  @apply bg-gradient-to-r from-emerald-500 to-primary text-white font-black py-4 px-8 rounded-2xl shadow-lg shadow-primary/20 hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all;
+  background: linear-gradient(to right, #10b981, var(--primary));
+  color: #fff;
+  font-weight: 900;
+  padding: 1rem 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 14px 28px rgba(16, 185, 129, 0.28);
+  transform: scale(1.02);
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
 }

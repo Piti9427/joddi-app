@@ -1,50 +1,145 @@
-import React from 'react';
-import { User, Bell, Wallet, TrendingUp, TrendingDown, ShoppingBasket, Coffee, Banknote, Plus, Home, Receipt, PieChart, Landmark, Settings, ChevronRight, CreditCard, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { ViewState, Transaction } from '../App';
+import React, { useMemo } from 'react';
+import {
+  User,
+  Bell,
+  Wallet,
+  TrendingUp,
+  TrendingDown,
+  ShoppingBasket,
+  Coffee,
+  Banknote,
+  Receipt,
+  Settings,
+  ChevronRight,
+  CreditCard,
+  ArrowUpRight,
+  ArrowDownRight,
+  Plus,
+  PieChart,
+  Landmark,
+} from 'lucide-react';
+import { ViewState, Transaction, TransactionType } from '../App';
 import { motion } from 'motion/react';
+import { formatDateShort, formatMoney } from '../lib/formatters';
+
+const QUICK_ADD_TYPE_KEY = 'quick_add_type';
 
 export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void; transactions: Transaction[] }) {
-  const today = new Date().toDateString();
-  const todayTransactions = transactions.filter(t => new Date(t.date).toDateString() === today);
-  
-  const todayIncome = todayTransactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.amount, 0);
-  const todayExpense = todayTransactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + t.amount, 0);
-  
-  const totalIncome = transactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = transactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + t.amount, 0);
-  const balance = totalIncome - totalExpense;
-  const savings = totalIncome - totalExpense > 0 ? totalIncome - totalExpense : 0;
+  const {
+    todayIncome,
+    todayExpense,
+    totalIncome,
+    totalExpense,
+    balance,
+    monthIncome,
+    monthExpense,
+    monthNet,
+    monthSpendRate,
+    topExpenseCategory,
+    recentTransactions,
+  } = useMemo(() => {
+    const now = new Date();
+    const today = now.toDateString();
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+    const monthCategoryExpenseMap: Record<string, number> = {};
+    let todayIncomeValue = 0;
+    let todayExpenseValue = 0;
+    let totalIncomeValue = 0;
+    let totalExpenseValue = 0;
+    let monthIncomeValue = 0;
+    let monthExpenseValue = 0;
+
+    transactions.forEach((transaction) => {
+      const transactionDate = new Date(transaction.date);
+      const isCurrentMonth =
+        transactionDate.getMonth() === now.getMonth() &&
+        transactionDate.getFullYear() === now.getFullYear();
+
+      if (transaction.type === 'Income') {
+        totalIncomeValue += transaction.amount;
+        if (transactionDate.toDateString() === today) todayIncomeValue += transaction.amount;
+        if (isCurrentMonth) monthIncomeValue += transaction.amount;
+      } else {
+        totalExpenseValue += transaction.amount;
+        if (transactionDate.toDateString() === today) todayExpenseValue += transaction.amount;
+        if (isCurrentMonth) {
+          monthExpenseValue += transaction.amount;
+          monthCategoryExpenseMap[transaction.category] = (monthCategoryExpenseMap[transaction.category] || 0) + transaction.amount;
+        }
+      }
+    });
+
+    const bestCategory = Object.entries(monthCategoryExpenseMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([category, amount]) => ({ category, amount }))[0];
+
+    const netBalance = totalIncomeValue - totalExpenseValue;
+    const monthNetValue = monthIncomeValue - monthExpenseValue;
+    const spendRate = monthIncomeValue > 0 ? Math.min((monthExpenseValue / monthIncomeValue) * 100, 999) : 0;
+
+    return {
+      todayIncome: todayIncomeValue,
+      todayExpense: todayExpenseValue,
+      totalIncome: totalIncomeValue,
+      totalExpense: totalExpenseValue,
+      balance: netBalance,
+      monthIncome: monthIncomeValue,
+      monthExpense: monthExpenseValue,
+      monthNet: monthNetValue,
+      monthSpendRate: spendRate,
+      topExpenseCategory: bestCategory,
+      recentTransactions: transactions.slice(0, 6),
+    };
+  }, [transactions]);
+
+  const formatCurrency = (value: number, maximumFractionDigits = 0) =>
+    formatMoney(value, {
+      maximumFractionDigits,
+      minimumFractionDigits: maximumFractionDigits > 0 ? 2 : 0,
+    });
+
+  const openQuickAdd = (type: TransactionType) => {
+    try {
+      window.sessionStorage.setItem(QUICK_ADD_TYPE_KEY, type);
+    } catch {
+      // Ignore storage errors and continue navigation.
+    }
+    onNavigate('add_transaction');
+  };
+
+  const monthStatus = monthNet >= 0 ? 'Positive Flow' : 'Negative Flow';
+  const monthStatusStyle = monthNet >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
 
   return (
     <div className="flex flex-col min-h-full pb-32 relative bg-slate-50 dark:bg-background-dark">
-      {/* Premium Header */}
-      <header className="flex items-center bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md p-4 pb-3 justify-between sticky top-0 z-20 transition-all">
+      <header className="safe-top flex items-center bg-white/85 dark:bg-surface-dark/85 backdrop-blur-md px-4 pb-3 pt-3 justify-between sticky top-0 z-20 transition-all border-b border-border/70 dark:border-slate-800/80">
         <div className="flex items-center gap-3">
-          <motion.div 
-            whileHover={{ scale: 1.1 }}
+          <motion.div
             whileTap={{ scale: 0.95 }}
             className="size-10 shrink-0 overflow-hidden rounded-full ring-2 ring-primary/20 bg-primary/10 flex items-center justify-center cursor-pointer"
           >
             <User className="text-primary" size={20} />
           </motion.div>
           <div>
-            <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em]">Good Morning ☀️</p>
-            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">Joddi User</h2>
+            <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em]">
+              {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+            </p>
+            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">Financial Overview</h2>
           </div>
         </div>
         <div className="flex gap-1">
-          <motion.button 
+          <motion.button
+            aria-label="Notifications"
             whileTap={{ scale: 0.9 }}
             className="flex items-center justify-center rounded-full h-10 w-10 bg-input-bg dark:bg-slate-800 text-secondary hover:text-primary transition-colors relative"
           >
             <Bell size={20} />
             <span className="absolute top-2 right-2 size-2 bg-rose-500 rounded-full ring-2 ring-white dark:ring-slate-800"></span>
           </motion.button>
-          <motion.button 
+          <motion.button
+            aria-label="Settings"
             whileTap={{ scale: 0.9 }}
-            onClick={() => onNavigate('settings')} 
+            onClick={() => onNavigate('settings')}
             className="flex items-center justify-center rounded-full h-10 w-10 bg-input-bg dark:bg-slate-800 text-secondary hover:text-primary transition-colors"
           >
             <Settings size={20} />
@@ -52,61 +147,58 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
         </div>
       </header>
 
-      {/* Main Wallet Card */}
       <section className="px-4 py-4">
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-          className="bg-primary bg-gradient-to-br from-primary to-emerald-600 rounded-[2.5rem] p-8 shadow-2xl shadow-primary/30 text-white relative overflow-hidden group"
+          className="bg-gradient-to-br from-emerald-500 via-primary to-emerald-700 rounded-[2.2rem] p-6 shadow-2xl shadow-primary/25 text-white relative overflow-hidden"
         >
-          <motion.div 
-            animate={{ 
-              rotate: [0, 5, -5, 0],
-              scale: [1, 1.05, 1]
-            }}
-            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-            className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-700"
-          >
-            <Wallet size={160} />
-          </motion.div>
+          <div className="absolute -right-4 -top-4 p-4 opacity-10">
+            <Wallet size={140} />
+          </div>
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-1">
-              <span className="text-white/70 text-xs font-bold uppercase tracking-widest">Available Balance</span>
-              <CreditCard size={18} className="text-white/40" />
+              <span className="text-white/75 text-xs font-bold uppercase tracking-wider">Available Balance</span>
+              <CreditCard size={18} className="text-white/45" />
             </div>
-            <motion.h1 
+            <motion.h1
               key={balance}
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="text-4xl font-black tracking-tight mb-8"
+              className="text-[2.2rem] leading-none font-black tracking-tight mb-6 tabular-nums"
             >
               {formatCurrency(balance)}
             </motion.h1>
-            
-            <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
+
+            <div className="grid grid-cols-2 gap-4 border-t border-white/15 pt-4">
               <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-1.5 text-white/60">
-                  <ArrowUpRight size={14} className="text-emerald-300" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider">Total Income</span>
+                <div className="flex items-center gap-1.5 text-white/65">
+                  <ArrowUpRight size={14} className="text-emerald-200" />
+                  <span className="text-[10px] font-bold uppercase tracking-wide">Total Income</span>
                 </div>
-                <p className="text-lg font-bold">{formatCurrency(totalIncome)}</p>
+                <p className="text-lg font-bold tabular-nums">{formatCurrency(totalIncome)}</p>
               </div>
               <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-1.5 text-white/60">
-                  <ArrowDownRight size={14} className="text-rose-300" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider">Total Expenses</span>
+                <div className="flex items-center gap-1.5 text-white/65">
+                  <ArrowDownRight size={14} className="text-rose-200" />
+                  <span className="text-[10px] font-bold uppercase tracking-wide">Total Expense</span>
                 </div>
-                <p className="text-lg font-bold">{formatCurrency(totalExpense)}</p>
+                <p className="text-lg font-bold tabular-nums">{formatCurrency(totalExpense)}</p>
               </div>
             </div>
           </div>
         </motion.div>
       </section>
 
-      {/* Quick Summary Cards */}
-      <section className="px-4 py-2 grid grid-cols-2 gap-3">
-        <motion.div 
+      <section className="px-4 grid grid-cols-3 gap-2">
+        <QuickActionCard icon={<Plus size={18} />} label="Expense" onClick={() => openQuickAdd('Expense')} />
+        <QuickActionCard icon={<TrendingUp size={18} />} label="Income" onClick={() => openQuickAdd('Income')} />
+        <QuickActionCard icon={<PieChart size={18} />} label="Analytics" onClick={() => onNavigate('analytics')} />
+      </section>
+
+      <section className="px-4 py-3 grid grid-cols-2 gap-3">
+        <motion.div
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
@@ -116,11 +208,11 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
             <TrendingUp size={18} />
           </div>
           <div>
-            <p className="text-secondary text-[10px] font-bold uppercase mb-0.5">Savings</p>
-            <p className="text-sm font-bold text-text-dark dark:text-white">{formatCurrency(savings)}</p>
+            <p className="text-secondary text-[10px] font-bold uppercase mb-0.5">Today In</p>
+            <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">{formatCurrency(todayIncome, 2)}</p>
           </div>
         </motion.div>
-        <motion.div 
+        <motion.div
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
@@ -130,80 +222,150 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
             <TrendingDown size={18} />
           </div>
           <div>
-            <p className="text-secondary text-[10px] font-bold uppercase mb-0.5">Today's</p>
-            <p className="text-sm font-bold text-text-dark dark:text-white">{formatCurrency(todayExpense)}</p>
+            <p className="text-secondary text-[10px] font-bold uppercase mb-0.5">Today Out</p>
+            <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">{formatCurrency(todayExpense, 2)}</p>
           </div>
         </motion.div>
       </section>
 
-      {/* Recent Transactions Section */}
-      <section className="flex flex-col px-4 mt-6">
+      <section className="px-4">
+        <div className="bg-white dark:bg-surface-dark border border-border/70 dark:border-slate-800 rounded-3xl p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-secondary font-black">This Month</p>
+              <h3 className="text-lg font-black text-text-dark dark:text-white tabular-nums">{formatCurrency(monthNet)}</h3>
+            </div>
+            <span className={`text-[10px] font-black uppercase tracking-widest ${monthStatusStyle}`}>{monthStatus}</span>
+          </div>
+
+          <div className="space-y-2">
+            <MetricRow label="Income" value={formatCurrency(monthIncome)} positive />
+            <MetricRow label="Expense" value={formatCurrency(monthExpense)} />
+            <MetricRow label="Spend / Income" value={`${monthSpendRate.toFixed(0)}%`} warning={monthSpendRate > 80} />
+            <MetricRow
+              label="Top Category"
+              value={topExpenseCategory ? `${topExpenseCategory.category} (${formatCurrency(topExpenseCategory.amount)})` : 'No expense yet'}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="flex flex-col px-4 mt-5">
         <div className="flex items-center justify-between mb-4 px-2">
           <h3 className="text-text-dark dark:text-slate-100 text-lg font-black tracking-tight">Recent Activity</h3>
-          <motion.button 
-            whileHover={{ x: 5 }}
-            onClick={() => onNavigate('transactions')} 
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => onNavigate('transactions')}
             className="flex items-center gap-1 text-primary text-xs font-bold transition-all"
           >
             See all
             <ChevronRight size={14} />
           </motion.button>
         </div>
-        
+
         <div className="space-y-2 pb-4">
-          {transactions.length === 0 ? (
-            <motion.div 
+          {recentTransactions.length === 0 ? (
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="flex flex-col items-center justify-center py-10 bg-white dark:bg-input-bg/10 rounded-[2rem] border-2 border-dashed border-border dark:border-slate-800"
             >
-               <div className="size-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
-                 <Receipt size={32} />
-               </div>
-               <p className="text-secondary font-bold text-sm">No transactions yet</p>
-               <button 
-                 onClick={() => onNavigate('add_transaction')}
-                 className="mt-4 text-primary text-xs font-bold underline underline-offset-4"
-               >
-                 Add your first one
-               </button>
+              <div className="size-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
+                <Receipt size={32} />
+              </div>
+              <p className="text-secondary font-bold text-sm">No transactions yet</p>
+              <button onClick={() => onNavigate('add_transaction')} className="mt-4 text-primary text-xs font-bold underline underline-offset-4">
+                Add your first one
+              </button>
             </motion.div>
           ) : (
-            transactions.slice(0, 6).map((t, index) => (
-              <TransactionItem 
-                key={t.id}
+            recentTransactions.map((transaction, index) => (
+              <TransactionItem
+                key={transaction.id}
                 index={index}
-                type={t.type}
-                category={t.category}
-                merchant={t.merchant}
-                date={t.date}
-                amount={t.amount}
-                formatCurrency={formatCurrency}
+                type={transaction.type}
+                category={transaction.category}
+                merchant={transaction.merchant}
+                date={transaction.date}
+                amount={transaction.amount}
               />
             ))
           )}
         </div>
       </section>
+
+      <section className="px-4 pb-2">
+        <button
+          onClick={() => onNavigate('budget')}
+          className="w-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 rounded-2xl py-3.5 px-4 text-sm font-bold flex items-center justify-center gap-2"
+        >
+          <Landmark size={16} />
+          Open Budget Planner
+        </button>
+      </section>
+
+      <div className="h-3" />
     </div>
   );
 }
 
-function TransactionItem({ type, category, merchant, date, amount, formatCurrency, index }: any) {
+function QuickActionCard({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      className="bg-white dark:bg-surface-dark border border-border dark:border-slate-800 rounded-2xl py-3 px-2 shadow-sm text-text-dark dark:text-white flex flex-col items-center justify-center gap-1"
+    >
+      <span className="text-primary">{icon}</span>
+      <span className="text-[10px] uppercase tracking-wide font-black">{label}</span>
+    </motion.button>
+  );
+}
+
+function MetricRow({ label, value, positive, warning }: { label: string; value: string; positive?: boolean; warning?: boolean }) {
+  const textStyle = warning ? 'text-amber-600 dark:text-amber-400' : positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-text-dark dark:text-white';
+
+  return (
+    <div className="flex items-center justify-between text-xs">
+      <span className="text-secondary font-bold uppercase tracking-wide">{label}</span>
+      <span className={`font-black tabular-nums ${textStyle}`}>{value}</span>
+    </div>
+  );
+}
+
+function TransactionItem({
+  type,
+  category,
+  merchant,
+  date,
+  amount,
+  index,
+}: {
+  key?: React.Key;
+  type: TransactionType;
+  category: string;
+  merchant?: string;
+  date: string;
+  amount: number;
+  index: number;
+}) {
   const isExpense = type === 'Expense';
-  
+
   const getIcon = () => {
-    if (category.toLowerCase().includes('food')) return <ShoppingBasket size={22} />;
-    if (category.toLowerCase().includes('coffee')) return <Coffee size={22} />;
-    if (category.toLowerCase().includes('income')) return <Banknote size={22} />;
-    if (category.toLowerCase().includes('transport')) return <TrendingUp size={22} />;
+    const normalized = category.toLowerCase();
+
+    if (normalized.includes('food')) return <ShoppingBasket size={22} />;
+    if (normalized.includes('coffee')) return <Coffee size={22} />;
+    if (normalized.includes('income') || normalized.includes('salary')) return <Banknote size={22} />;
+    if (normalized.includes('transport')) return <TrendingUp size={22} />;
     return <Receipt size={22} />;
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.1 + index * 0.05 }}
+      transition={{ delay: 0.08 + index * 0.05 }}
       whileTap={{ scale: 0.98 }}
       className="flex items-center gap-4 bg-white dark:bg-surface-dark p-4 rounded-3xl border border-border/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer shadow-sm"
     >
@@ -216,12 +378,13 @@ function TransactionItem({ type, category, merchant, date, amount, formatCurrenc
           <div className="flex items-center gap-1 mt-0.5">
             <span className="text-[10px] font-bold text-secondary uppercase tracking-tight">{category}</span>
             <span className="size-1 bg-slate-200 dark:bg-slate-700 rounded-full"></span>
-            <span className="text-[10px] font-bold text-secondary opacity-60 uppercase">{new Date(date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+            <span className="text-[10px] font-bold text-secondary opacity-60 uppercase">{formatDateShort(date)}</span>
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className={`${isExpense ? 'text-text-dark dark:text-slate-100' : 'text-income dark:text-income'} font-black text-[16px]`}>
-            {isExpense ? '-' : '+'}{formatCurrency(amount)}
+          <p className={`${isExpense ? 'text-text-dark dark:text-slate-100' : 'text-income dark:text-income'} font-black text-[16px] tabular-nums`}>
+            {isExpense ? '-' : '+'}
+            {formatMoney(amount, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
           </p>
         </div>
       </div>
