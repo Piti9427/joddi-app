@@ -1,6 +1,7 @@
 import React from 'react';
 import { Home, Receipt, PieChart, Plus, Landmark } from 'lucide-react';
 import { ViewState } from '../App';
+import { motion } from 'motion/react';
 
 interface BottomNavProps {
   currentView: ViewState;
@@ -8,7 +9,6 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ currentView, onNavigate }: BottomNavProps) {
-  // Only show bottom nav for these views
   const navVisibleViews: ViewState[] = ['dashboard', 'transactions', 'analytics', 'budget', 'settings', 'categories'];
   if (!navVisibleViews.includes(currentView) && currentView !== 'add_transaction') return null;
 
@@ -30,12 +30,14 @@ export function BottomNav({ currentView, onNavigate }: BottomNavProps) {
         
         {/* Centered Add Button */}
         <div className="relative -mt-12 mb-4 px-1 group">
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9, rotate: -90 }}
             onClick={() => onNavigate('add_transaction')}
-            className={`size-16 bg-primary bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-full shadow-xl shadow-emerald-500/30 flex items-center justify-center transition-all active:scale-90 hover:scale-105 border-4 border-white dark:border-background-dark group-hover:shadow-emerald-500/50`}
+            className={`size-16 bg-primary bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-full shadow-xl shadow-emerald-500/30 flex items-center justify-center transition-all border-4 border-white dark:border-background-dark`}
           >
             <Plus size={36} strokeWidth={3} />
-          </button>
+          </motion.button>
         </div>
 
         <NavItem 
@@ -58,17 +60,26 @@ export function BottomNav({ currentView, onNavigate }: BottomNavProps) {
 
 function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
-    <button 
+    <motion.button 
       onClick={onClick} 
+      whileTap={{ y: -2 }}
       className={`flex flex-col items-center gap-1.5 min-w-[64px] transition-all duration-300 relative group ${active ? 'text-primary' : 'text-secondary hover:text-text-dark dark:hover:text-slate-300'}`}
     >
-      <div className={`transition-all duration-300 ${active ? 'scale-110 -translate-y-1' : 'opacity-70 group-hover:opacity-100 group-hover:-translate-y-0.5'}`}>
+      <motion.div 
+        animate={active ? { y: -4, scale: 1.2 } : { y: 0, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+      >
         {icon}
-      </div>
+      </motion.div>
       <p className={`text-[10px] font-black tracking-widest uppercase transition-all duration-300 ${active ? 'opacity-100' : 'opacity-0 scale-75 group-hover:opacity-40'}`}>
         {label}
       </p>
-      {active && <span className="absolute -bottom-1 size-1 bg-primary rounded-full animate-in fade-in zoom-in duration-300"></span>}
-    </button>
+      {active && (
+        <motion.span 
+          layoutId="nav-dot"
+          className="absolute -bottom-1 size-1 bg-primary rounded-full"
+        ></motion.span>
+      )}
+    </motion.button>
   );
 }

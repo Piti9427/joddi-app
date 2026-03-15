@@ -61,8 +61,16 @@
   }
 
   /* Keypad visual haptics */
-  .haptic-press:active {
-    @apply scale-90 duration-75 brightness-95 opacity-80;
+  .haptic-press:active,
+  button:active {
+    @apply scale-95 duration-75 brightness-90 opacity-90 transition-all;
+  }
+
+  /* Only apply hover effects on devices that support it (Desktop) */
+  @media (hover: hover) {
+    .hover-effect:hover {
+      @apply opacity-80 brightness-110;
+    }
   }
   
   /* Smooth Slide Transitions */

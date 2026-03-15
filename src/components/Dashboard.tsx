@@ -1,6 +1,7 @@
 import React from 'react';
-import { User, Bell, Wallet, TrendingUp, TrendingDown, PiggyBank, ShoppingBasket, Coffee, Banknote, Tv, Plus, Home, Receipt, PieChart, Landmark, Settings, ChevronRight, CreditCard, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { User, Bell, Wallet, TrendingUp, TrendingDown, ShoppingBasket, Coffee, Banknote, Plus, Home, Receipt, PieChart, Landmark, Settings, ChevronRight, CreditCard, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
+import { motion } from 'motion/react';
 
 export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void; transactions: Transaction[] }) {
   const today = new Date().toDateString();
@@ -21,39 +22,67 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
       {/* Premium Header */}
       <header className="flex items-center bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md p-4 pb-3 justify-between sticky top-0 z-20 transition-all">
         <div className="flex items-center gap-3">
-          <div className="size-10 shrink-0 overflow-hidden rounded-full ring-2 ring-primary/20 bg-primary/10 flex items-center justify-center">
+          <motion.div 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className="size-10 shrink-0 overflow-hidden rounded-full ring-2 ring-primary/20 bg-primary/10 flex items-center justify-center cursor-pointer"
+          >
             <User className="text-primary" size={20} />
-          </div>
+          </motion.div>
           <div>
             <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em]">Good Morning ☀️</p>
             <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">Joddi User</h2>
           </div>
         </div>
         <div className="flex gap-1">
-          <button className="flex items-center justify-center rounded-full h-10 w-10 bg-input-bg dark:bg-slate-800 text-secondary hover:text-primary transition-colors relative">
+          <motion.button 
+            whileTap={{ scale: 0.9 }}
+            className="flex items-center justify-center rounded-full h-10 w-10 bg-input-bg dark:bg-slate-800 text-secondary hover:text-primary transition-colors relative"
+          >
             <Bell size={20} />
             <span className="absolute top-2 right-2 size-2 bg-rose-500 rounded-full ring-2 ring-white dark:ring-slate-800"></span>
-          </button>
-          <button onClick={() => onNavigate('settings')} className="flex items-center justify-center rounded-full h-10 w-10 bg-input-bg dark:bg-slate-800 text-secondary hover:text-primary transition-colors">
+          </motion.button>
+          <motion.button 
+            whileTap={{ scale: 0.9 }}
+            onClick={() => onNavigate('settings')} 
+            className="flex items-center justify-center rounded-full h-10 w-10 bg-input-bg dark:bg-slate-800 text-secondary hover:text-primary transition-colors"
+          >
             <Settings size={20} />
-          </button>
+          </motion.button>
         </div>
       </header>
 
       {/* Main Wallet Card */}
       <section className="px-4 py-4">
-        <div className="bg-primary bg-gradient-to-br from-primary to-emerald-600 rounded-[2.5rem] p-8 shadow-2xl shadow-primary/30 text-white relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+          className="bg-primary bg-gradient-to-br from-primary to-emerald-600 rounded-[2.5rem] p-8 shadow-2xl shadow-primary/30 text-white relative overflow-hidden group"
+        >
+          <motion.div 
+            animate={{ 
+              rotate: [0, 5, -5, 0],
+              scale: [1, 1.05, 1]
+            }}
+            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+            className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-700"
+          >
             <Wallet size={160} />
-          </div>
+          </motion.div>
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-1">
               <span className="text-white/70 text-xs font-bold uppercase tracking-widest">Available Balance</span>
               <CreditCard size={18} className="text-white/40" />
             </div>
-            <h1 className="text-4xl font-black tracking-tight mb-8">
+            <motion.h1 
+              key={balance}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="text-4xl font-black tracking-tight mb-8"
+            >
               {formatCurrency(balance)}
-            </h1>
+            </motion.h1>
             
             <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
               <div className="flex flex-col gap-1">
@@ -72,12 +101,17 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Quick Summary Cards */}
       <section className="px-4 py-2 grid grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-surface-dark border border-border dark:border-slate-800 p-4 rounded-3xl shadow-sm flex items-center gap-3">
+        <motion.div 
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white dark:bg-surface-dark border border-border dark:border-slate-800 p-4 rounded-3xl shadow-sm flex items-center gap-3"
+        >
           <div className="size-10 rounded-2xl bg-income-bg/60 dark:bg-income/10 flex items-center justify-center text-income">
             <TrendingUp size={18} />
           </div>
@@ -85,8 +119,13 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
             <p className="text-secondary text-[10px] font-bold uppercase mb-0.5">Savings</p>
             <p className="text-sm font-bold text-text-dark dark:text-white">{formatCurrency(savings)}</p>
           </div>
-        </div>
-        <div className="bg-white dark:bg-surface-dark border border-border dark:border-slate-800 p-4 rounded-3xl shadow-sm flex items-center gap-3">
+        </motion.div>
+        <motion.div 
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white dark:bg-surface-dark border border-border dark:border-slate-800 p-4 rounded-3xl shadow-sm flex items-center gap-3"
+        >
           <div className="size-10 rounded-2xl bg-expense-bg/60 dark:bg-expense/10 flex items-center justify-center text-expense">
             <TrendingDown size={18} />
           </div>
@@ -94,25 +133,30 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
             <p className="text-secondary text-[10px] font-bold uppercase mb-0.5">Today's</p>
             <p className="text-sm font-bold text-text-dark dark:text-white">{formatCurrency(todayExpense)}</p>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Recent Transactions Section */}
       <section className="flex flex-col px-4 mt-6">
         <div className="flex items-center justify-between mb-4 px-2">
           <h3 className="text-text-dark dark:text-slate-100 text-lg font-black tracking-tight">Recent Activity</h3>
-          <button 
+          <motion.button 
+            whileHover={{ x: 5 }}
             onClick={() => onNavigate('transactions')} 
-            className="flex items-center gap-1 text-primary text-xs font-bold hover:gap-2 transition-all"
+            className="flex items-center gap-1 text-primary text-xs font-bold transition-all"
           >
             See all
             <ChevronRight size={14} />
-          </button>
+          </motion.button>
         </div>
         
         <div className="space-y-2 pb-4">
           {transactions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 bg-white dark:bg-input-bg/10 rounded-[2rem] border-2 border-dashed border-border dark:border-slate-800">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex flex-col items-center justify-center py-10 bg-white dark:bg-input-bg/10 rounded-[2rem] border-2 border-dashed border-border dark:border-slate-800"
+            >
                <div className="size-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
                  <Receipt size={32} />
                </div>
@@ -123,22 +167,20 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
                >
                  Add your first one
                </button>
-            </div>
+            </motion.div>
           ) : (
-            transactions.slice(0, 6).map(t => {
-              const isExpense = t.type === 'Expense';
-              return (
-                <TransactionItem 
-                  key={t.id}
-                  type={t.type}
-                  category={t.category}
-                  merchant={t.merchant}
-                  date={t.date}
-                  amount={t.amount}
-                  formatCurrency={formatCurrency}
-                />
-              );
-            })
+            transactions.slice(0, 6).map((t, index) => (
+              <TransactionItem 
+                key={t.id}
+                index={index}
+                type={t.type}
+                category={t.category}
+                merchant={t.merchant}
+                date={t.date}
+                amount={t.amount}
+                formatCurrency={formatCurrency}
+              />
+            ))
           )}
         </div>
       </section>
@@ -146,20 +188,25 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
   );
 }
 
-function TransactionItem({ type, category, merchant, date, amount, formatCurrency }: any) {
+function TransactionItem({ type, category, merchant, date, amount, formatCurrency, index }: any) {
   const isExpense = type === 'Expense';
   
-  // Custom Icon Logic
   const getIcon = () => {
     if (category.toLowerCase().includes('food')) return <ShoppingBasket size={22} />;
     if (category.toLowerCase().includes('coffee')) return <Coffee size={22} />;
     if (category.toLowerCase().includes('income')) return <Banknote size={22} />;
-    if (category.toLowerCase().includes('transport')) return <TrendingUp size={22} />; // Simplified
+    if (category.toLowerCase().includes('transport')) return <TrendingUp size={22} />;
     return <Receipt size={22} />;
   };
 
   return (
-    <div className="flex items-center gap-4 bg-white dark:bg-surface-dark p-4 rounded-3xl border border-border/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group scale-100 active:scale-95 cursor-pointer shadow-sm">
+    <motion.div 
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.1 + index * 0.05 }}
+      whileTap={{ scale: 0.98 }}
+      className="flex items-center gap-4 bg-white dark:bg-surface-dark p-4 rounded-3xl border border-border/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer shadow-sm"
+    >
       <div className={`size-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${isExpense ? 'bg-expense-bg/60 text-expense' : 'bg-income-bg/60 text-income'}`}>
         {getIcon()}
       </div>
@@ -178,6 +225,6 @@ function TransactionItem({ type, category, merchant, date, amount, formatCurrenc
           </p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
