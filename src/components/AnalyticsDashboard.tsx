@@ -1,261 +1,385 @@
-import React, { useState, useMemo } from 'react';
-import { ArrowLeft, PieChart, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import { ViewState, Transaction } from '../App';
+import { ArrowUpRight, ArrowDownRight, BarChart3, LineChart } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { formatMoney } from '../lib/formatters';
 
-type TimeRange = 'week' | 'month' | 'year';
+type ChartType = 'Bar' | 'Line';
 
 export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void, transactions: Transaction[] }) {
-  const [timeRange, setTimeRange] = useState<TimeRange>('month');
+  const [timeRange, setTimeRange] = useState<'Week' | 'Month' | 'Year'>('Month');
+  const [chartType, setChartType] = useState<ChartType>('Bar');
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
-
-  const filteredTransactions = useMemo(() => {
+  const { totalIncome, totalExpense, chartEntries, netBalance, savingsRate } = useMemo(() => {
     const now = new Date();
-    return transactions.filter(t => {
-      const date = new Date(t.date);
-      if (timeRange === 'week') {
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return date >= weekAgo;
-      } else if (timeRange === 'month') {
-        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-      } else {
-        return date.getFullYear() === now.getFullYear();
+    let income = 0;
+    let expense = 0;
+    
+    // 1. Pre-fill chart map to ensure consistent X-axis
+    const chartMap: { [key: string]: { income: number, expense: number } } = {};
+    const orderedKeys: string[] = [];
+
+    if (timeRange === 'Week') {
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = d.toLocaleDateString('en-US', { weekday: 'short' });
+        orderedKeys.push(key);
+        chartMap[key] = { income: 0, expense: 0 };
+      }
+    } else if (timeRange === 'Month') {
+      ['W1', 'W2', 'W3', 'W4', 'W5'].forEach(w => {
+        orderedKeys.push(w);
+        chartMap[w] = { income: 0, expense: 0 };
+      });
+    } else if (timeRange === 'Year') {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      months.forEach(m => {
+        orderedKeys.push(m);
+        chartMap[m] = { income: 0, expense: 0 };
+      });
+    }
+
+    // 2. Filter transactions based on timeRange
+    const filtered = transactions.filter(t => {
+      const tDate = new Date(t.date);
+      if (timeRange === 'Week') {
+        const weekAgo = new Date();
+        weekAgo.setHours(0,0,0,0);
+        weekAgo.setDate(now.getDate() - 6);
+        return tDate >= weekAgo;
+      }
+      if (timeRange === 'Month') {
+        return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+      }
+      if (timeRange === 'Year') {
+        return tDate.getFullYear() === now.getFullYear();
+      }
+      return true;
+    });
+
+    // 3. Populate metrics
+    filtered.forEach(t => {
+      if (t.type === 'Income') income += t.amount;
+      else expense += t.amount;
+
+      let key = '';
+      const d = new Date(t.date);
+      
+      if (timeRange === 'Week') {
+        key = d.toLocaleDateString('en-US', { weekday: 'short' });
+      } else if (timeRange === 'Month') {
+        // Simple week grouping 1-7 = W1, etc.
+        const dayOfMonth = d.getDate();
+        const weekNum = Math.ceil(dayOfMonth / 7);
+        key = `W${Math.min(weekNum, 5)}`; // Cap at W5
+      } else if (timeRange === 'Year') {
+        key = d.toLocaleDateString('en-US', { month: 'short' });
+      }
+
+      if (chartMap[key]) {
+        if (t.type === 'Income') chartMap[key].income += t.amount;
+        else chartMap[key].expense += t.amount;
       }
     });
+
+    const entries = orderedKeys.map(k => [k, chartMap[k]] as [string, { income: number, expense: number }]);
+
+    return {
+      totalIncome: income,
+      totalExpense: expense,
+      chartEntries: entries,
+      netBalance: income - expense,
+      savingsRate: income > 0 ? ((income - expense) / income) * 100 : 0,
+    };
   }, [transactions, timeRange]);
 
-  const { totalIncome, totalExpense, topCategories } = useMemo(() => {
-    let inc = 0, exp = 0;
-    const catMap: { [key: string]: number } = {};
-
-    filteredTransactions.forEach(t => {
-      if (t.type === 'Income') {
-        inc += t.amount;
-      } else {
-        exp += t.amount;
-        catMap[t.category] = (catMap[t.category] || 0) + t.amount;
-      }
+  const fmt = (val: number, maximumFractionDigits = 0) =>
+    formatMoney(val, {
+      maximumFractionDigits,
+      minimumFractionDigits: maximumFractionDigits > 0 ? 2 : 0,
     });
 
-    const sortedCats = Object.entries(catMap)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([label, amount]) => ({
-        label,
-        amount,
-        percent: exp > 0 ? (amount / exp) * 100 : 0
-      }));
-
-    return { totalIncome: inc, totalExpense: exp, topCategories: sortedCats };
-  }, [filteredTransactions]);
-
-  // === REAL BAR CHART DATA ===
-  const chartData = useMemo(() => {
-    const now = new Date();
-
-    if (timeRange === 'week') {
-      // Last 7 days
-      const days: { label: string, expense: number, income: number }[] = [];
-      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-        const dayStr = d.toDateString();
-        let exp = 0, inc = 0;
-        filteredTransactions.forEach(t => {
-          if (new Date(t.date).toDateString() === dayStr) {
-            if (t.type === 'Expense') exp += t.amount;
-            else inc += t.amount;
-          }
-        });
-        days.push({ label: dayNames[d.getDay()], expense: exp, income: inc });
-      }
-      return days;
-    } else if (timeRange === 'month') {
-      // Group by week of the month (Week 1-5)
-      const weeks: { label: string, expense: number, income: number }[] = [];
-      for (let w = 0; w < 5; w++) {
-        let exp = 0, inc = 0;
-        filteredTransactions.forEach(t => {
-          const d = new Date(t.date);
-          const weekOfMonth = Math.floor((d.getDate() - 1) / 7);
-          if (weekOfMonth === w) {
-            if (t.type === 'Expense') exp += t.amount;
-            else inc += t.amount;
-          }
-        });
-        weeks.push({ label: `W${w + 1}`, expense: exp, income: inc });
-      }
-      return weeks;
-    } else {
-      // Group by month
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const months: { label: string, expense: number, income: number }[] = [];
-      for (let m = 0; m < 12; m++) {
-        let exp = 0, inc = 0;
-        filteredTransactions.forEach(t => {
-          const d = new Date(t.date);
-          if (d.getMonth() === m) {
-            if (t.type === 'Expense') exp += t.amount;
-            else inc += t.amount;
-          }
-        });
-        months.push({ label: monthNames[m], expense: exp, income: inc });
-      }
-      return months;
-    }
-  }, [filteredTransactions, timeRange]);
-
-  const maxValue = Math.max(...chartData.map(d => Math.max(d.expense, d.income)), 1);
-  const netFlow = totalIncome - totalExpense;
-
-  const colors = ['bg-expense', 'bg-expense/70', 'bg-amber-500', 'bg-amber-400', 'bg-amber-300'];
-
   return (
-    <div className="flex flex-col min-h-full pb-20 relative bg-background-light dark:bg-background-dark">
-      <header className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10">
-        <button onClick={() => onNavigate('dashboard')} className="text-text-dark dark:text-slate-100 flex size-10 items-center justify-center rounded-full hover:bg-input-bg dark:hover:bg-slate-800 transition-colors">
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center pr-10 text-text-dark dark:text-white">Analytics</h1>
-      </header>
-
-      <div className="flex overflow-x-auto no-scrollbar gap-2 px-4 py-3 bg-surface dark:bg-surface-dark border-b border-border dark:border-slate-800">
-        <GraphTab label="This Week" active={timeRange === 'week'} onClick={() => setTimeRange('week')} />
-        <GraphTab label="This Month" active={timeRange === 'month'} onClick={() => setTimeRange('month')} />
-        <GraphTab label="This Year" active={timeRange === 'year'} onClick={() => setTimeRange('year')} />
-      </div>
-
-      <main className="p-4 flex flex-col flex-1 space-y-6">
-        
-        {/* Real Bar Chart */}
-        <section className="bg-surface dark:bg-surface-dark rounded-3xl p-6 shadow-sm border border-border dark:border-slate-800">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-bold text-text-dark dark:text-slate-100">Spending Overview</h3>
-            <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider">
-              <div className="flex items-center gap-1"><div className="size-2.5 rounded-full bg-expense"></div><span className="text-secondary">Expense</span></div>
-              <div className="flex items-center gap-1"><div className="size-2.5 rounded-full bg-income"></div><span className="text-secondary">Income</span></div>
-            </div>
-          </div>
-
-          {filteredTransactions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 text-secondary">
-              <Minus size={32} className="mb-2 opacity-40" />
-              <p className="text-sm font-bold">No data for this period</p>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-end gap-1 h-36 w-full">
-                {chartData.map((d, i) => {
-                  const expH = maxValue > 0 ? (d.expense / maxValue) * 100 : 0;
-                  const incH = maxValue > 0 ? (d.income / maxValue) * 100 : 0;
-                  const isToday = timeRange === 'week' && i === chartData.length - 1;
-                  return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group">
-                      <div className="flex gap-0.5 items-end h-28 w-full justify-center">
-                        {/* Income bar */}
-                        <div 
-                          className={`rounded-t-md transition-all duration-500 ${isToday ? 'bg-income shadow-md shadow-income/20' : 'bg-income/60 dark:bg-income/40'}`} 
-                          style={{ height: `${Math.max(incH, 2)}%`, width: chartData.length > 8 ? '35%' : '40%', minHeight: d.income > 0 ? 4 : 0 }}
-                          title={`Income: $${d.income.toFixed(0)}`}
-                        ></div>
-                        {/* Expense bar */}
-                        <div 
-                          className={`rounded-t-md transition-all duration-500 ${isToday ? 'bg-expense shadow-md shadow-expense/20' : 'bg-expense/60 dark:bg-expense/40'}`} 
-                          style={{ height: `${Math.max(expH, 2)}%`, width: chartData.length > 8 ? '35%' : '40%', minHeight: d.expense > 0 ? 4 : 0 }}
-                          title={`Expense: $${d.expense.toFixed(0)}`}
-                        ></div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className={`flex w-full mt-2 text-[10px] font-bold text-secondary ${chartData.length > 8 ? 'gap-0' : 'gap-1'}`}>
-                {chartData.map((d, i) => {
-                  const isToday = timeRange === 'week' && i === chartData.length - 1;
-                  return (
-                    <div key={i} className={`flex-1 text-center truncate ${isToday ? 'text-primary' : ''}`}>{d.label}</div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </section>
-
-        {/* Summary Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="col-span-2 bg-text-dark dark:bg-surface-dark rounded-3xl p-6 shadow-lg text-white flex flex-col items-center justify-center gap-2">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-60">Net Balance</p>
-            <p className={`text-4xl font-extrabold tracking-tight ${netFlow >= 0 ? 'text-income' : 'text-expense'}`}>
-              {netFlow >= 0 ? '+' : ''}{formatCurrency(netFlow)}
-            </p>
-            <div className="flex items-center gap-6 mt-2">
-              <div className="flex items-center gap-2">
-                 <div className="size-2 rounded-full bg-income"></div>
-                 <span className="text-[10px] font-bold opacity-60 uppercase">Savings Rate: {totalIncome > 0 ? ((netFlow / totalIncome) * 100).toFixed(0) : 0}%</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-surface dark:bg-surface-dark rounded-2xl p-4 shadow-sm border border-border dark:border-slate-800 flex flex-col gap-1">
-            <div className="size-8 rounded-full bg-income-bg/60 dark:bg-income/10 flex items-center justify-center mb-1 text-income">
-              <TrendingUp size={16} />
-            </div>
-            <p className="text-[10px] font-bold text-secondary uppercase tracking-wider">Total Income</p>
-            <p className="text-sm font-bold text-text-dark dark:text-white">{formatCurrency(totalIncome)}</p>
-          </div>
-          <div className="bg-surface dark:bg-surface-dark rounded-2xl p-4 shadow-sm border border-border dark:border-slate-800 flex flex-col gap-1">
-            <div className="size-8 rounded-full bg-expense-bg/60 dark:bg-expense/10 flex items-center justify-center mb-1 text-expense">
-              <TrendingDown size={16} />
-            </div>
-            <p className="text-[10px] font-bold text-secondary uppercase tracking-wider">Total Expense</p>
-            <p className="text-sm font-bold text-text-dark dark:text-white">{formatCurrency(totalExpense)}</p>
-          </div>
+    <div className="flex flex-col min-h-full pb-32 relative bg-slate-50 dark:bg-background-dark">
+      <header className="safe-top bg-white dark:bg-surface-dark px-6 pb-4 pt-3 sticky top-0 z-20 shadow-sm border-b border-border dark:border-slate-800">
+        <div className="flex items-end justify-between mb-4">
+          <h1 className="text-2xl font-black tracking-tight text-text-dark dark:text-white">Cashflow</h1>
+          <p className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-70">{timeRange} view</p>
         </div>
 
-        {/* Top Spending Categories */}
-        <section className="space-y-4">
-          <h3 className="text-sm font-bold text-text-dark dark:text-slate-100 flex items-center gap-2">
-            <PieChart size={18} className="text-expense" />
-            Top Spending
-          </h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800 space-y-4">
-            {topCategories.length === 0 ? (
-               <p className="text-center text-sm font-bold text-secondary">No expenses in this period.</p>
-            ) : (
-              topCategories.map((cat, idx) => (
-                <CategoryProgress key={cat.label} label={cat.label} amount={cat.amount} percent={cat.percent} color={colors[idx % colors.length]} />
-              ))
-            )}
+        <div className="grid grid-cols-3 bg-slate-100 dark:bg-slate-900 rounded-xl p-1">
+          {(['Week', 'Month', 'Year'] as const).map(range => {
+            const active = timeRange === range;
+            return (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={`relative py-1.5 text-xs font-black uppercase tracking-widest transition-all ${active ? 'text-text-dark dark:text-slate-900' : 'text-secondary opacity-70'}`}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="time-range-pill"
+                    className="absolute inset-0 rounded-lg bg-white dark:bg-white shadow-sm"
+                    transition={{ type: 'spring', bounce: 0.2, duration: 0.45 }}
+                  />
+                )}
+                <span className="relative z-10">{range}</span>
+              </button>
+            );
+          })}
+        </div>
+      </header>
+
+      <main className="p-4 space-y-6 mt-2">
+        
+        {/* Net Balance & Chart Section */}
+        <section className="bg-white dark:bg-surface-dark rounded-[2.5rem] p-6 shadow-sm border border-border dark:border-slate-800">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Net Flow</p>
+              <h2 className="text-3xl font-black text-text-dark dark:text-white">{fmt(netBalance)}</h2>
+            </div>
+            <div className="flex bg-slate-100 dark:bg-slate-900 rounded-xl p-0.5">
+              <button 
+                onClick={() => setChartType('Bar')} 
+                className={`p-1.5 rounded-lg transition-all ${chartType === 'Bar' ? 'bg-white dark:bg-slate-800 shadow-sm text-text-dark dark:text-white' : 'text-secondary/60'}`}
+              >
+                <BarChart3 size={16} />
+              </button>
+              <button 
+                onClick={() => setChartType('Line')} 
+                className={`p-1.5 rounded-lg transition-all ${chartType === 'Line' ? 'bg-white dark:bg-slate-800 shadow-sm text-text-dark dark:text-white' : 'text-secondary/60'}`}
+              >
+                <LineChart size={16} />
+              </button>
+            </div>
+          </div>
+
+          <div className="h-[220px] w-full">
+             <AnimatePresence mode="wait">
+                <motion.div 
+                  key={chartType + timeRange} 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0 }} 
+                  transition={{ duration: 0.2 }}
+                  className="h-full"
+                >
+                  {chartType === 'Bar' ? <BarChart entries={chartEntries} /> : <TrendChart entries={chartEntries} />}
+                </motion.div>
+             </AnimatePresence>
+          </div>
+          
+          <div className="flex justify-center gap-6 mt-6 border-t border-slate-100 dark:border-slate-800 pt-4">
+            <div className="flex items-center gap-2">
+              <span className="size-2.5 bg-primary rounded-full"></span>
+              <span className="text-[10px] font-bold text-secondary uppercase">Income</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="size-2.5 bg-expense rounded-full"></span>
+              <span className="text-[10px] font-bold text-secondary uppercase">Expense</span>
+            </div>
           </div>
         </section>
+
+        {/* Breakdown Cards */}
+        <div className="grid grid-cols-2 gap-4">
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            className="bg-white dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800"
+          >
+            <div className="size-10 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 text-primary flex items-center justify-center mb-4">
+              <ArrowUpRight size={20} />
+            </div>
+            <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Total Income</p>
+            <p className="text-xl font-black text-text-dark dark:text-white">{fmt(totalIncome)}</p>
+          </motion.div>
+
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            className="bg-white dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800"
+          >
+            <div className="size-10 rounded-2xl bg-rose-50 dark:bg-rose-900/30 text-expense flex items-center justify-center mb-4">
+              <ArrowDownRight size={20} />
+            </div>
+            <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Total Expense</p>
+            <p className="text-xl font-black text-text-dark dark:text-white">{fmt(totalExpense)}</p>
+          </motion.div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-surface-dark rounded-3xl p-4 border border-border dark:border-slate-800 shadow-sm">
+            <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Savings Rate</p>
+            <p className={`text-lg font-black ${savingsRate >= 0 ? 'text-primary' : 'text-expense'}`}>{savingsRate.toFixed(0)}%</p>
+          </div>
+          <div className="bg-white dark:bg-surface-dark rounded-3xl p-4 border border-border dark:border-slate-800 shadow-sm">
+            <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Avg Expense</p>
+            <p className="text-lg font-black text-text-dark dark:text-white">{fmt(totalExpense / Math.max(chartEntries.length, 1), 2)}</p>
+          </div>
+        </div>
 
       </main>
     </div>
   );
 }
 
-function GraphTab({ label, active, onClick }: any) {
+/* ── Pro-Level Standardized Charts ── */
+
+const formatYAxis = (val: number) => formatMoney(val, { compact: true, maximumFractionDigits: 1 });
+
+function BarChart({ entries }: any) {
+  const maxVal = Math.max(...entries.map(([, v]: any) => Math.max(v.income, v.expense)), 100); // minimum scale 100
+  const ticks = [maxVal, maxVal * 0.5, 0];
+
   return (
-    <button onClick={onClick} className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${active ? 'bg-text-dark text-white dark:bg-white dark:text-slate-900 shadow-md' : 'bg-transparent text-secondary hover:bg-input-bg dark:hover:bg-slate-800'}`}>
-      {label}
-    </button>
+    <div className="relative h-full flex flex-col pt-2">
+      {/* Y-Axis Grid Background */}
+      <div className="absolute inset-0 flex flex-col justify-between pb-6 pointer-events-none z-0">
+         {ticks.map((tick, i) => (
+           <div key={i} className={`flex-1 border-t border-slate-100 dark:border-slate-800 flex items-start ${i === 2 ? 'border-none' : ''}`}>
+             <span className="text-[9px] text-secondary opacity-40 font-bold -mt-3 bg-white dark:bg-surface-dark px-1">{formatYAxis(tick)}</span>
+           </div>
+         ))}
+      </div>
+
+      {/* Bars Layer */}
+      <div className="flex-1 flex justify-between items-end pb-6 z-10 px-2 sm:px-4">
+        {entries.map(([key, val]: any, i: number) => (
+          <div key={i} className="flex flex-col items-center h-full w-full justify-end group">
+            <div className="flex items-end justify-center w-full h-full pb-0 gap-0.5 sm:gap-1">
+              {/* Income Bar */}
+              <motion.div 
+                initial={{ height: 0 }} 
+                animate={{ height: `${(val.income / maxVal) * 100}%` }} 
+                transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+                className="w-1.5 sm:w-2.5 bg-primary rounded-t-sm"
+                style={{ minHeight: val.income > 0 ? '4px' : '0' }}
+              />
+              {/* Expense Bar */}
+              <motion.div 
+                initial={{ height: 0 }} 
+                animate={{ height: `${(val.expense / maxVal) * 100}%` }} 
+                transition={{ type: 'spring', damping: 20, stiffness: 100, delay: 0.1 }}
+                className="w-1.5 sm:w-2.5 bg-expense rounded-t-sm"
+                style={{ minHeight: val.expense > 0 ? '4px' : '0' }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* X-Axis Labels */}
+      <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 sm:px-4">
+         {entries.map(([key]: any, i: number) => (
+           <div key={i} className="flex-1 text-center">
+             <span className="text-[9px] font-bold text-secondary uppercase opacity-60">
+               {key.length > 3 ? key.substring(0,3) : key}
+             </span>
+           </div>
+         ))}
+      </div>
+    </div>
   );
 }
 
-function CategoryProgress({ label, amount, percent, color }: any) {
-  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+function TrendChart({ entries }: any) {
+  const maxV = Math.max(...entries.map(([, v]: any) => Math.max(v.income, v.expense)), 100);
+  const width = 1000;
+  const height = 400;
   
+  const getPoints = (key: 'income' | 'expense') => {
+    return entries.map(([, v]: any, i: number) => ({
+      x: (i / (entries.length - 1 || 1)) * width,
+      y: height - (v[key] / maxV) * height
+    }));
+  };
+
+  const incPoints = getPoints('income');
+  const expPoints = getPoints('expense');
+
+  // Curve smoothing function (Catmull-Rom to Cubic Bezier)
+  const spline = (points: {x:number, y:number}[]) => {
+    if(points.length === 0) return '';
+    if(points.length === 1) return `M ${points[0].x},${points[0].y}`;
+    let path = `M ${points[0].x},${points[0].y}`;
+    for (let i = 0; i < points.length - 1; i++) {
+        const p0 = i > 0 ? points[i - 1] : points[0];
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const p3 = i != points.length - 2 ? points[i + 2] : p2;
+        
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+        
+        path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+    }
+    return path;
+  };
+
+  const ticks = [maxV, maxV * 0.5, 0];
+
   return (
-    <div>
-      <div className="flex justify-between items-end mb-2">
-        <p className="font-bold text-sm text-text-dark dark:text-slate-100">{label}</p>
-        <div className="text-right">
-          <p className="font-bold text-sm text-text-dark dark:text-slate-100">{formatCurrency(amount)}</p>
-          <p className="text-[10px] font-bold text-secondary">{percent.toFixed(1)}%</p>
-        </div>
+    <div className="relative h-full flex flex-col pt-2">
+      {/* Y-Axis Grid Background (HTML) */}
+      <div className="absolute inset-0 flex flex-col justify-between pb-6 pointer-events-none z-0">
+         {ticks.map((tick, i) => (
+           <div key={i} className={`flex-1 border-t border-slate-100 dark:border-slate-800 flex items-start ${i === 2 ? 'border-none' : ''}`}>
+             <span className="text-[9px] text-secondary opacity-40 font-bold -mt-3 bg-white dark:bg-surface-dark px-1">{formatYAxis(tick)}</span>
+           </div>
+         ))}
       </div>
-      <div className="h-2.5 w-full bg-input-bg dark:bg-slate-800 rounded-full overflow-hidden">
-        <div className={`h-full ${color} rounded-full transition-all duration-500`} style={{ width: `${percent}%` }}></div>
+
+      <div className="flex-1 w-full relative z-10 pb-6 overflow-visible">
+        <svg viewBox={`0 -10 ${width} ${height + 20}`} preserveAspectRatio="none" className="size-full overflow-visible">
+          {/* Defs for Glow */}
+          <defs>
+             <filter id="glowInc" x="-20%" y="-20%" width="140%" height="140%">
+               <feGaussianBlur stdDeviation="15" result="blur" />
+               <feComposite in="SourceGraphic" in2="blur" operator="over" />
+             </filter>
+             <filter id="glowExp" x="-20%" y="-20%" width="140%" height="140%">
+               <feGaussianBlur stdDeviation="15" result="blur" />
+               <feComposite in="SourceGraphic" in2="blur" operator="over" />
+             </filter>
+          </defs>
+          
+          <motion.path 
+            d={spline(incPoints)} 
+            fill="none" 
+            stroke="var(--primary)" 
+            strokeWidth="8" 
+            strokeLinecap="round" 
+            filter="url(#glowInc)"
+            initial={{ pathLength: 0 }} 
+            animate={{ pathLength: 1 }} 
+            transition={{ duration: 1.5, ease: 'easeInOut' }} 
+          />
+          <motion.path 
+            d={spline(expPoints)} 
+            fill="none" 
+            stroke="var(--expense)" 
+            strokeWidth="8" 
+            strokeLinecap="round" 
+            filter="url(#glowExp)"
+            initial={{ pathLength: 0 }} 
+            animate={{ pathLength: 1 }} 
+            transition={{ duration: 1.5, ease: 'easeInOut', delay: 0.2 }} 
+          />
+        </svg>
+      </div>
+      
+      {/* X-Axis Labels */}
+      <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 sm:px-4">
+         {entries.map(([key]: any, i: number) => (
+           <div key={i} className="flex-1 text-center">
+             <span className="text-[9px] font-bold text-secondary uppercase opacity-60">
+               {key.length > 3 ? key.substring(0,3) : key}
+             </span>
+           </div>
+         ))}
       </div>
     </div>
   );

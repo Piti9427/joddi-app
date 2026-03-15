@@ -16,5 +16,8 @@ View your app in AI Studio: https://ai.studio/apps/3c4e562c-9968-474d-ad56-ccbf7
 1. Install dependencies:
    `npm install`
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+3. Configure Supabase auth envs in `.env` (see `.env.example`)
+4. In Supabase dashboard, enable Email auth and set redirect URL to your app URL
+5. Optional but recommended: run `supabase_schema_upgrade.sql` in Supabase SQL editor for RLS/user ownership
+6. Run the app:
    `npm run dev`
