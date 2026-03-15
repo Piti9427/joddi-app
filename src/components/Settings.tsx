@@ -46,14 +46,18 @@ export function Settings({
 
       <main className="p-4 flex flex-col flex-1 space-y-6">
         <div className="bg-surface dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800 flex items-center gap-4 cursor-pointer hover:bg-input-bg dark:hover:bg-slate-800/50 transition-colors">
-          <div className="size-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-primary/20">
-            J
+          <div className="size-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-black shadow-lg shadow-primary/20">
+            {isAuthenticated && userEmail ? userEmail[0].toUpperCase() : 'G'}
           </div>
           <div className="flex-1">
-            <h2 className="text-lg font-bold text-text-dark dark:text-white">Joddi User</h2>
-            <p className="text-secondary text-sm font-medium">{userEmail || 'user@joddi.app'}</p>
+            <h2 className="text-lg font-black text-text-dark dark:text-white leading-tight">
+              {isAuthenticated && userEmail ? userEmail.split('@')[0] : 'Guest Account'}
+            </h2>
+            <p className="text-secondary text-sm font-bold opacity-80">
+              {isAuthenticated && userEmail ? userEmail : 'Sign in to sync your data'}
+            </p>
           </div>
-          <ChevronRight className="text-secondary" />
+          <ChevronRight className="text-secondary opacity-40" />
         </div>
 
         <section className="space-y-3">
