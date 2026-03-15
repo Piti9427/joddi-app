@@ -122,8 +122,8 @@ export function Dashboard({
   const monthStatusStyle = monthNet >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
 
   return (
-    <div className="flex flex-col min-h-full pb-32 relative bg-slate-50 dark:bg-background-dark">
-      <header className="safe-top flex items-center bg-white/85 dark:bg-surface-dark/85 backdrop-blur-md px-4 pb-3 pt-3 justify-between sticky top-0 z-20 transition-all border-b border-border/70 dark:border-slate-800/80">
+    <div className="flex flex-col min-h-full pb-6 relative bg-slate-50 dark:bg-background-dark">
+      <header className="flex items-center bg-white dark:bg-surface-dark px-4 pb-3 justify-between sticky top-0 z-20 border-b border-border/70 dark:border-slate-800/80" style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}>
         <div className="flex items-center gap-3">
           <motion.div
             whileTap={{ scale: 0.95 }}

@@ -34,8 +34,8 @@ export function TransactionHistory({ onNavigate, transactions }: { onNavigate: (
   };
 
   return (
-    <div className="flex flex-col min-h-full pb-32 relative bg-slate-50 dark:bg-background-dark">
-      <header className="safe-top flex flex-col bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md p-6 border-b border-border dark:border-slate-800 sticky top-0 z-20">
+    <div className="flex flex-col min-h-full pb-6 relative bg-slate-50 dark:bg-background-dark">
+      <header className="flex flex-col bg-white dark:bg-surface-dark p-6 border-b border-border dark:border-slate-800 sticky top-0 z-20" style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 16px)' }}>
         <div className="flex items-center justify-between mb-6">
            <h1 className="text-2xl font-black tracking-tight text-text-dark dark:text-white">Activity</h1>
            <motion.button 

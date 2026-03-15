@@ -321,6 +321,7 @@ export default function App() {
             isAuthenticated={canWrite}
             onSignOut={handleSignOut}
             onRequestSignIn={closeGuestModeAndRequireAuth}
+            userEmail={session?.user?.email}
           />
         );
       default:
@@ -336,8 +337,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-dvh bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased flex justify-center">
-      <div className="w-full max-w-md bg-white dark:bg-background-dark shadow-2xl relative overflow-hidden min-h-dvh">
+    <div className="h-dvh bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased flex justify-center overflow-hidden">
+      <div className="w-full max-w-md bg-white dark:bg-background-dark shadow-2xl relative overflow-hidden h-full flex flex-col">
         {isGuestMode && (
           <div className="absolute top-3 right-3 z-40 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 px-3 py-1 text-[10px] font-black uppercase tracking-wide">
             Read-only
@@ -350,25 +351,29 @@ export default function App() {
           </div>
         )}
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={contentView + (isGuestMode ? '-guest' : '-auth')}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 overflow-y-auto bg-white dark:bg-background-dark pb-safe-nav"
-          >
-            <Suspense fallback={<ScreenFallback />}>{renderScreen()}</Suspense>
-            <div className="h-24 safe-bottom" />
-          </motion.div>
-        </AnimatePresence>
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-y-auto ios-scroll bg-white dark:bg-background-dark">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={contentView + (isGuestMode ? '-guest' : '-auth')}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <Suspense fallback={<ScreenFallback />}>{renderScreen()}</Suspense>
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
+        {/* Bottom Navigation */}
         <Suspense fallback={null}>
           {(session || isGuestMode) && (
             <BottomNav currentView={currentView} onNavigate={navigate} canCreate={canWrite} />
           )}
         </Suspense>
 
+        {/* Add Transaction Overlay */}
         <AnimatePresence>
           {currentView === 'add_transaction' && canWrite && (
             <motion.div
@@ -400,3 +405,4 @@ export default function App() {
     </div>
   );
 }
+
