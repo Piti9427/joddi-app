@@ -10,10 +10,10 @@ interface BottomNavProps {
 }
 
 const NAV_ITEMS: Array<{ view: ViewState; label: string; icon: React.ReactNode }> = [
-  { view: 'dashboard', label: 'Home', icon: <Home size={21} /> },
-  { view: 'transactions', label: 'Activity', icon: <Receipt size={21} /> },
-  { view: 'analytics', label: 'Stats', icon: <PieChart size={21} /> },
-  { view: 'budget', label: 'Budget', icon: <Landmark size={21} /> },
+  { view: 'dashboard', label: 'Home', icon: <Home size={22} /> },
+  { view: 'transactions', label: 'Activity', icon: <Receipt size={22} /> },
+  { view: 'analytics', label: 'Stats', icon: <PieChart size={22} /> },
+  { view: 'budget', label: 'Budget', icon: <Landmark size={22} /> },
 ];
 
 export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomNavProps) {
@@ -21,8 +21,10 @@ export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomN
   if (!navVisibleViews.includes(currentView)) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t border-border/80 dark:border-slate-800 bg-white/90 dark:bg-surface-dark/90 backdrop-blur-xl pb-safe-nav pt-2 z-40 max-w-md mx-auto rounded-t-[2rem] shadow-[0_-10px_35px_rgba(15,23,42,0.08)] transition-all duration-300">
-      <div className="flex items-end justify-between px-2 gap-1">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none px-4">
+      <div className="w-full max-w-md bg-white/98 dark:bg-surface-dark/98 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 rounded-t-[2.5rem] shadow-[0_-12px_45px_rgba(0,0,0,0.12)] pointer-events-auto flex items-end justify-around px-4 pb-0"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)', paddingTop: '10px' }}
+      >
         <NavItem
           icon={NAV_ITEMS[0].icon}
           label={NAV_ITEMS[0].label}
@@ -36,19 +38,18 @@ export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomN
           onClick={() => onNavigate(NAV_ITEMS[1].view)}
         />
 
-        <div className="relative -mt-8 mb-1 px-1">
+        <div className="relative -mt-8 mb-2">
           <motion.button
-            aria-label="Add transaction"
             whileTap={canCreate ? { scale: 0.92, rotate: -15 } : undefined}
             onClick={() => canCreate && onNavigate('add_transaction')}
             disabled={!canCreate}
-            className={`size-14 rounded-full flex items-center justify-center transition-all border-[3px] border-white dark:border-background-dark ${
+            className={`size-14 rounded-full flex items-center justify-center transition-all border-[4px] border-white dark:border-surface-dark ${
               canCreate
                 ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-xl shadow-emerald-500/30'
                 : 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
             }`}
           >
-            <Plus size={28} strokeWidth={2.8} />
+            <Plus size={30} strokeWidth={3} />
           </motion.button>
         </div>
 
@@ -72,28 +73,21 @@ export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomN
 function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
     <motion.button
-      aria-label={label}
       onClick={onClick}
       whileTap={{ y: -2 }}
-      className={`relative flex flex-col items-center justify-center gap-1 h-14 min-w-[62px] rounded-2xl transition-all duration-300 ${active ? 'text-primary' : 'text-secondary hover:text-text-dark dark:hover:text-slate-300'}`}
+      className={`relative flex flex-col items-center justify-center gap-1.5 h-14 min-w-[65px] transition-all duration-300 ${active ? 'text-primary' : 'text-secondary hover:text-text-dark dark:hover:text-slate-300'}`}
     >
-      {active && (
-        <motion.span
-          layoutId="nav-active-pill"
-          className="absolute inset-0 rounded-2xl bg-primary/10"
-          transition={{ type: 'spring', stiffness: 280, damping: 24 }}
-        />
-      )}
       <motion.div
-        className="relative z-10"
-        animate={active ? { y: -1, scale: 1.12 } : { y: 0, scale: 1 }}
+        animate={active ? { scale: 1.15 } : { scale: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 15 }}
       >
         {icon}
       </motion.div>
-      <p className={`relative z-10 text-[10px] font-black tracking-wide uppercase transition-all duration-300 ${active ? 'opacity-100' : 'opacity-70'}`}>
+      <p className={`text-[9px] font-black tracking-widest uppercase transition-all duration-300 ${active ? 'opacity-100' : 'opacity-60'}`}>
         {label}
       </p>
     </motion.button>
   );
 }
+
+

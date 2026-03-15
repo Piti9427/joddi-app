@@ -123,19 +123,37 @@
   }
 }
 
-@layer utilities {
-  .safe-top {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-
-  .pb-safe-nav {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.85rem);
-  }
+html, body {
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  position: fixed; /* Prevents background scroll on iOS */
+  touch-action: none; /* Controlled scroll on App level */
 }
+
+#root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pb-safe-nav {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6rem);
+}
+
 
 /* Custom spacing and typography refinements */
 h1, h2, h3, h4 {

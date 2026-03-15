@@ -351,18 +351,19 @@ export default function App() {
           </div>
         )}
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={contentView + (isGuestMode ? '-guest' : '-auth')}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 overflow-y-auto bg-white dark:bg-background-dark pb-safe-nav"
-          >
-            <Suspense fallback={<ScreenFallback />}>{renderScreen()}</Suspense>
-            <div className="h-24 safe-bottom" />
-          </motion.div>
-        </AnimatePresence>
+        <div className="absolute inset-0 overflow-y-auto bg-white dark:bg-background-dark scroll-smooth pb-32">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={contentView + (isGuestMode ? '-guest' : '-auth')}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Suspense fallback={<ScreenFallback />}>{renderScreen()}</Suspense>
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         <Suspense fallback={null}>
           {(session || isGuestMode) && (
