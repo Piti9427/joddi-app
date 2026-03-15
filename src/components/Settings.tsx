@@ -1,9 +1,20 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { ArrowLeft, User, Bell, Shield, Moon, Globe, LogOut, ChevronRight, HelpCircle } from 'lucide-react';
+import { User, Bell, Shield, Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn } from 'lucide-react';
 import { ViewState } from '../App';
 
-export function Settings({ onNavigate }: { onNavigate: (v: ViewState) => void }) {
+export function Settings({
+  onNavigate,
+  isAuthenticated = true,
+  onSignOut,
+  onRequestSignIn,
+  userEmail,
+}: {
+  onNavigate: (v: ViewState) => void;
+  isAuthenticated?: boolean;
+  onSignOut?: () => void | Promise<void>;
+  onRequestSignIn?: () => void;
+  userEmail?: string;
+}) {
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') === 'dark';
@@ -23,40 +34,33 @@ export function Settings({ onNavigate }: { onNavigate: (v: ViewState) => void })
     }
   };
 
-  // Define generalSettings for the map, as implied by the instruction
-  const generalSettings = [
-    { icon: <HelpCircle />, label: "Help Center" }
-  ];
+  const supportSettings = [{ icon: <HelpCircle />, label: 'Help Center' }];
 
   return (
     <div className="flex flex-col min-h-full pb-20 relative bg-background-light dark:bg-background-dark">
-      <header className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10">
+      <header className="safe-top flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10">
         <div className="size-10 shrink-0"></div>
         <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">Settings</h1>
         <div className="size-10 shrink-0"></div>
       </header>
 
       <main className="p-4 flex flex-col flex-1 space-y-6">
-        
-        {/* Profile Card */}
         <div className="bg-surface dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800 flex items-center gap-4 cursor-pointer hover:bg-input-bg dark:hover:bg-slate-800/50 transition-colors">
           <div className="size-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-primary/20">
             J
           </div>
           <div className="flex-1">
             <h2 className="text-lg font-bold text-text-dark dark:text-white">Joddi User</h2>
-            <p className="text-secondary text-sm font-medium">user@joddi.app</p>
+            <p className="text-secondary text-sm font-medium">{userEmail || 'user@joddi.app'}</p>
           </div>
           <ChevronRight className="text-secondary" />
         </div>
 
-        {/* Preferences */}
         <section className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary pl-2">Preferences</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
-            
             <SettingRow icon={<Moon />} label="Dark Mode">
-              <button 
+              <button
                 onClick={toggleDarkMode}
                 className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${darkMode ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
               >
@@ -64,13 +68,11 @@ export function Settings({ onNavigate }: { onNavigate: (v: ViewState) => void })
               </button>
             </SettingRow>
 
-            <SettingRow icon={<Globe />} label="Currency" value="USD ($)" />
+            <SettingRow icon={<Globe />} label="Currency" value="Auto" />
             <SettingRow icon={<Bell />} label="Notifications" />
-
           </div>
         </section>
 
-        {/* Account */}
         <section className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary pl-2">Account</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
@@ -79,25 +81,36 @@ export function Settings({ onNavigate }: { onNavigate: (v: ViewState) => void })
           </div>
         </section>
 
-        {/* Support */}
         <section className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary pl-2">Support</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-[2rem] p-2 shadow-sm border border-border dark:border-slate-800">
-           {generalSettings.map((item, index) => (
-             <SettingRow key={index} icon={item.icon} label={item.label} />
-           ))}
-           <button 
-             onClick={() => supabase.auth.signOut()}
-             className="w-full flex items-center gap-4 p-4 hover:bg-input-bg dark:hover:bg-slate-800/50 rounded-2xl transition-colors text-left text-rose-500 group"
-           >
-             <div className="size-10 rounded-[1.2rem] bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center group-hover:bg-rose-100 transition-colors">
-               <LogOut size={20} />
-             </div>
-             <div className="flex-1 font-bold">Sign Out</div>
-           </button>
-        </div>
-        </section>
+            {supportSettings.map((item, index) => (
+              <SettingRow key={index} icon={item.icon} label={item.label} />
+            ))}
 
+            {isAuthenticated ? (
+              <button
+                onClick={onSignOut}
+                className="w-full flex items-center gap-4 p-4 hover:bg-input-bg dark:hover:bg-slate-800/50 rounded-2xl transition-colors text-left text-rose-500 group"
+              >
+                <div className="size-10 rounded-[1.2rem] bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center group-hover:bg-rose-100 transition-colors">
+                  <LogOut size={20} />
+                </div>
+                <div className="flex-1 font-bold">Sign Out</div>
+              </button>
+            ) : (
+              <button
+                onClick={onRequestSignIn}
+                className="w-full flex items-center gap-4 p-4 hover:bg-input-bg dark:hover:bg-slate-800/50 rounded-2xl transition-colors text-left text-primary group"
+              >
+                <div className="size-10 rounded-[1.2rem] bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                  <LogIn size={20} />
+                </div>
+                <div className="flex-1 font-bold">Sign In to Unlock Writing</div>
+              </button>
+            )}
+          </div>
+        </section>
       </main>
     </div>
   );

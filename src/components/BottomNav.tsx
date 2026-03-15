@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
 interface BottomNavProps {
   currentView: ViewState;
   onNavigate: (view: ViewState) => void;
+  canCreate?: boolean;
 }
 
 const NAV_ITEMS: Array<{ view: ViewState; label: string; icon: React.ReactNode }> = [
@@ -15,7 +16,7 @@ const NAV_ITEMS: Array<{ view: ViewState; label: string; icon: React.ReactNode }
   { view: 'budget', label: 'Budget', icon: <Landmark size={21} /> },
 ];
 
-export function BottomNav({ currentView, onNavigate }: BottomNavProps) {
+export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomNavProps) {
   const navVisibleViews: ViewState[] = ['dashboard', 'transactions', 'analytics', 'budget', 'settings', 'categories', 'add_transaction'];
   if (!navVisibleViews.includes(currentView)) return null;
 
@@ -38,9 +39,14 @@ export function BottomNav({ currentView, onNavigate }: BottomNavProps) {
         <div className="relative -mt-8 mb-1 px-1">
           <motion.button
             aria-label="Add transaction"
-            whileTap={{ scale: 0.92, rotate: -15 }}
-            onClick={() => onNavigate('add_transaction')}
-            className="size-14 bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-full shadow-xl shadow-emerald-500/30 flex items-center justify-center transition-all border-[3px] border-white dark:border-background-dark"
+            whileTap={canCreate ? { scale: 0.92, rotate: -15 } : undefined}
+            onClick={() => canCreate && onNavigate('add_transaction')}
+            disabled={!canCreate}
+            className={`size-14 rounded-full flex items-center justify-center transition-all border-[3px] border-white dark:border-background-dark ${
+              canCreate
+                ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-xl shadow-emerald-500/30'
+                : 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+            }`}
           >
             <Plus size={28} strokeWidth={2.8} />
           </motion.button>

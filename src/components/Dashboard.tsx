@@ -24,7 +24,17 @@ import { formatDateShort, formatMoney } from '../lib/formatters';
 
 const QUICK_ADD_TYPE_KEY = 'quick_add_type';
 
-export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void; transactions: Transaction[] }) {
+export function Dashboard({
+  onNavigate,
+  transactions,
+  canCreateTransactions = true,
+  readOnlyMode = false,
+}: {
+  onNavigate: (v: ViewState) => void;
+  transactions: Transaction[];
+  canCreateTransactions?: boolean;
+  readOnlyMode?: boolean;
+}) {
   const {
     todayIncome,
     todayExpense,
@@ -99,6 +109,7 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
     });
 
   const openQuickAdd = (type: TransactionType) => {
+    if (!canCreateTransactions) return;
     try {
       window.sessionStorage.setItem(QUICK_ADD_TYPE_KEY, type);
     } catch {
@@ -147,6 +158,14 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
         </div>
       </header>
 
+      {readOnlyMode && (
+        <section className="px-4 pt-3">
+          <div className="rounded-2xl bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] font-black tracking-wide uppercase px-4 py-2.5 text-center">
+            Guest read-only mode: Sign in to add or edit data
+          </div>
+        </section>
+      )}
+
       <section className="px-4 py-4">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -192,8 +211,8 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
       </section>
 
       <section className="px-4 grid grid-cols-3 gap-2">
-        <QuickActionCard icon={<Plus size={18} />} label="Expense" onClick={() => openQuickAdd('Expense')} />
-        <QuickActionCard icon={<TrendingUp size={18} />} label="Income" onClick={() => openQuickAdd('Income')} />
+        <QuickActionCard icon={<Plus size={18} />} label="Expense" onClick={() => openQuickAdd('Expense')} disabled={!canCreateTransactions} />
+        <QuickActionCard icon={<TrendingUp size={18} />} label="Income" onClick={() => openQuickAdd('Income')} disabled={!canCreateTransactions} />
         <QuickActionCard icon={<PieChart size={18} />} label="Analytics" onClick={() => onNavigate('analytics')} />
       </section>
 
@@ -274,8 +293,12 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
                 <Receipt size={32} />
               </div>
               <p className="text-secondary font-bold text-sm">No transactions yet</p>
-              <button onClick={() => onNavigate('add_transaction')} className="mt-4 text-primary text-xs font-bold underline underline-offset-4">
-                Add your first one
+              <button
+                disabled={!canCreateTransactions}
+                onClick={() => onNavigate('add_transaction')}
+                className={`mt-4 text-xs font-bold underline underline-offset-4 ${canCreateTransactions ? 'text-primary' : 'text-secondary opacity-60 cursor-not-allowed'}`}
+              >
+                {canCreateTransactions ? 'Add your first one' : 'Sign in to add transactions'}
               </button>
             </motion.div>
           ) : (
@@ -309,12 +332,25 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
   );
 }
 
-function QuickActionCard({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+function QuickActionCard({
+  icon,
+  label,
+  onClick,
+  disabled = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
   return (
     <motion.button
-      whileTap={{ scale: 0.97 }}
+      whileTap={disabled ? undefined : { scale: 0.97 }}
       onClick={onClick}
-      className="bg-white dark:bg-surface-dark border border-border dark:border-slate-800 rounded-2xl py-3 px-2 shadow-sm text-text-dark dark:text-white flex flex-col items-center justify-center gap-1"
+      disabled={disabled}
+      className={`bg-white dark:bg-surface-dark border border-border dark:border-slate-800 rounded-2xl py-3 px-2 shadow-sm flex flex-col items-center justify-center gap-1 ${
+        disabled ? 'text-secondary opacity-60 cursor-not-allowed' : 'text-text-dark dark:text-white'
+      }`}
     >
       <span className="text-primary">{icon}</span>
       <span className="text-[10px] uppercase tracking-wide font-black">{label}</span>
