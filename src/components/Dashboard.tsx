@@ -127,21 +127,6 @@ export function Dashboard({ onNavigate, transactions }: { onNavigate: (v: ViewSt
         </div>
       </div>
 
-      {/* FAB */}
-      <button onClick={() => onNavigate('add_transaction')} className="fixed bottom-24 right-5 size-14 bg-primary text-white rounded-2xl shadow-xl shadow-primary/30 flex items-center justify-center z-20 hover:scale-105 active:scale-95 transition-transform">
-        <Plus size={32} />
-      </button>
-
-      {/* Bottom Nav */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-border dark:border-slate-800 bg-surface/95 dark:bg-surface-dark/95 backdrop-blur-md px-6 pb-8 pt-3 z-10 max-w-md mx-auto">
-        <div className="flex justify-between items-center">
-          <NavItem icon={<Home size={24} className="fill-current" />} label="Home" active onClick={() => onNavigate('dashboard')} />
-          <NavItem icon={<Receipt size={24} />} label="Records" onClick={() => onNavigate('transactions')} />
-          <NavItem icon={<PieChart size={24} />} label="Analytics" onClick={() => onNavigate('analytics')} />
-          <NavItem icon={<Landmark size={24} />} label="Budget" onClick={() => onNavigate('budget')} />
-          <NavItem icon={<Settings size={24} />} label="Settings" onClick={() => onNavigate('settings')} />
-        </div>
-      </div>
     </div>
   );
 }

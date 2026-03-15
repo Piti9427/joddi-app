@@ -113,10 +113,9 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
   return (
     <div className="flex flex-col min-h-full pb-20 relative bg-background-light dark:bg-background-dark">
       <header className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10">
-        <button onClick={() => onNavigate('dashboard')} className="text-text-dark dark:text-slate-100 flex size-10 items-center justify-center rounded-full hover:bg-input-bg dark:hover:bg-slate-800 transition-colors">
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center pr-10 text-text-dark dark:text-white">Analytics</h1>
+        <div className="size-10 shrink-0"></div>
+        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">Analytics</h1>
+        <div className="size-10 shrink-0"></div>
       </header>
 
       <div className="flex overflow-x-auto no-scrollbar gap-2 px-4 py-3 bg-surface dark:bg-surface-dark border-b border-border dark:border-slate-800">

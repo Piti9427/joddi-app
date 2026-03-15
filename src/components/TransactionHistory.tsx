@@ -36,10 +36,7 @@ export function TransactionHistory({ onNavigate, transactions }: { onNavigate: (
   return (
     <div className="flex flex-col min-h-full pb-20 relative bg-background-light dark:bg-background-dark">
       <header className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10">
-        <button onClick={() => onNavigate('dashboard')} className="text-text-dark dark:text-slate-100 flex size-10 items-center justify-center rounded-full hover:bg-input-bg dark:hover:bg-slate-800 transition-colors">
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center pr-2 text-text-dark dark:text-white">Transactions</h1>
+        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">Transactions</h1>
         <button className="text-secondary hover:text-primary transition-colors p-2">
           <Filter size={20} />
         </button>

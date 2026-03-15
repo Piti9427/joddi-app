@@ -9,6 +9,7 @@ import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { BudgetScreen } from './components/BudgetScreen';
 import { CategoriesManagement } from './components/CategoriesManagement';
 import { Settings } from './components/Settings';
+import { BottomNav } from './components/BottomNav';
 import { supabase } from './lib/supabase';
 
 export type ViewState = 'onboarding' | 'dashboard' | 'review_receipt' | 'add_transaction' | 'transactions' | 'analytics' | 'budget' | 'categories' | 'settings';
@@ -30,10 +31,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // FORCE light mode initially to clear out the old cached state from previous tests
+    // FORCE light mode initially
     document.documentElement.classList.remove('dark');
     
-    // For now, always start in light mode
     if (localStorage.getItem('theme_v2_migrated') !== 'true') {
       localStorage.setItem('theme', 'light');
       localStorage.setItem('theme_v2_migrated', 'true');
@@ -60,7 +60,6 @@ export default function App() {
       }
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      // Fallback data if Supabase is not set up yet
       setTransactions([
         { id: '1', type: 'Income', amount: 4200, category: 'Income', merchant: 'Monthly Salary', note: 'Salary', date: new Date(Date.now() - 86400000).toISOString() },
         { id: '2', type: 'Expense', amount: 32.5, category: 'Food', merchant: 'Grocery Store', note: '', date: new Date().toISOString() },
@@ -72,7 +71,6 @@ export default function App() {
   };
 
   const handleAddTransaction = async (t: Omit<Transaction, 'id'>) => {
-    // Optimistic UI update
     const tempId = Math.random().toString(36).substring(7);
     const newTransaction = { ...t, id: tempId };
     setTransactions(prev => [newTransaction, ...prev]);
@@ -86,13 +84,11 @@ export default function App() {
 
       if (error) throw error;
 
-      // Update with real ID from database
       if (data) {
         setTransactions(prev => prev.map(item => item.id === tempId ? data : item));
       }
     } catch (error) {
       console.error('Error saving transaction:', error);
-      // Revert optimistic update on error
       setTransactions(prev => prev.filter(item => item.id !== tempId));
       alert('Failed to save transaction');
     }
@@ -112,7 +108,7 @@ export default function App() {
       case 'budget': return <BudgetScreen onNavigate={setCurrentView} transactions={transactions} />;
       case 'categories': return <CategoriesManagement onNavigate={setCurrentView} transactions={transactions} />;
       case 'settings': return <Settings onNavigate={setCurrentView} />;
-      case 'add_transaction': return <Dashboard onNavigate={setCurrentView} transactions={transactions} />; // AddTransaction is an overlay
+      case 'add_transaction': return <Dashboard onNavigate={setCurrentView} transactions={transactions} />;
       default: return <Dashboard onNavigate={setCurrentView} transactions={transactions} />;
     }
   };
@@ -129,8 +125,12 @@ export default function App() {
             className="absolute inset-0 overflow-y-auto bg-white dark:bg-background-dark"
           >
             {renderScreen()}
+            {/* Added padding to prevent content from being hidden behind BottomNav */}
+            <div className="h-28" />
           </motion.div>
         </AnimatePresence>
+
+        <BottomNav currentView={currentView} onNavigate={setCurrentView} />
 
         <AnimatePresence>
           {currentView === 'add_transaction' && (
