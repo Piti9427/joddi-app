@@ -5,9 +5,10 @@ const config: CapacitorConfig = {
   appName: 'JoddiApp',
   webDir: 'dist',
   ios: {
-    contentInset: 'automatic',
+    contentInset: 'always',
     allowsLinkPreview: false,
     scrollEnabled: true,
+    backgroundColor: '#ffffff',
   },
   server: {
     iosScheme: 'capacitor',

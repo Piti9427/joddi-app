@@ -8,80 +8,111 @@ interface BottomNavProps {
   canCreate?: boolean;
 }
 
-const NAV_ITEMS: Array<{ view: ViewState; label: string; icon: React.ReactNode }> = [
-  { view: 'dashboard', label: 'Home', icon: <Home size={20} /> },
-  { view: 'transactions', label: 'Activity', icon: <Receipt size={20} /> },
-  { view: 'analytics', label: 'Stats', icon: <PieChart size={20} /> },
-  { view: 'budget', label: 'Budget', icon: <Landmark size={20} /> },
-];
-
 export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomNavProps) {
   const navVisibleViews: ViewState[] = ['dashboard', 'transactions', 'analytics', 'budget', 'settings', 'categories', 'add_transaction'];
   if (!navVisibleViews.includes(currentView)) return null;
 
   return (
-    <div className="shrink-0 bg-white dark:bg-surface-dark border-t border-slate-200 dark:border-slate-700">
-      <div className="grid grid-cols-5 h-16">
-        <NavItem
-          icon={NAV_ITEMS[0].icon}
-          label={NAV_ITEMS[0].label}
-          active={currentView === NAV_ITEMS[0].view}
-          onClick={() => onNavigate(NAV_ITEMS[0].view)}
+    <div
+      style={{
+        flexShrink: 0,
+        borderTop: '1px solid #e5e7eb',
+        backgroundColor: '#ffffff',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
+    >
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr',
+          height: 60,
+          alignItems: 'center',
+        }}
+      >
+        <TabItem
+          icon={<Home size={22} strokeWidth={currentView === 'dashboard' ? 2.2 : 1.6} />}
+          label="Home"
+          active={currentView === 'dashboard'}
+          onClick={() => onNavigate('dashboard')}
         />
-        <NavItem
-          icon={NAV_ITEMS[1].icon}
-          label={NAV_ITEMS[1].label}
-          active={currentView === NAV_ITEMS[1].view}
-          onClick={() => onNavigate(NAV_ITEMS[1].view)}
+        <TabItem
+          icon={<Receipt size={22} strokeWidth={currentView === 'transactions' ? 2.2 : 1.6} />}
+          label="Activity"
+          active={currentView === 'transactions'}
+          onClick={() => onNavigate('transactions')}
         />
 
-        {/* Center FAB */}
-        <div className="flex items-start justify-center">
+        {/* Center FAB — same grid cell width as others */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <button
             onClick={() => canCreate && onNavigate('add_transaction')}
             disabled={!canCreate}
-            className={`size-12 -mt-4 rounded-full flex items-center justify-center border-4 border-white dark:border-background-dark ${
-              canCreate
-                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 active:scale-90'
-                : 'bg-slate-300 text-slate-500'
-            } transition-transform`}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              border: 'none',
+              backgroundColor: canCreate ? '#10b981' : '#d1d5db',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: canCreate ? '0 4px 14px rgba(16,185,129,0.35)' : 'none',
+              cursor: canCreate ? 'pointer' : 'default',
+            }}
           >
-            <Plus size={24} strokeWidth={2.8} />
+            <Plus size={24} strokeWidth={2.5} />
           </button>
         </div>
 
-        <NavItem
-          icon={NAV_ITEMS[2].icon}
-          label={NAV_ITEMS[2].label}
-          active={currentView === NAV_ITEMS[2].view}
-          onClick={() => onNavigate(NAV_ITEMS[2].view)}
+        <TabItem
+          icon={<PieChart size={22} strokeWidth={currentView === 'analytics' ? 2.2 : 1.6} />}
+          label="Stats"
+          active={currentView === 'analytics'}
+          onClick={() => onNavigate('analytics')}
         />
-        <NavItem
-          icon={NAV_ITEMS[3].icon}
-          label={NAV_ITEMS[3].label}
-          active={currentView === NAV_ITEMS[3].view}
-          onClick={() => onNavigate(NAV_ITEMS[3].view)}
+        <TabItem
+          icon={<Landmark size={22} strokeWidth={currentView === 'budget' ? 2.2 : 1.6} />}
+          label="Budget"
+          active={currentView === 'budget'}
+          onClick={() => onNavigate('budget')}
         />
       </div>
-      {/* Safe area spacer for iPhone home indicator */}
-      <div className="safe-bottom" />
     </div>
   );
 }
 
-function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void }) {
+function TabItem({ icon, label, active, onClick }: {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-        active ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-500'
-      }`}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 3,
+        width: '100%',
+        height: '100%',
+        border: 'none',
+        backgroundColor: 'transparent',
+        color: active ? '#10b981' : '#9ca3af',
+        cursor: 'pointer',
+        padding: 0,
+      }}
     >
       {icon}
-      <span
-        className="text-[10px] font-bold uppercase tracking-wide leading-none"
-        style={{ opacity: active ? 1 : 0.7 }}
-      >
+      <span style={{
+        fontSize: 10,
+        fontWeight: 700,
+        lineHeight: 1,
+        letterSpacing: '0.02em',
+      }}>
         {label}
       </span>
     </button>

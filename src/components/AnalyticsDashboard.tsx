@@ -111,8 +111,8 @@ export function AnalyticsDashboard({ onNavigate, transactions }: { onNavigate: (
     });
 
   return (
-    <div className="flex flex-col min-h-full pb-32 relative bg-slate-50 dark:bg-background-dark">
-      <header className="safe-top bg-white dark:bg-surface-dark px-6 pb-4 pt-3 sticky top-0 z-20 shadow-sm border-b border-border dark:border-slate-800">
+    <div className="flex flex-col min-h-full pb-6 relative bg-slate-50 dark:bg-background-dark">
+      <header className="bg-white dark:bg-surface-dark px-6 pb-4 sticky top-0 z-20 shadow-sm border-b border-border dark:border-slate-800" style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}>
         <div className="flex items-end justify-between mb-4">
           <h1 className="text-2xl font-black tracking-tight text-text-dark dark:text-white">Cashflow</h1>
           <p className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-70">{timeRange} view</p>
