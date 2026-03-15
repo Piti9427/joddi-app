@@ -161,7 +161,7 @@ export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, 
   };
 
   return (
-    <div className="min-h-full flex flex-col justify-center px-6 py-12 bg-background-light dark:bg-background-dark relative overflow-hidden">
+    <div className="min-h-full flex flex-col justify-center px-6 py-12 bg-background-light dark:bg-background-dark relative overflow-hidden" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 48px)' }}>
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -mr-32 -mt-32"></div>
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -ml-32 -mb-32"></div>
 

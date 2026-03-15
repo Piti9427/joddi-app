@@ -21,7 +21,6 @@
 }
 
 :root {
-  /* Warm & Friendly Theme (Minimalistic Creamy) */
   --primary: #10b981; 
   --primary-dark: #059669;
   --secondary: #64748b;
@@ -38,6 +37,9 @@
   --highlight: #f0fdf4;
   --input-bg: #f1f5f9;
   --border: #e2e8f0;
+
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
 }
 
 .dark {
@@ -59,22 +61,51 @@
   --border: #334155;
 }
 
-@layer base {
-  body {
-    background-color: var(--background-light);
-    color: var(--text-dark);
-    transition: background-color 0.3s, color 0.3s;
-    font-family: 'Outfit', sans-serif;
-    min-height: 100dvh;
-    overscroll-behavior-y: none;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+/* ── Base ── */
+html {
+  height: 100%;
+  overflow: hidden;
 }
 
+body {
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  background-color: var(--background-light);
+  color: var(--text-dark);
+  transition: background-color 0.3s, color 0.3s;
+  font-family: 'Outfit', sans-serif;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── iOS-specific scroll fix ── */
+.ios-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* ── Safe Area Utilities ── */
+.safe-top {
+  padding-top: var(--safe-top);
+}
+
+.safe-bottom {
+  padding-bottom: var(--safe-bottom);
+}
+
+/* ── Components ── */
 @layer components {
-  /* Glassmorphism utility */
   .glass {
     backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -86,7 +117,6 @@
     background: rgba(15, 23, 42, 0.7);
   }
 
-  /* No scrollbar utility */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -95,7 +125,6 @@
     scrollbar-width: none;
   }
 
-  /* Keypad visual haptics */
   .haptic-press:active,
   button:active {
     transform: scale(0.95);
@@ -104,7 +133,6 @@
     opacity: 0.9;
   }
 
-  /* Only apply hover effects on devices that support it (Desktop) */
   @media (hover: hover) {
     .hover-effect:hover {
       opacity: 0.8;
@@ -112,7 +140,6 @@
     }
   }
   
-  /* Smooth Slide Transitions */
   .slide-up {
     animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -123,21 +150,7 @@
   }
 }
 
-@layer utilities {
-  .safe-top {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-
-  .pb-safe-nav {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.85rem);
-  }
-}
-
-/* Custom spacing and typography refinements */
+/* ── Typography ── */
 h1, h2, h3, h4 {
   letter-spacing: -0.025em;
 }
@@ -148,12 +161,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   -webkit-appearance: none;
 }
 
-/* Tabular numbers for amounts to prevent shifting */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Custom Gradient Button */
+/* ── Buttons ── */
 .btn-primary {
   background: linear-gradient(to right, #10b981, var(--primary));
   color: #fff;
