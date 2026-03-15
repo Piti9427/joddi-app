@@ -321,6 +321,7 @@ export default function App() {
             isAuthenticated={canWrite}
             onSignOut={handleSignOut}
             onRequestSignIn={closeGuestModeAndRequireAuth}
+            userEmail={session?.user?.email}
           />
         );
       default:
