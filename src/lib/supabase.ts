@@ -74,7 +74,24 @@ export type LocalProfile = {
   updatedAt: string;
 };
 
-type StoreName = 'transactions' | 'categories' | 'budgets' | 'profile';
+export type LocalReceiptDraft = {
+  id: string;
+  localId: string;
+  imageDataUrl?: string;
+  storagePath?: string | null;
+  transactionId?: string | null;
+  parsedMerchant?: string;
+  parsedAmount?: number | null;
+  parsedDate?: string | null;
+  ocrText?: string;
+  syncStatus: SyncStatus;
+  syncError?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+};
+
+type StoreName = 'transactions' | 'categories' | 'budgets' | 'profile' | 'receipts';
 
 type TransactionPayload = {
   id: string;
@@ -100,16 +117,19 @@ export type SyncResult = SyncBucket<LocalTransaction> & {
   categories?: SyncBucket<LocalCategory>;
   budgets?: SyncBucket<LocalBudget>;
   profile?: SyncBucket<LocalProfile>;
+  receipts?: SyncBucket<LocalReceiptDraft>;
 };
 
 const DB_NAME = 'joddi-offline-store';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const TRANSACTION_STORE: StoreName = 'transactions';
 const CATEGORY_STORE: StoreName = 'categories';
 const BUDGET_STORE: StoreName = 'budgets';
 const PROFILE_STORE: StoreName = 'profile';
+const RECEIPT_STORE: StoreName = 'receipts';
 const CATEGORY_CHANGE_EVENT = 'joddi:categories-changed';
 const BUDGET_CHANGE_EVENT = 'joddi:budgets-changed';
+const RECEIPT_CHANGE_EVENT = 'joddi:receipts-changed';
 
 export const DEFAULT_CATEGORIES: LocalCategory[] = [
   buildLocalCategory(
@@ -274,6 +294,7 @@ function openOfflineDb(): Promise<IDBDatabase> {
         ensureStore(db, CATEGORY_STORE, ['syncStatus', 'name', 'type']);
         ensureStore(db, BUDGET_STORE, ['syncStatus', 'category']);
         ensureStore(db, PROFILE_STORE, ['syncStatus']);
+        ensureStore(db, RECEIPT_STORE, ['syncStatus', 'createdAt']);
       };
 
       request.onsuccess = () => resolve(request.result);
@@ -344,6 +365,12 @@ function sortCategories(categories: LocalCategory[]) {
 
 function sortBudgets(budgets: LocalBudget[]) {
   return [...budgets].filter((budget) => !budget.deletedAt).sort((a, b) => a.category.localeCompare(b.category));
+}
+
+function sortReceiptDrafts(receipts: LocalReceiptDraft[]) {
+  return [...receipts]
+    .filter((receipt) => !receipt.deletedAt)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 function buildLocalCategory(
@@ -544,6 +571,25 @@ export function createLocalBudget(
   return buildLocalBudget({ ...input, id }, 'pending');
 }
 
+export function createLocalReceiptDraft(input: Partial<LocalReceiptDraft> = {}): LocalReceiptDraft {
+  const id = newClientId();
+  const timestamp = nowIso();
+  return {
+    id,
+    localId: id,
+    imageDataUrl: input.imageDataUrl,
+    storagePath: input.storagePath ?? null,
+    transactionId: input.transactionId ?? null,
+    parsedMerchant: input.parsedMerchant,
+    parsedAmount: input.parsedAmount ?? null,
+    parsedDate: input.parsedDate ?? null,
+    ocrText: input.ocrText,
+    syncStatus: 'pending',
+    createdAt: input.createdAt ?? timestamp,
+    updatedAt: timestamp,
+  };
+}
+
 export async function getLocalTransactions(): Promise<LocalTransaction[]> {
   return sortTransactions(await getRawStore<LocalTransaction>(TRANSACTION_STORE));
 }
@@ -618,15 +664,28 @@ export async function saveLocalProfile(profile: LocalProfile) {
   await replaceStore(PROFILE_STORE, [{ ...profile, updatedAt: nowIso() }]);
 }
 
+export async function getLocalReceiptDrafts(): Promise<LocalReceiptDraft[]> {
+  return sortReceiptDrafts(await getRawStore<LocalReceiptDraft>(RECEIPT_STORE));
+}
+
+export async function saveLocalReceiptDraft(receipt: LocalReceiptDraft): Promise<LocalReceiptDraft> {
+  const next = { ...receipt, updatedAt: nowIso() };
+  await runStore(RECEIPT_STORE, 'readwrite', (store) => store.put(next));
+  dispatchLocalEvent(RECEIPT_CHANGE_EVENT);
+  return next;
+}
+
 export async function clearOfflineData(): Promise<void> {
   await Promise.all([
     replaceStore(TRANSACTION_STORE, []),
     replaceStore(CATEGORY_STORE, []),
     replaceStore(BUDGET_STORE, []),
     replaceStore(PROFILE_STORE, []),
+    replaceStore(RECEIPT_STORE, []),
   ]);
   dispatchLocalEvent(CATEGORY_CHANGE_EVENT);
   dispatchLocalEvent(BUDGET_CHANGE_EVENT);
+  dispatchLocalEvent(RECEIPT_CHANGE_EVENT);
 }
 
 export async function clearLocalTransactions(): Promise<void> {
@@ -705,6 +764,7 @@ async function syncPendingDataInternal(): Promise<SyncResult> {
   const budgets = await syncBudgets();
   const transactions = await syncTransactions();
   const profile = await syncProfile();
+  const receipts = await syncReceipts();
 
   await refreshRemoteSnapshots();
 
@@ -714,6 +774,7 @@ async function syncPendingDataInternal(): Promise<SyncResult> {
     categories,
     budgets,
     profile,
+    receipts,
   };
 }
 
@@ -856,6 +917,90 @@ async function syncProfile(): Promise<SyncBucket<LocalProfile>> {
   return { synced: [syncedProfile], failed: [] };
 }
 
+async function syncReceipts(): Promise<SyncBucket<LocalReceiptDraft>> {
+  const localReceipts = await getRawStore<LocalReceiptDraft>(RECEIPT_STORE);
+  const pending = localReceipts.filter(
+    (item) => item.syncStatus === 'pending' || item.syncStatus === 'failed' || item.deletedAt,
+  );
+  const synced: LocalReceiptDraft[] = [];
+  const failed: LocalReceiptDraft[] = [];
+
+  for (const receipt of pending) {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) break;
+
+    if (receipt.deletedAt) {
+      const { error } = await supabase.from('receipts').delete().eq('id', receipt.id);
+      if (error) {
+        const failedReceipt = {
+          ...receipt,
+          syncStatus: 'failed' as const,
+          syncError: error.message,
+          updatedAt: nowIso(),
+        };
+        await saveLocalReceiptDraft(failedReceipt);
+        failed.push(failedReceipt);
+      } else {
+        await runStore(RECEIPT_STORE, 'readwrite', (store) => store.delete(receipt.localId));
+      }
+      continue;
+    }
+
+    let storagePath = receipt.storagePath ?? null;
+    if (!storagePath && receipt.imageDataUrl) {
+      storagePath = await uploadReceiptImage(receipt.imageDataUrl);
+    }
+
+    const { data, error } = await supabase
+      .from('receipts')
+      .upsert(
+        {
+          id: receipt.id,
+          transaction_id: receipt.transactionId,
+          storage_path: storagePath,
+          ocr_text: receipt.ocrText,
+          parsed_merchant: receipt.parsedMerchant,
+          parsed_amount: receipt.parsedAmount,
+          parsed_date: receipt.parsedDate,
+          created_at: receipt.createdAt,
+        },
+        { onConflict: 'id' },
+      )
+      .select()
+      .single();
+
+    if (error) {
+      const failedReceipt = {
+        ...receipt,
+        syncStatus: 'failed' as const,
+        syncError: error.message,
+        updatedAt: nowIso(),
+      };
+      await saveLocalReceiptDraft(failedReceipt);
+      failed.push(failedReceipt);
+      continue;
+    }
+
+    const syncedReceipt: LocalReceiptDraft = {
+      id: data.id,
+      localId: receipt.localId,
+      imageDataUrl: undefined,
+      storagePath: data.storage_path ?? storagePath,
+      transactionId: data.transaction_id,
+      parsedMerchant: data.parsed_merchant,
+      parsedAmount: data.parsed_amount == null ? null : Number(data.parsed_amount),
+      parsedDate: data.parsed_date,
+      ocrText: data.ocr_text,
+      syncStatus: 'synced',
+      createdAt: data.created_at ?? receipt.createdAt,
+      updatedAt: nowIso(),
+    };
+    await saveLocalReceiptDraft(syncedReceipt);
+    synced.push(syncedReceipt);
+  }
+
+  return { synced, failed };
+}
+
 async function refreshRemoteSnapshots() {
   const [remoteCategories, remoteBudgets] = await Promise.all([
     supabase.from('categories').select('*').order('name', { ascending: true }),
@@ -879,10 +1024,11 @@ export async function fetchRemoteTransactionsIntoLocal(): Promise<LocalTransacti
 }
 
 export async function getSyncSummary() {
-  const [transactions, categories, budgets] = await Promise.all([
+  const [transactions, categories, budgets, receipts] = await Promise.all([
     getLocalTransactions(),
     getLocalCategories(),
     getLocalBudgets(),
+    getLocalReceiptDrafts(),
   ]);
 
   const countPending = (rows: { syncStatus: SyncStatus }[]) =>
@@ -892,6 +1038,7 @@ export async function getSyncSummary() {
     pendingTransactions: countPending(transactions),
     pendingCategories: countPending(categories),
     pendingBudgets: countPending(budgets),
+    pendingReceipts: countPending(receipts),
   };
 }
 
