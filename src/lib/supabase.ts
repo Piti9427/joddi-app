@@ -14,8 +14,7 @@ export type TransactionType = 'Income' | 'Expense';
 
 const configuredMode = String(import.meta.env.VITE_AUTH_ACCESS_MODE || 'strict').toLowerCase();
 
-export const authAccessMode: AuthAccessMode =
-  configuredMode === 'guest_readonly' ? 'guest_readonly' : 'strict';
+export const authAccessMode: AuthAccessMode = configuredMode === 'guest_readonly' ? 'guest_readonly' : 'strict';
 
 export const allowGuestReadOnly = authAccessMode === 'guest_readonly';
 
@@ -113,21 +112,111 @@ const CATEGORY_CHANGE_EVENT = 'joddi:categories-changed';
 const BUDGET_CHANGE_EVENT = 'joddi:budgets-changed';
 
 export const DEFAULT_CATEGORIES: LocalCategory[] = [
-  buildLocalCategory({ id: '10000000-0000-4000-8000-000000000001', name: 'Coffee', type: 'Expense', iconName: 'Coffee', color: 'text-amber-600 dark:text-amber-400' }, 'pending'),
-  buildLocalCategory({ id: '10000000-0000-4000-8000-000000000002', name: 'Food', type: 'Expense', iconName: 'Utensils', color: 'text-rose-500 dark:text-rose-400' }, 'pending'),
-  buildLocalCategory({ id: '10000000-0000-4000-8000-000000000003', name: 'Transport', type: 'Expense', iconName: 'Car', color: 'text-blue-500 dark:text-blue-400' }, 'pending'),
-  buildLocalCategory({ id: '10000000-0000-4000-8000-000000000004', name: 'Bills', type: 'Expense', iconName: 'Receipt', color: 'text-secondary dark:text-slate-400' }, 'pending'),
-  buildLocalCategory({ id: '10000000-0000-4000-8000-000000000005', name: 'Shopping', type: 'Expense', iconName: 'ShoppingBag', color: 'text-primary dark:text-primary' }, 'pending'),
-  buildLocalCategory({ id: '10000000-0000-4000-8000-000000000006', name: 'Health', type: 'Expense', iconName: 'Shield', color: 'text-emerald-500 dark:text-emerald-400' }, 'pending'),
-  buildLocalCategory({ id: '10000000-0000-4000-8000-000000000007', name: 'Income', type: 'Income', iconName: 'Banknote', color: 'text-primary dark:text-primary' }, 'pending'),
-  buildLocalCategory({ id: '10000000-0000-4000-8000-000000000008', name: 'Gifts', type: 'Income', iconName: 'Gift', color: 'text-fuchsia-500 dark:text-fuchsia-400' }, 'pending'),
-  buildLocalCategory({ id: '10000000-0000-4000-8000-000000000009', name: 'Freelance', type: 'Income', iconName: 'Banknote', color: 'text-blue-500 dark:text-blue-400' }, 'pending'),
+  buildLocalCategory(
+    {
+      id: '10000000-0000-4000-8000-000000000001',
+      name: 'Coffee',
+      type: 'Expense',
+      iconName: 'Coffee',
+      color: 'text-amber-600 dark:text-amber-400',
+    },
+    'pending',
+  ),
+  buildLocalCategory(
+    {
+      id: '10000000-0000-4000-8000-000000000002',
+      name: 'Food',
+      type: 'Expense',
+      iconName: 'Utensils',
+      color: 'text-rose-500 dark:text-rose-400',
+    },
+    'pending',
+  ),
+  buildLocalCategory(
+    {
+      id: '10000000-0000-4000-8000-000000000003',
+      name: 'Transport',
+      type: 'Expense',
+      iconName: 'Car',
+      color: 'text-blue-500 dark:text-blue-400',
+    },
+    'pending',
+  ),
+  buildLocalCategory(
+    {
+      id: '10000000-0000-4000-8000-000000000004',
+      name: 'Bills',
+      type: 'Expense',
+      iconName: 'Receipt',
+      color: 'text-secondary dark:text-slate-400',
+    },
+    'pending',
+  ),
+  buildLocalCategory(
+    {
+      id: '10000000-0000-4000-8000-000000000005',
+      name: 'Shopping',
+      type: 'Expense',
+      iconName: 'ShoppingBag',
+      color: 'text-primary dark:text-primary',
+    },
+    'pending',
+  ),
+  buildLocalCategory(
+    {
+      id: '10000000-0000-4000-8000-000000000006',
+      name: 'Health',
+      type: 'Expense',
+      iconName: 'Shield',
+      color: 'text-emerald-500 dark:text-emerald-400',
+    },
+    'pending',
+  ),
+  buildLocalCategory(
+    {
+      id: '10000000-0000-4000-8000-000000000007',
+      name: 'Income',
+      type: 'Income',
+      iconName: 'Banknote',
+      color: 'text-primary dark:text-primary',
+    },
+    'pending',
+  ),
+  buildLocalCategory(
+    {
+      id: '10000000-0000-4000-8000-000000000008',
+      name: 'Gifts',
+      type: 'Income',
+      iconName: 'Gift',
+      color: 'text-fuchsia-500 dark:text-fuchsia-400',
+    },
+    'pending',
+  ),
+  buildLocalCategory(
+    {
+      id: '10000000-0000-4000-8000-000000000009',
+      name: 'Freelance',
+      type: 'Income',
+      iconName: 'Banknote',
+      color: 'text-blue-500 dark:text-blue-400',
+    },
+    'pending',
+  ),
 ];
 
 const DEFAULT_BUDGETS: LocalBudget[] = [
-  buildLocalBudget({ id: '20000000-0000-4000-8000-000000000001', category: 'Food', limit: 200, period: 'daily', icon: '🍔' }, 'pending'),
-  buildLocalBudget({ id: '20000000-0000-4000-8000-000000000002', category: 'Shopping', limit: 3000, period: 'monthly', icon: '🛍️' }, 'pending'),
-  buildLocalBudget({ id: '20000000-0000-4000-8000-000000000003', category: 'Transport', limit: 1500, period: 'monthly', icon: '🚗' }, 'pending'),
+  buildLocalBudget(
+    { id: '20000000-0000-4000-8000-000000000001', category: 'Food', limit: 200, period: 'daily', icon: '🍔' },
+    'pending',
+  ),
+  buildLocalBudget(
+    { id: '20000000-0000-4000-8000-000000000002', category: 'Shopping', limit: 3000, period: 'monthly', icon: '🛍️' },
+    'pending',
+  ),
+  buildLocalBudget(
+    { id: '20000000-0000-4000-8000-000000000003', category: 'Transport', limit: 1500, period: 'monthly', icon: '🚗' },
+    'pending',
+  ),
 ];
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -153,12 +242,15 @@ function newClientId() {
   }
 
   return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (char) =>
-    (Number(char) ^ (Math.random() * 16) >> (Number(char) / 4)).toString(16),
+    (Number(char) ^ ((Math.random() * 16) >> (Number(char) / 4))).toString(16),
   );
 }
 
 function isUuid(value: unknown): value is string {
-  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  return (
+    typeof value === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  );
 }
 
 function ensureStore(db: IDBDatabase, storeName: StoreName, indexNames: string[] = []) {
@@ -251,9 +343,7 @@ function sortCategories(categories: LocalCategory[]) {
 }
 
 function sortBudgets(budgets: LocalBudget[]) {
-  return [...budgets]
-    .filter((budget) => !budget.deletedAt)
-    .sort((a, b) => a.category.localeCompare(b.category));
+  return [...budgets].filter((budget) => !budget.deletedAt).sort((a, b) => a.category.localeCompare(b.category));
 }
 
 function buildLocalCategory(
@@ -440,12 +530,16 @@ export function createOptimisticTransaction(transaction: Omit<Transaction, 'id'>
   );
 }
 
-export function createLocalCategory(input: Omit<LocalCategory, 'id' | 'localId' | 'syncStatus' | 'updatedAt'>): LocalCategory {
+export function createLocalCategory(
+  input: Omit<LocalCategory, 'id' | 'localId' | 'syncStatus' | 'updatedAt'>,
+): LocalCategory {
   const id = newClientId();
   return buildLocalCategory({ ...input, id }, 'pending');
 }
 
-export function createLocalBudget(input: Omit<LocalBudget, 'id' | 'localId' | 'syncStatus' | 'updatedAt'>): LocalBudget {
+export function createLocalBudget(
+  input: Omit<LocalBudget, 'id' | 'localId' | 'syncStatus' | 'updatedAt'>,
+): LocalBudget {
   const id = newClientId();
   return buildLocalBudget({ ...input, id }, 'pending');
 }
@@ -471,7 +565,10 @@ export async function getLocalCategories(): Promise<LocalCategory[]> {
 }
 
 export async function saveLocalCategories(categories: LocalCategory[]) {
-  await replaceStore(CATEGORY_STORE, categories.map((category) => ({ ...category, updatedAt: nowIso() })));
+  await replaceStore(
+    CATEGORY_STORE,
+    categories.map((category) => ({ ...category, updatedAt: nowIso() })),
+  );
   dispatchLocalEvent(CATEGORY_CHANGE_EVENT);
 }
 
@@ -495,7 +592,10 @@ export async function getLocalBudgets(): Promise<LocalBudget[]> {
 }
 
 export async function saveLocalBudgets(budgets: LocalBudget[]) {
-  await replaceStore(BUDGET_STORE, budgets.map((budget) => ({ ...budget, updatedAt: nowIso() })));
+  await replaceStore(
+    BUDGET_STORE,
+    budgets.map((budget) => ({ ...budget, updatedAt: nowIso() })),
+  );
   dispatchLocalEvent(BUDGET_CHANGE_EVENT);
 }
 
@@ -508,7 +608,9 @@ export async function deleteLocalBudget(id: string) {
 }
 
 export async function getLocalProfile(): Promise<LocalProfile | null> {
-  const result = (await runStore<LocalProfile[]>(PROFILE_STORE, 'readonly', (store) => store.getAll())) as LocalProfile[] | undefined;
+  const result = (await runStore<LocalProfile[]>(PROFILE_STORE, 'readonly', (store) => store.getAll())) as
+    | LocalProfile[]
+    | undefined;
   return result?.[0] ?? null;
 }
 
@@ -617,7 +719,9 @@ async function syncPendingDataInternal(): Promise<SyncResult> {
 
 async function syncTransactions(): Promise<SyncBucket<LocalTransaction>> {
   const localTransactions = await getRawStore<LocalTransaction>(TRANSACTION_STORE);
-  const pendingTransactions = localTransactions.filter((item) => item.syncStatus === 'pending' || item.syncStatus === 'failed');
+  const pendingTransactions = localTransactions.filter(
+    (item) => item.syncStatus === 'pending' || item.syncStatus === 'failed',
+  );
   const synced: LocalTransaction[] = [];
   const failed: LocalTransaction[] = [];
 
@@ -654,14 +758,20 @@ async function syncTransactions(): Promise<SyncBucket<LocalTransaction>> {
 
 async function syncCategories(): Promise<SyncBucket<LocalCategory>> {
   const localCategories = await getRawStore<LocalCategory>(CATEGORY_STORE);
-  const pending = localCategories.filter((item) => item.syncStatus === 'pending' || item.syncStatus === 'failed' || item.deletedAt);
+  const pending = localCategories.filter(
+    (item) => item.syncStatus === 'pending' || item.syncStatus === 'failed' || item.deletedAt,
+  );
   const synced: LocalCategory[] = [];
   const failed: LocalCategory[] = [];
 
   for (const category of pending) {
     const { data, error } = category.deletedAt
       ? await supabase.from('categories').delete().eq('id', category.id).select().maybeSingle()
-      : await supabase.from('categories').upsert(toSupabaseCategoryPayload(category), { onConflict: 'id' }).select().single();
+      : await supabase
+          .from('categories')
+          .upsert(toSupabaseCategoryPayload(category), { onConflict: 'id' })
+          .select()
+          .single();
 
     if (error) {
       const failedCategory = buildLocalCategory({ ...category, syncError: error.message }, 'failed');
@@ -682,7 +792,9 @@ async function syncCategories(): Promise<SyncBucket<LocalCategory>> {
 
 async function syncBudgets(): Promise<SyncBucket<LocalBudget>> {
   const localBudgets = await getRawStore<LocalBudget>(BUDGET_STORE);
-  const pending = localBudgets.filter((item) => item.syncStatus === 'pending' || item.syncStatus === 'failed' || item.deletedAt);
+  const pending = localBudgets.filter(
+    (item) => item.syncStatus === 'pending' || item.syncStatus === 'failed' || item.deletedAt,
+  );
   const synced: LocalBudget[] = [];
   const failed: LocalBudget[] = [];
 
@@ -756,10 +868,7 @@ async function refreshRemoteSnapshots() {
 
 export async function fetchRemoteTransactionsIntoLocal(): Promise<LocalTransaction[]> {
   const syncResult = await syncPendingTransactions();
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('*')
-    .order('date', { ascending: false });
+  const { data, error } = await supabase.from('transactions').select('*').order('date', { ascending: false });
 
   if (error) throw error;
   const merged = await replaceSyncedTransactions((data ?? []) as Transaction[]);
