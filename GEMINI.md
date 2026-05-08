@@ -63,6 +63,15 @@ The application requires the following environment variables. Use `.env.local` o
 ## Development Conventions
 
 - **Component Architecture**: The UI is divided into modular components located in the `src/components` directory (e.g., `Dashboard`, `AddTransaction`, `AnalyticsDashboard`).
+- **Clean Code (SonarQube Standards)**:
+  - **Readonly Props**: Always define component props as `Readonly<{...}>`.
+  - **Global Objects**: Use `globalThis` instead of `window` or `self`.
+  - **Type Conversion**: Use `Number.parseInt()` and `Number.parseFloat()` instead of global functions.
+  - **Complexity**: Keep Cognitive Complexity low (max 15). Extract logic into helper functions or sub-components.
+  - **React Keys**: Never use array index as a `key` for list items. Use unique data identifiers.
+  - **Ternaries**: Do not use nested ternary operators. Use helper functions or early returns.
+  - **Template Literals**: Avoid nested template literals.
+  - **Conditionals**: Avoid unnecessary negated conditions and prefer positive logic.
 - **Lazy Loading**: Components are lazy-loaded (`React.lazy`) to optimize performance and split bundles.
 - **Offline First**: The app incorporates offline caching and optimistic UI updates for transactions, managed within `src/lib/supabase.ts` and `App.tsx`.
 - **Styling**: Utility-first styling via TailwindCSS.
