@@ -127,7 +127,7 @@ export default function App() {
   useEffect(() => {
     return () => {
       if (accessMessageTimeout.current) {
-        window.clearTimeout(accessMessageTimeout.current);
+        globalThis.clearTimeout(accessMessageTimeout.current);
       }
     };
   }, []);
@@ -135,9 +135,9 @@ export default function App() {
   const showAccessMessage = (message: string) => {
     setAccessMessage(message);
     if (accessMessageTimeout.current) {
-      window.clearTimeout(accessMessageTimeout.current);
+      globalThis.clearTimeout(accessMessageTimeout.current);
     }
-    accessMessageTimeout.current = window.setTimeout(() => setAccessMessage(''), 3000);
+    accessMessageTimeout.current = globalThis.setTimeout(() => setAccessMessage(''), 3000);
   };
 
   useEffect(() => {
@@ -217,8 +217,8 @@ export default function App() {
         .catch((error) => console.error('Background sync error:', error));
     };
 
-    window.addEventListener('online', handleOnline);
-    return () => window.removeEventListener('online', handleOnline);
+    globalThis.addEventListener('online', handleOnline);
+    return () => globalThis.removeEventListener('online', handleOnline);
   }, [session, isGuestMode]);
 
   const fetchTransactions = async () => {
@@ -355,6 +355,7 @@ export default function App() {
       case 'onboarding':
         return <Onboarding onNavigate={navigate} />;
       case 'dashboard':
+      default:
         return (
           <Dashboard
             onNavigate={navigate}
@@ -385,26 +386,12 @@ export default function App() {
             userId={session?.user?.id}
           />
         );
-      default:
-        return (
-          <Dashboard
-            onNavigate={navigate}
-            transactions={transactions}
-            canCreateTransactions={canWrite}
-            readOnlyMode={false}
-          />
-        );
     }
   };
 
   return (
     <div className="h-dvh bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased flex justify-center overflow-hidden">
       <div className="w-full max-w-md bg-white dark:bg-background-dark shadow-2xl relative overflow-hidden h-full flex flex-col">
-        {/* {isGuestMode && (
-          <div className="absolute top-3 right-3 z-40 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 px-3 py-1 text-[10px] font-black uppercase tracking-wide">
-            Local only
-          </div>
-        )} */}
 
         {accessMessage && (
           <div className="absolute left-4 right-4 top-14 z-40 rounded-2xl bg-slate-900/90 text-white px-4 py-3 text-[11px] font-bold text-center shadow-lg">
