@@ -12,8 +12,9 @@
     "lint": "npm run typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "smart:check": "tsx scripts/check-smart-input.ts",
     "cap:check": "node scripts/check-capacitor-config.mjs",
-    "check": "npm ci --prefer-offline --no-audit && npm run format:check && npm run typecheck && npm run cap:check && npm run build",
+    "check": "npm ci --prefer-offline --no-audit && npm run format:check && npm run typecheck && npm run smart:check && npm run cap:check && npm run build",
     "cap:sync:ios": "npm run build && npx cap sync ios",
     "cap:open:ios": "npx cap open ios"
   },
