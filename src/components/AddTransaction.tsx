@@ -61,11 +61,11 @@ export function AddTransaction({
   onNavigate,
   onAddTransaction,
   returnView = 'dashboard',
-}: {
+}: Readonly<{
   onNavigate: (v: ViewState) => void;
   onAddTransaction: (t: Omit<Transaction, 'id'>) => void | Promise<void>;
   returnView?: ViewState;
-}) {
+}>) {
   const [amount, setAmount] = useState('0');
   const [type, setType] = useState<TransactionType>('Expense');
   const [category, setCategory] = useState('');
@@ -76,27 +76,30 @@ export function AddTransaction({
   const currencySymbol = getCurrencySymbol();
 
   useEffect(() => {
-    try {
-      const presetType = window.sessionStorage.getItem(QUICK_ADD_TYPE_KEY);
-      if (presetType === 'Expense' || presetType === 'Income') {
-        setType(presetType);
-      }
-      window.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
+    const handlePrefill = () => {
+      try {
+        const presetType = globalThis.sessionStorage.getItem(QUICK_ADD_TYPE_KEY);
+        if (presetType === 'Expense' || presetType === 'Income') {
+          setType(presetType);
+        }
+        globalThis.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
 
-      const rawPrefill = window.sessionStorage.getItem(SMART_INPUT_PREFILL_KEY);
-      if (rawPrefill) {
-        const prefill = JSON.parse(rawPrefill) as SmartInputPrefill;
-        if (prefill.type === 'Expense' || prefill.type === 'Income') setType(prefill.type);
-        if (prefill.amount && prefill.amount > 0) setAmount(String(prefill.amount));
-        if (prefill.category) setCategory(prefill.category);
-        if (prefill.note || prefill.rawText) setNote(prefill.note || prefill.rawText);
-        if (prefill.date) setDate(prefill.date.slice(0, 10));
-        if (prefill.paymentMethod) setPaymentMethod(prefill.paymentMethod);
-        window.sessionStorage.removeItem(SMART_INPUT_PREFILL_KEY);
+        const rawPrefill = globalThis.sessionStorage.getItem(SMART_INPUT_PREFILL_KEY);
+        if (rawPrefill) {
+          const prefill = JSON.parse(rawPrefill) as SmartInputPrefill;
+          if (prefill.type === 'Expense' || prefill.type === 'Income') setType(prefill.type);
+          if (prefill.amount && prefill.amount > 0) setAmount(String(prefill.amount));
+          if (prefill.category) setCategory(prefill.category);
+          if (prefill.note || prefill.rawText) setNote(prefill.note || prefill.rawText);
+          if (prefill.date) setDate(prefill.date.slice(0, 10));
+          if (prefill.paymentMethod) setPaymentMethod(prefill.paymentMethod);
+          globalThis.sessionStorage.removeItem(SMART_INPUT_PREFILL_KEY);
+        }
+      } catch {
+        // sessionStorage can fail in private browsing contexts, ignore safely.
       }
-    } catch {
-      // sessionStorage can fail in private browsing contexts, ignore safely.
-    }
+    };
+    handlePrefill();
   }, []);
 
   useEffect(() => {
@@ -109,8 +112,8 @@ export function AddTransaction({
     };
 
     loadCategories();
-    window.addEventListener('joddi:categories-changed', loadCategories);
-    return () => window.removeEventListener('joddi:categories-changed', loadCategories);
+    globalThis.addEventListener('joddi:categories-changed', loadCategories);
+    return () => globalThis.removeEventListener('joddi:categories-changed', loadCategories);
   }, []);
 
   const filteredCategories = userCategories.filter((cat) => cat.type === type);
@@ -139,7 +142,7 @@ export function AddTransaction({
   };
 
   const handleSave = async () => {
-    const val = parseFloat(amount);
+    const val = Number.parseFloat(amount);
     if (val === 0) return;
 
     await onAddTransaction({
@@ -152,7 +155,7 @@ export function AddTransaction({
       paymentMethod,
     });
     try {
-      window.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
+      globalThis.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
     } catch {
       // Ignore non-critical storage errors.
     }
@@ -161,7 +164,6 @@ export function AddTransaction({
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-background-dark rounded-t-[3rem] shadow-2xl overflow-hidden border-t border-border dark:border-slate-800 animate-in slide-in-from-bottom-full duration-500">
-      {/* Dynamic Background Header */}
       <div
         className={`pt-6 px-4 pb-12 safe-top transition-colors duration-500 ${type === 'Expense' ? 'bg-expense/10 dark:bg-expense/20' : 'bg-primary/10 dark:bg-primary/20'}`}
       >
@@ -169,7 +171,7 @@ export function AddTransaction({
           <button
             onClick={() => {
               try {
-                window.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
+                globalThis.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
               } catch {
                 // Ignore non-critical storage errors.
               }
@@ -193,7 +195,7 @@ export function AddTransaction({
               รายรับ
             </button>
           </div>
-          <div className="size-10" /> {/* Spacer */}
+          <div className="size-10" />
         </div>
 
         <div className="text-center group">
@@ -209,9 +211,7 @@ export function AddTransaction({
         </div>
       </div>
 
-      {/* Main Form Fields */}
       <div className="flex-1 overflow-y-auto px-6 space-y-8 -mt-6 rounded-t-[3rem] bg-white dark:bg-background-dark pt-10">
-        {/* Categories Horizontal Scroll */}
         <section>
           <div className="flex justify-between items-center mb-4 px-2">
             <p className="text-[11px] text-secondary font-semibold">เลือกหมวดหมู่</p>
@@ -236,7 +236,6 @@ export function AddTransaction({
           </div>
         </section>
 
-        {/* Date & Note & Payment Method */}
         <div className="grid grid-cols-1 gap-6 pb-20">
           <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-3xl group border border-transparent focus-within:border-primary/20 transition-all">
             <Calendar className="text-secondary group-focus-within:text-primary transition-colors" size={20} />
@@ -305,7 +304,7 @@ export function AddTransaction({
           </div>
           <button
             onClick={handleSave}
-            disabled={parseFloat(amount) === 0}
+            disabled={Number.parseFloat(amount) === 0}
             className={`flex items-center justify-center rounded-2xl transition-all shadow-lg active:scale-95 disabled:opacity-30 ${type === 'Expense' ? 'bg-expense text-white shadow-expense/20' : 'bg-primary text-white shadow-primary/20'}`}
           >
             <Check size={32} />
@@ -345,7 +344,11 @@ function CategoryChip({ icon, label, color, selected, onClick }: any) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl transition-all border-2 whitespace-nowrap ${selected ? `bg-white dark:bg-slate-800 border-primary shadow-md scale-110 z-10 ${color}` : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary hover:border-slate-100'}`}
+      className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl transition-all border-2 whitespace-nowrap ${
+        selected
+          ? `bg-white dark:bg-slate-800 border-primary shadow-md scale-110 z-10 ${color}`
+          : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary hover:border-slate-100'
+      }`}
     >
       <span className={selected ? color : 'text-inherit opacity-60'}>{getIcon()}</span>
       <span className="text-[13px] font-extrabold">{label}</span>

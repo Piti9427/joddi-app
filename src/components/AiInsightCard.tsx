@@ -25,15 +25,19 @@ const TONE_STYLES = {
   },
 } as const;
 
-export function AiInsightCard({ insight, onNavigate }: { insight: AiInsight; onNavigate: (view: ViewState) => void }) {
+export function AiInsightCard({
+  insight,
+  onNavigate,
+}: Readonly<{ insight: AiInsight; onNavigate: (view: ViewState) => void }>) {
   const tone = TONE_STYLES[insight.tone];
-  const targetView: ViewState = insight.actionLabel.includes('งบ')
-    ? 'budget'
-    : insight.actionLabel.includes('หมวด')
-      ? 'categories'
-      : insight.actionLabel.includes('วิเคราะห์')
-        ? 'analytics'
-        : 'add_transaction';
+
+  const getTargetView = (label: string): ViewState => {
+    if (label.includes('งบ')) return 'budget';
+    if (label.includes('หมวด')) return 'categories';
+    if (label.includes('วิเคราะห์')) return 'analytics';
+    return 'add_transaction';
+  };
+  const targetView = getTargetView(insight.actionLabel);
 
   return (
     <section className="px-4 pt-3">

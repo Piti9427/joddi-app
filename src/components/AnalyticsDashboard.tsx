@@ -28,10 +28,10 @@ const CATEGORY_COLORS = [
 export function AnalyticsDashboard({
   onNavigate,
   transactions,
-}: {
+}: Readonly<{
   onNavigate: (v: ViewState) => void;
   transactions: Transaction[];
-}) {
+}>) {
   const [timeRange, setTimeRange] = useState<'Week' | 'Month' | 'Year'>('Month');
   const [chartType, setChartType] = useState<ChartType>('Bar');
 
@@ -336,7 +336,10 @@ export function AnalyticsDashboard({
 
 /* ── Donut Chart Component ── */
 
-function DonutChart({ data, total }: { data: { name: string; amount: number; color: string }[]; total: number }) {
+function DonutChart({
+  data,
+  total,
+}: Readonly<{ data: { name: string; amount: number; color: string }[]; total: number }>) {
   const size = 120;
   const strokeWidth = 18;
   const radius = (size - strokeWidth) / 2;
@@ -417,10 +420,10 @@ function BarChart({ entries }: any) {
   return (
     <div className="relative h-full flex flex-col pt-2">
       <div className="absolute inset-0 flex flex-col justify-between pb-6 pointer-events-none z-0">
-        {ticks.map((tick, i) => (
+        {ticks.map((tick) => (
           <div
-            key={i}
-            className={`flex-1 border-t border-slate-100 dark:border-slate-800 flex items-start ${i === 2 ? 'border-none' : ''}`}
+            key={tick}
+            className={`flex-1 border-t border-slate-100 dark:border-slate-800 flex items-start ${tick === 0 ? 'border-none' : ''}`}
           >
             <span className="text-[9px] text-secondary opacity-40 font-bold -mt-3 bg-white dark:bg-surface-dark px-1">
               {formatYAxis(tick)}
@@ -430,8 +433,8 @@ function BarChart({ entries }: any) {
       </div>
 
       <div className="flex-1 flex justify-between items-end pb-6 z-10 px-2 sm:px-4">
-        {entries.map(([key, val]: any, i: number) => (
-          <div key={i} className="flex flex-col items-center h-full w-full justify-end group">
+        {entries.map(([key, val]: any) => (
+          <div key={key} className="flex flex-col items-center h-full w-full justify-end group">
             <div className="flex items-end justify-center w-full h-full pb-0 gap-0.5 sm:gap-1">
               <motion.div
                 initial={{ height: 0 }}
@@ -453,8 +456,8 @@ function BarChart({ entries }: any) {
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 sm:px-4">
-        {entries.map(([key]: any, i: number) => (
-          <div key={i} className="flex-1 text-center">
+        {entries.map(([key]: any) => (
+          <div key={key} className="flex-1 text-center">
             <span className="text-[9px] font-bold text-secondary uppercase opacity-60">
               {key.length > 3 ? key.substring(0, 3) : key}
             </span>
@@ -488,7 +491,7 @@ function TrendChart({ entries }: any) {
       const p0 = i > 0 ? points[i - 1] : points[0];
       const p1 = points[i];
       const p2 = points[i + 1];
-      const p3 = i != points.length - 2 ? points[i + 2] : p2;
+      const p3 = i === points.length - 2 ? p2 : points[i + 2];
 
       const cp1x = p1.x + (p2.x - p0.x) / 6;
       const cp1y = p1.y + (p2.y - p0.y) / 6;
@@ -505,10 +508,10 @@ function TrendChart({ entries }: any) {
   return (
     <div className="relative h-full flex flex-col pt-2">
       <div className="absolute inset-0 flex flex-col justify-between pb-6 pointer-events-none z-0">
-        {ticks.map((tick, i) => (
+        {ticks.map((tick) => (
           <div
-            key={i}
-            className={`flex-1 border-t border-slate-100 dark:border-slate-800 flex items-start ${i === 2 ? 'border-none' : ''}`}
+            key={tick}
+            className={`flex-1 border-t border-slate-100 dark:border-slate-800 flex items-start ${tick === 0 ? 'border-none' : ''}`}
           >
             <span className="text-[9px] text-secondary opacity-40 font-bold -mt-3 bg-white dark:bg-surface-dark px-1">
               {formatYAxis(tick)}
@@ -560,8 +563,8 @@ function TrendChart({ entries }: any) {
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 sm:px-4">
-        {entries.map(([key]: any, i: number) => (
-          <div key={i} className="flex-1 text-center">
+        {entries.map(([key]: any) => (
+          <div key={key} className="flex-1 text-center">
             <span className="text-[9px] font-bold text-secondary uppercase opacity-60">
               {key.length > 3 ? key.substring(0, 3) : key}
             </span>
