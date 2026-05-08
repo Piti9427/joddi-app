@@ -354,16 +354,6 @@ export default function App() {
     switch (contentView) {
       case 'onboarding':
         return <Onboarding onNavigate={navigate} />;
-      case 'dashboard':
-      default:
-        return (
-          <Dashboard
-            onNavigate={navigate}
-            transactions={transactions}
-            canCreateTransactions={canWrite}
-            readOnlyMode={false}
-          />
-        );
       case 'review_receipt':
         return <ReviewReceipt onNavigate={navigate} onAddTransaction={handleAddTransaction} />;
       case 'transactions':
@@ -384,6 +374,16 @@ export default function App() {
             onClearLocalData={handleClearLocalData}
             userEmail={session?.user?.email}
             userId={session?.user?.id}
+          />
+        );
+      case 'dashboard':
+      default:
+        return (
+          <Dashboard
+            onNavigate={navigate}
+            transactions={transactions}
+            canCreateTransactions={canWrite}
+            readOnlyMode={false}
           />
         );
     }
