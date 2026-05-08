@@ -3,16 +3,15 @@ import { Target, Plus, Trash2, X, ChevronDown } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import { formatMoney } from '../lib/formatters';
 import { motion, AnimatePresence } from 'motion/react';
-
-type BudgetPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
-
-interface BudgetItem {
-  id: string;
-  category: string;
-  limit: number;
-  period: BudgetPeriod;
-  icon: string;
-}
+import {
+  createLocalBudget,
+  deleteLocalBudget,
+  getLocalBudgets,
+  saveLocalBudgets,
+  syncAllOfflineData,
+  type BudgetPeriod,
+  type LocalBudget,
+} from '../lib/supabase';
 
 const PERIOD_LABELS: Record<BudgetPeriod, string> = {
   daily: 'Daily',
@@ -27,39 +26,39 @@ const DEFAULT_ICONS: Record<string, string> = {
   Health: '🏥', Utilities: '💡', Rent: '🏠', Travel: '✈️',
 };
 
-const STORAGE_KEY = 'joddi_budgets';
-
-function loadBudgets(): BudgetItem[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return [
-    { id: '1', category: 'Food', limit: 200, period: 'daily', icon: '🍔' },
-    { id: '2', category: 'Shopping', limit: 3000, period: 'monthly', icon: '🛍️' },
-    { id: '3', category: 'Transport', limit: 1500, period: 'monthly', icon: '🚗' },
-    { id: '4', category: 'Entertainment', limit: 800, period: 'monthly', icon: '🍿' },
-  ];
-}
-
-function saveBudgets(budgets: BudgetItem[]) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(budgets)); } catch {}
-}
-
 export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void, transactions: Transaction[] }) {
-  const [budgets, setBudgets] = useState<BudgetItem[]>(loadBudgets);
+  const [budgets, setBudgets] = useState<LocalBudget[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewPeriod, setViewPeriod] = useState<BudgetPeriod>('monthly');
 
-  const persist = (next: BudgetItem[]) => { setBudgets(next); saveBudgets(next); };
+  React.useEffect(() => {
+    const load = async () => {
+      try {
+        setBudgets(await getLocalBudgets());
+      } catch (error) {
+        console.error('Failed to load budgets', error);
+      }
+    };
+    load();
+    window.addEventListener('joddi:budgets-changed', load);
+    return () => window.removeEventListener('joddi:budgets-changed', load);
+  }, []);
 
-  const removeBudget = (id: string) => {
-    persist(budgets.filter(b => b.id !== id));
+  const persist = async (next: LocalBudget[]) => {
+    setBudgets(next);
+    await saveLocalBudgets(next);
+    syncAllOfflineData().catch((error) => console.error('Budget sync error:', error));
   };
 
-  const addBudget = (item: Omit<BudgetItem, 'id'>) => {
-    const newItem: BudgetItem = { ...item, id: Date.now().toString(36) };
-    persist([...budgets, newItem]);
+  const removeBudget = async (id: string) => {
+    await deleteLocalBudget(id);
+    setBudgets(await getLocalBudgets());
+    syncAllOfflineData().catch((error) => console.error('Budget delete sync error:', error));
+  };
+
+  const addBudget = async (item: Omit<LocalBudget, 'id' | 'localId' | 'syncStatus' | 'updatedAt'>) => {
+    const newItem = createLocalBudget(item);
+    await persist([...budgets, newItem]);
     setShowAddForm(false);
   };
 
@@ -219,6 +218,7 @@ export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: Vie
                     originalLimit={cat.limit}
                     originalPeriod={cat.period}
                     icon={cat.icon}
+                    syncStatus={cat.syncStatus}
                     warning={cat.warning}
                     over={cat.over}
                     percent={cat.percent}
@@ -246,9 +246,9 @@ export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: Vie
 }
 
 /* ── Budget Card ── */
-function BudgetCard({ label, spent, limit, originalLimit, originalPeriod, icon, warning, over, percent, onDelete }: {
+function BudgetCard({ label, spent, limit, originalLimit, originalPeriod, icon, syncStatus, warning, over, percent, onDelete }: {
   label: string; spent: number; limit: number; originalLimit: number; originalPeriod: BudgetPeriod; icon: string;
-  warning: boolean; over: boolean; percent: number; onDelete: () => void;
+  syncStatus: string; warning: boolean; over: boolean; percent: number; onDelete: () => void;
 }) {
   const fmt = (v: number) => formatMoney(v, { maximumFractionDigits: 0 });
 
@@ -281,7 +281,7 @@ function BudgetCard({ label, spent, limit, originalLimit, originalPeriod, icon, 
                 {statusText}
               </span>
               <span className="text-[9px] text-secondary font-bold opacity-60">
-                ({fmt(originalLimit)}/{PERIOD_LABELS[originalPeriod].toLowerCase()})
+                ({fmt(originalLimit)}/{PERIOD_LABELS[originalPeriod].toLowerCase()}){syncStatus !== 'synced' ? ` · ${syncStatus}` : ''}
               </span>
             </div>
           </div>
@@ -313,7 +313,7 @@ function BudgetCard({ label, spent, limit, originalLimit, originalPeriod, icon, 
 /* ── Add Budget Modal ── */
 function AddBudgetModal({ onClose, onAdd, existingCategories }: {
   onClose: () => void;
-  onAdd: (item: Omit<BudgetItem, 'id'>) => void;
+  onAdd: (item: Omit<LocalBudget, 'id' | 'localId' | 'syncStatus' | 'updatedAt'>) => void;
   existingCategories: string[];
 }) {
   const [category, setCategory] = useState('');

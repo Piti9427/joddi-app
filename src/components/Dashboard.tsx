@@ -210,9 +210,10 @@ export function Dashboard({
         </motion.div>
       </section>
 
-      <section className="px-4 grid grid-cols-3 gap-2">
+      <section className="px-4 grid grid-cols-4 gap-2">
         <QuickActionCard icon={<Plus size={18} />} label="Expense" onClick={() => openQuickAdd('Expense')} disabled={!canCreateTransactions} />
         <QuickActionCard icon={<TrendingUp size={18} />} label="Income" onClick={() => openQuickAdd('Income')} disabled={!canCreateTransactions} />
+        <QuickActionCard icon={<Receipt size={18} />} label="Receipt" onClick={() => onNavigate('review_receipt')} disabled={!canCreateTransactions} />
         <QuickActionCard icon={<PieChart size={18} />} label="Analytics" onClick={() => onNavigate('analytics')} />
       </section>
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Check, Coffee, Utensils, Car, Receipt, ShoppingBag, Banknote, Gift, Shield, ChevronDown, Calendar, Tag, Plus, CreditCard, Wallet, Smartphone } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
-import { Category } from './CategoriesManagement';
 import { getCurrencySymbol } from '../lib/formatters';
+import { getLocalCategories, type LocalCategory } from '../lib/supabase';
 
 const PAYMENT_METHODS = [
   { id: 'cash', label: 'Cash', icon: <Banknote size={16} /> },
@@ -40,7 +40,7 @@ export function AddTransaction({ onNavigate, onAddTransaction, returnView = 'das
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentMethod, setPaymentMethod] = useState('cash');
-  const [userCategories, setUserCategories] = useState<Category[]>([]);
+  const [userCategories, setUserCategories] = useState<LocalCategory[]>([]);
   const currencySymbol = getCurrencySymbol();
 
   useEffect(() => {
@@ -56,33 +56,17 @@ export function AddTransaction({ onNavigate, onAddTransaction, returnView = 'das
   }, []);
 
   useEffect(() => {
-    const loadCategories = () => {
-      const saved = localStorage.getItem('user_categories');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setUserCategories(parsed);
-            return;
-          }
-        } catch (e) {
-          console.error("Failed to parse categories", e);
-        }
+    const loadCategories = async () => {
+      try {
+        setUserCategories(await getLocalCategories());
+      } catch (e) {
+        console.error('Failed to load categories', e);
       }
-      
-      const defaultCategories: Category[] = [
-        { id: '1', name: 'Food', type: 'Expense', iconName: 'Utensils', color: 'text-rose-500' },
-        { id: '2', name: 'Transport', type: 'Expense', iconName: 'Car', color: 'text-blue-500' },
-        { id: '3', name: 'Coffee', type: 'Expense', iconName: 'Coffee', color: 'text-amber-600' },
-        { id: '4', name: 'Salary', type: 'Income', iconName: 'Banknote', color: 'text-primary' },
-      ];
-      setUserCategories(defaultCategories);
-      localStorage.setItem('user_categories', JSON.stringify(defaultCategories));
     };
 
     loadCategories();
-    window.addEventListener('storage', loadCategories);
-    return () => window.removeEventListener('storage', loadCategories);
+    window.addEventListener('joddi:categories-changed', loadCategories);
+    return () => window.removeEventListener('joddi:categories-changed', loadCategories);
   }, []);
 
   const filteredCategories = userCategories.filter(cat => cat.type === type);
@@ -120,7 +104,8 @@ export function AddTransaction({ onNavigate, onAddTransaction, returnView = 'das
       category: category || (type === 'Expense' ? 'Misc' : 'Income'),
       note,
       date,
-      merchant: note || category
+      merchant: note || category,
+      paymentMethod,
     });
     try {
       window.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);

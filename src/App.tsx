@@ -5,8 +5,8 @@ import {
   allowGuestReadOnly,
   clearLocalTransactions,
   createOptimisticTransaction,
+  fetchRemoteTransactionsIntoLocal,
   getLocalTransactions,
-  replaceSyncedTransactions,
   saveLocalTransaction,
   supabase,
   syncPendingTransactions,
@@ -33,10 +33,13 @@ export interface Transaction {
   note: string;
   date: string;
   merchant?: string;
+  paymentMethod?: string;
   localId?: string;
   syncStatus?: TransactionSyncStatus;
   syncError?: string;
+  createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string;
 }
 
 const LOCAL_WRITE_BLOCKED_MESSAGE = 'ยังไม่พร้อมบันทึกข้อมูลในเครื่อง กรุณาลองใหม่อีกครั้ง';
@@ -221,19 +224,8 @@ export default function App() {
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      const syncResult = await syncPendingTransactions();
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .order('date', { ascending: false });
-
-      if (error) throw error;
-      const mergedTransactions = await replaceSyncedTransactions((data ?? []) as Transaction[]);
+      const mergedTransactions = await fetchRemoteTransactionsIntoLocal();
       setTransactions(mergedTransactions);
-
-      if (syncResult.failed.length > 0) {
-        showAccessMessage('มีรายการบางส่วนยัง sync ไม่สำเร็จ ระบบจะลองใหม่เมื่อพร้อม');
-      }
     } catch (error) {
       console.error('Error fetching transactions:', error);
       const localTransactions = await getLocalTransactions().catch(() => []);
@@ -306,6 +298,12 @@ export default function App() {
     setTransactions([]);
     setCurrentView('dashboard');
     setBaseView('dashboard');
+  };
+
+  const handleClearLocalData = async () => {
+    await clearLocalTransactions();
+    setTransactions([]);
+    showAccessMessage('ล้างข้อมูลในเครื่องเรียบร้อย');
   };
 
   if (loading) {
@@ -382,7 +380,9 @@ export default function App() {
             isAuthenticated={isAuthenticated}
             onSignOut={handleSignOut}
             onRequestSignIn={closeGuestModeAndRequireAuth}
+            onClearLocalData={handleClearLocalData}
             userEmail={session?.user?.email}
+            userId={session?.user?.id}
           />
         );
       default:

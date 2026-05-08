@@ -1,28 +1,16 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Coffee, Utensils, Car, Receipt, ShoppingBag, Banknote, Gift, Shield, MoreHorizontal, X, Trash, Check, Tag } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
+import {
+  createLocalCategory,
+  deleteLocalCategory,
+  getLocalCategories,
+  saveLocalCategories,
+  syncAllOfflineData,
+  type LocalCategory,
+} from '../lib/supabase';
 
-export interface Category {
-  id: string;
-  name: string;
-  type: 'Expense' | 'Income';
-  iconName: string;
-  color: string;
-}
-
-const DEFAULT_CATEGORIES: Category[] = [
-  { id: '1', name: 'Coffee', type: 'Expense', iconName: 'Coffee', color: 'text-amber-600 dark:text-amber-400' },
-  { id: '2', name: 'Food', type: 'Expense', iconName: 'Utensils', color: 'text-rose-500 dark:text-rose-400' },
-  { id: '3', name: 'Transport', type: 'Expense', iconName: 'Car', color: 'text-blue-500 dark:text-blue-400' },
-  { id: '4', name: 'Bills', type: 'Expense', iconName: 'Receipt', color: 'text-secondary dark:text-slate-400' },
-  { id: '5', name: 'Shopping', type: 'Expense', iconName: 'ShoppingBag', color: 'text-primary dark:text-primary' },
-  { id: '6', name: 'Lifestyle', type: 'Expense', iconName: 'Shield', color: 'text-indigo-500 dark:text-indigo-400' },
-  { id: '7', name: 'Entertainment', type: 'Expense', iconName: 'Tag', color: 'text-pink-500 dark:text-pink-400' },
-  { id: '8', name: 'Health', type: 'Expense', iconName: 'Shield', color: 'text-emerald-500 dark:text-emerald-400' },
-  { id: '9', name: 'Income', type: 'Income', iconName: 'Banknote', color: 'text-grass dark:text-grass/80' },
-  { id: '10', name: 'Gifts', type: 'Income', iconName: 'Gift', color: 'text-fuchsia-500 dark:text-fuchsia-400' },
-  { id: '11', name: 'Freelance', type: 'Income', iconName: 'Banknote', color: 'text-blue-500 dark:text-blue-400' },
-];
+export type Category = LocalCategory;
 
 const ICONS: Record<string, React.ReactNode> = {
   Coffee: <Coffee />,
@@ -60,7 +48,7 @@ const COLOR_OPTIONS = [
 ];
 
 export function CategoriesManagement({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void, transactions: Transaction[] }) {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<LocalCategory[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   
   // Edit states
@@ -76,30 +64,27 @@ export function CategoriesManagement({ onNavigate, transactions }: { onNavigate:
   const [newIcon, setNewIcon] = useState('Receipt');
   const [newColor, setNewColor] = useState(COLOR_OPTIONS[0].value);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('user_categories');
+  const loadCategories = async () => {
     try {
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setCategories(parsed);
-          return;
-        }
-      }
+      setCategories(await getLocalCategories());
     } catch (e) {
-      console.error("Failed to parse", e);
+      console.error('Failed to load categories', e);
     }
-    setCategories(DEFAULT_CATEGORIES);
-    localStorage.setItem('user_categories', JSON.stringify(DEFAULT_CATEGORIES));
-  }, []);
-
-  const saveCategories = (cats: Category[]) => {
-    setCategories(cats);
-    localStorage.setItem('user_categories', JSON.stringify(cats));
-    window.dispatchEvent(new Event('storage'));
   };
 
-  const handleEdit = (cat: Category) => {
+  useEffect(() => {
+    loadCategories();
+    window.addEventListener('joddi:categories-changed', loadCategories);
+    return () => window.removeEventListener('joddi:categories-changed', loadCategories);
+  }, []);
+
+  const saveCategories = async (cats: LocalCategory[]) => {
+    setCategories(cats);
+    await saveLocalCategories(cats);
+    syncAllOfflineData().catch((error) => console.error('Category sync error:', error));
+  };
+
+  const handleEdit = (cat: LocalCategory) => {
     setEditingId(cat.id);
     setEditName(cat.name);
     setEditIcon(cat.iconName);
@@ -108,31 +93,31 @@ export function CategoriesManagement({ onNavigate, transactions }: { onNavigate:
     setShowAddForm(false);
   };
 
-  const handleSave = (id: string) => {
+  const handleSave = async (id: string) => {
     if (!editName.trim()) return;
-    const updated = categories.map(c => c.id === id ? { ...c, name: editName.trim(), iconName: editIcon, color: editColor, type: editType } : c);
-    saveCategories(updated);
+    const updated = categories.map(c => c.id === id ? { ...c, name: editName.trim(), iconName: editIcon, color: editColor, type: editType, syncStatus: 'pending' as const } : c);
+    await saveCategories(updated);
     setEditingId(null);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Delete this category?')) {
-      const updated = categories.filter(c => c.id !== id);
-      saveCategories(updated);
+      await deleteLocalCategory(id);
+      await loadCategories();
+      syncAllOfflineData().catch((error) => console.error('Category delete sync error:', error));
       setEditingId(null);
     }
   };
 
-  const handleAddNew = () => {
+  const handleAddNew = async () => {
     if (!newName.trim()) return;
-    const newCat: Category = {
-      id: Math.random().toString(36).substring(2, 9),
+    const newCat = createLocalCategory({
       name: newName.trim(),
       type: newType,
       iconName: newIcon,
       color: newColor
-    };
-    saveCategories([...categories, newCat]);
+    });
+    await saveCategories([...categories, newCat]);
     setNewName('');
     setShowAddForm(false);
   };
@@ -327,7 +312,9 @@ function CategoryRow({ category, count, editing, editName, editIcon, editColor, 
       <div className="flex-1 flex justify-between items-center">
         <div>
           <p className="text-text-dark dark:text-slate-100 font-extrabold text-[15px]">{category.name}</p>
-          <p className="text-text-secondary dark:text-slate-500 text-[11px] font-bold uppercase tracking-tight mt-0.5">{count} transactions</p>
+          <p className="text-text-secondary dark:text-slate-500 text-[11px] font-bold uppercase tracking-tight mt-0.5">
+            {count} transactions{category.syncStatus !== 'synced' ? ` · ${category.syncStatus}` : ''}
+          </p>
         </div>
         <div className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
           <MoreHorizontal size={20} />
