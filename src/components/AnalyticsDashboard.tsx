@@ -6,6 +6,11 @@ import { getLocalAiInsight } from '../lib/aiInsights';
 import { formatMoney } from '../lib/formatters';
 
 type ChartType = 'Bar' | 'Line';
+const RANGE_LABELS = {
+  Week: 'สัปดาห์',
+  Month: 'เดือน',
+  Year: 'ปี',
+} as const;
 
 const CATEGORY_COLORS = [
   '#10b981',
@@ -44,17 +49,30 @@ export function AnalyticsDashboard({
         for (let i = 6; i >= 0; i--) {
           const d = new Date();
           d.setDate(d.getDate() - i);
-          const key = d.toLocaleDateString('en-US', { weekday: 'short' });
+          const key = d.toLocaleDateString('th-TH', { weekday: 'short' });
           orderedKeys.push(key);
           chartMap[key] = { income: 0, expense: 0 };
         }
       } else if (timeRange === 'Month') {
-        ['W1', 'W2', 'W3', 'W4', 'W5'].forEach((w) => {
+        ['สัปดาห์ 1', 'สัปดาห์ 2', 'สัปดาห์ 3', 'สัปดาห์ 4', 'สัปดาห์ 5'].forEach((w) => {
           orderedKeys.push(w);
           chartMap[w] = { income: 0, expense: 0 };
         });
       } else if (timeRange === 'Year') {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const months = [
+          'ม.ค.',
+          'ก.พ.',
+          'มี.ค.',
+          'เม.ย.',
+          'พ.ค.',
+          'มิ.ย.',
+          'ก.ค.',
+          'ส.ค.',
+          'ก.ย.',
+          'ต.ค.',
+          'พ.ย.',
+          'ธ.ค.',
+        ];
         months.forEach((m) => {
           orderedKeys.push(m);
           chartMap[m] = { income: 0, expense: 0 };
@@ -89,13 +107,13 @@ export function AnalyticsDashboard({
         const d = new Date(t.date);
 
         if (timeRange === 'Week') {
-          key = d.toLocaleDateString('en-US', { weekday: 'short' });
+          key = d.toLocaleDateString('th-TH', { weekday: 'short' });
         } else if (timeRange === 'Month') {
           const dayOfMonth = d.getDate();
           const weekNum = Math.ceil(dayOfMonth / 7);
-          key = `W${Math.min(weekNum, 5)}`;
+          key = `สัปดาห์ ${Math.min(weekNum, 5)}`;
         } else if (timeRange === 'Year') {
-          key = d.toLocaleDateString('en-US', { month: 'short' });
+          key = d.toLocaleDateString('th-TH', { month: 'short' });
         }
 
         if (chartMap[key]) {
@@ -128,14 +146,14 @@ export function AnalyticsDashboard({
     });
 
   return (
-    <div className="flex flex-col min-h-full pb-6 relative bg-slate-50 dark:bg-background-dark">
+    <div className="flex flex-col min-h-full pb-5 relative bg-slate-50 dark:bg-background-dark">
       <header
-        className="bg-white dark:bg-surface-dark px-6 pb-4 sticky top-0 z-20 shadow-sm border-b border-border dark:border-slate-800"
+        className="bg-white dark:bg-surface-dark px-4 pb-4 sticky top-0 z-20 shadow-sm border-b border-border dark:border-slate-800"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
         <div className="flex items-end justify-between mb-4">
-          <h1 className="text-2xl font-black tracking-tight text-text-dark dark:text-white">Cashflow</h1>
-          <p className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-70">{timeRange} view</p>
+          <h1 className="text-2xl font-black text-text-dark dark:text-white">วิเคราะห์เงินสด</h1>
+          <p className="text-[11px] font-semibold text-secondary opacity-80">มุมมอง{RANGE_LABELS[timeRange]}</p>
         </div>
 
         <div className="grid grid-cols-3 bg-slate-100 dark:bg-slate-900 rounded-xl p-1">
@@ -145,7 +163,7 @@ export function AnalyticsDashboard({
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
-                className={`relative py-1.5 text-xs font-black uppercase tracking-widest transition-all ${active ? 'text-text-dark dark:text-slate-900' : 'text-secondary opacity-70'}`}
+                className={`relative py-1.5 text-xs font-extrabold transition-all ${active ? 'text-text-dark dark:text-slate-900' : 'text-secondary opacity-70'}`}
               >
                 {active && (
                   <motion.span
@@ -154,40 +172,42 @@ export function AnalyticsDashboard({
                     transition={{ type: 'spring', bounce: 0.2, duration: 0.45 }}
                   />
                 )}
-                <span className="relative z-10">{range}</span>
+                <span className="relative z-10">{RANGE_LABELS[range]}</span>
               </button>
             );
           })}
         </div>
       </header>
 
-      <main className="p-4 space-y-6 mt-2">
-        <section className="ai-surface bg-white dark:bg-surface-dark rounded-[2rem] p-5 shadow-sm border border-border dark:border-slate-800">
+      <main className="p-4 space-y-4 mt-1">
+        <section className="ai-surface bg-white dark:bg-surface-dark rounded-[1.5rem] p-4 shadow-sm border border-border dark:border-slate-800">
           <div className="flex items-start gap-3">
             <div className="size-11 rounded-2xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center shrink-0">
               <BrainCircuit size={21} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-1 text-[9px] font-black uppercase tracking-widest">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-1 text-[10px] font-extrabold">
                   <Sparkles size={11} />
-                  AI Coach
+                  ผู้ช่วย AI
                 </span>
-                <span className="text-[10px] font-black text-secondary">
-                  {Math.round(aiInsight.confidence * 100)}% signal
+                <span className="text-[10px] font-bold text-secondary">
+                  สัญญาณ {Math.round(aiInsight.confidence * 100)}%
                 </span>
               </div>
-              <h2 className="text-base font-black text-text-dark dark:text-white leading-tight">{aiInsight.title}</h2>
-              <p className="text-xs font-semibold text-secondary leading-relaxed mt-1">{aiInsight.summary}</p>
+              <h2 className="text-base font-extrabold text-text-dark dark:text-white leading-snug">
+                {aiInsight.title}
+              </h2>
+              <p className="text-xs font-medium text-secondary leading-relaxed mt-1">{aiInsight.summary}</p>
             </div>
           </div>
         </section>
 
         {/* Net Balance & Chart Section */}
-        <section className="bg-white dark:bg-surface-dark rounded-[2.5rem] p-6 shadow-sm border border-border dark:border-slate-800">
-          <div className="flex justify-between items-start mb-6">
+        <section className="bg-white dark:bg-surface-dark rounded-[1.5rem] p-5 shadow-sm border border-border dark:border-slate-800">
+          <div className="flex justify-between items-start mb-5">
             <div>
-              <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Net Flow</p>
+              <p className="text-[11px] font-semibold text-secondary mb-1">เงินสุทธิ</p>
               <h2 className="text-3xl font-black text-text-dark dark:text-white">{fmt(netBalance)}</h2>
             </div>
             <div className="flex bg-slate-100 dark:bg-slate-900 rounded-xl p-0.5">
@@ -224,11 +244,11 @@ export function AnalyticsDashboard({
           <div className="flex justify-center gap-6 mt-6 border-t border-slate-100 dark:border-slate-800 pt-4">
             <div className="flex items-center gap-2">
               <span className="size-2.5 bg-primary rounded-full"></span>
-              <span className="text-[10px] font-bold text-secondary uppercase">Income</span>
+              <span className="text-[11px] font-semibold text-secondary">รายรับ</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="size-2.5 bg-expense rounded-full"></span>
-              <span className="text-[10px] font-bold text-secondary uppercase">Expense</span>
+              <span className="text-[11px] font-semibold text-secondary">รายจ่าย</span>
             </div>
           </div>
         </section>
@@ -237,36 +257,36 @@ export function AnalyticsDashboard({
         <div className="grid grid-cols-2 gap-4">
           <motion.div
             whileTap={{ scale: 0.98 }}
-            className="bg-white dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800"
+            className="bg-white dark:bg-surface-dark rounded-[1.35rem] p-4 shadow-sm border border-border dark:border-slate-800"
           >
             <div className="size-10 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 text-primary flex items-center justify-center mb-4">
               <ArrowUpRight size={20} />
             </div>
-            <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Total Income</p>
+            <p className="text-[11px] font-semibold text-secondary mb-1">รายรับรวม</p>
             <p className="text-xl font-black text-text-dark dark:text-white">{fmt(totalIncome)}</p>
           </motion.div>
 
           <motion.div
             whileTap={{ scale: 0.98 }}
-            className="bg-white dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800"
+            className="bg-white dark:bg-surface-dark rounded-[1.35rem] p-4 shadow-sm border border-border dark:border-slate-800"
           >
             <div className="size-10 rounded-2xl bg-rose-50 dark:bg-rose-900/30 text-expense flex items-center justify-center mb-4">
               <ArrowDownRight size={20} />
             </div>
-            <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Total Expense</p>
+            <p className="text-[11px] font-semibold text-secondary mb-1">รายจ่ายรวม</p>
             <p className="text-xl font-black text-text-dark dark:text-white">{fmt(totalExpense)}</p>
           </motion.div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white dark:bg-surface-dark rounded-3xl p-4 border border-border dark:border-slate-800 shadow-sm">
-            <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Savings Rate</p>
+            <p className="text-[11px] font-semibold text-secondary mb-1">อัตราออม</p>
             <p className={`text-lg font-black ${savingsRate >= 0 ? 'text-primary' : 'text-expense'}`}>
               {savingsRate.toFixed(0)}%
             </p>
           </div>
           <div className="bg-white dark:bg-surface-dark rounded-3xl p-4 border border-border dark:border-slate-800 shadow-sm">
-            <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Avg Expense</p>
+            <p className="text-[11px] font-semibold text-secondary mb-1">เฉลี่ยรายจ่าย</p>
             <p className="text-lg font-black text-text-dark dark:text-white">
               {fmt(totalExpense / Math.max(chartEntries.length, 1), 2)}
             </p>
@@ -274,11 +294,11 @@ export function AnalyticsDashboard({
         </div>
 
         {/* ── Donut Chart: Expense Breakdown ── */}
-        <section className="bg-white dark:bg-surface-dark rounded-[2.5rem] p-6 shadow-sm border border-border dark:border-slate-800">
-          <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-5">Expense Breakdown</p>
+        <section className="bg-white dark:bg-surface-dark rounded-[1.5rem] p-5 shadow-sm border border-border dark:border-slate-800">
+          <p className="text-[11px] font-semibold text-secondary mb-5">สัดส่วนรายจ่าย</p>
           {expenseByCategory.length === 0 ? (
             <div className="text-center py-10 text-secondary text-sm font-bold opacity-60">
-              No expense data for this period
+              ยังไม่มีข้อมูลรายจ่ายในช่วงนี้
             </div>
           ) : (
             <div className="flex items-center gap-6">
@@ -302,7 +322,7 @@ export function AnalyticsDashboard({
                 })}
                 {expenseByCategory.length > 5 && (
                   <p className="text-[10px] text-secondary font-bold opacity-60">
-                    +{expenseByCategory.length - 5} more
+                    เพิ่มอีก {expenseByCategory.length - 5} หมวด
                   </p>
                 )}
               </div>
@@ -380,7 +400,7 @@ function DonutChart({ data, total }: { data: { name: string; amount: number; col
         className="fill-secondary"
         style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}
       >
-        Total
+        รวม
       </text>
     </svg>
   );

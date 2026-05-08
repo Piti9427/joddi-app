@@ -181,7 +181,7 @@ export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, 
         </div>
 
         <h2 className="text-3xl font-black text-text-dark dark:text-white text-center tracking-tight mb-2">
-          {isLogin ? 'Welcome back' : 'Create account'}
+          {isLogin ? 'ยินดีต้อนรับกลับ' : 'สร้างบัญชีใหม่'}
         </h2>
         <p className="text-text-secondary text-center text-sm font-bold mb-8">
           {isLogin ? 'ล็อกอินเพื่อเข้าถึงข้อมูลส่วนตัวของคุณ' : 'สมัครสมาชิกแล้วเริ่มติดตามการเงินได้ทันที'}
@@ -219,7 +219,7 @@ export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-text-dark dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-              placeholder="Email address"
+              placeholder="อีเมล"
             />
           </div>
 
@@ -234,7 +234,7 @@ export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-text-dark dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-              placeholder="Password"
+              placeholder="รหัสผ่าน"
             />
           </div>
 
@@ -247,7 +247,7 @@ export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, 
               <Loader2 size={20} className="animate-spin" />
             ) : (
               <>
-                {isLogin ? 'Sign In' : 'Sign Up'}
+                {isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}
                 <ArrowRight size={18} />
               </>
             )}
@@ -262,7 +262,7 @@ export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, 
               disabled={loading}
               className="text-[11px] font-bold px-4 py-2 bg-slate-100 dark:bg-slate-800 text-secondary hover:text-text-dark dark:hover:text-white rounded-xl disabled:opacity-60 transition-colors"
             >
-              Forgot Password?
+              ลืมรหัสผ่าน?
             </button>
           ) : (
             <button
@@ -271,7 +271,7 @@ export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, 
               disabled={loading}
               className="text-[11px] font-bold px-4 py-2 bg-slate-100 dark:bg-slate-800 text-secondary hover:text-text-dark dark:hover:text-white rounded-xl disabled:opacity-60 transition-colors"
             >
-              Didn't receive verification email? Resend
+              ยังไม่ได้รับอีเมลยืนยัน? ส่งอีกครั้ง
             </button>
           )}
         </div>
@@ -286,8 +286,8 @@ export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, 
             }}
             className="text-secondary text-sm font-bold hover:text-text-dark dark:hover:text-white transition-colors"
           >
-            {isLogin ? "Don't have an account? " : 'Already have an account? '}
-            <span className="text-primary underline underline-offset-4">{isLogin ? 'Sign up' : 'Log in'}</span>
+            {isLogin ? 'ยังไม่มีบัญชี? ' : 'มีบัญชีอยู่แล้ว? '}
+            <span className="text-primary underline underline-offset-4">{isLogin ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ'}</span>
           </button>
         </div>
 
@@ -299,7 +299,7 @@ export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, 
               className="w-full rounded-2xl py-3 text-xs font-black bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 flex items-center justify-center gap-2"
             >
               <ShieldCheck size={16} />
-              Continue in Read-only Mode
+              เข้าใช้งานโหมดอ่านอย่างเดียว
             </button>
           </div>
         )}

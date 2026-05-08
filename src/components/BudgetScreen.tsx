@@ -14,10 +14,10 @@ import {
 } from '../lib/supabase';
 
 const PERIOD_LABELS: Record<BudgetPeriod, string> = {
-  daily: 'Daily',
-  weekly: 'Weekly',
-  monthly: 'Monthly',
-  yearly: 'Yearly',
+  daily: 'รายวัน',
+  weekly: 'รายสัปดาห์',
+  monthly: 'รายเดือน',
+  yearly: 'รายปี',
 };
 
 const DEFAULT_ICONS: Record<string, string> = {
@@ -158,7 +158,7 @@ export function BudgetScreen({
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
         <div className="size-10 shrink-0"></div>
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">Budgets</h1>
+        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">งบประมาณ</h1>
         <button
           onClick={() => setShowAddForm(true)}
           className="text-primary hover:text-text-dark transition-colors p-2 bg-highlight dark:bg-primary/20 rounded-full"
@@ -176,7 +176,7 @@ export function BudgetScreen({
               <button
                 key={p}
                 onClick={() => setViewPeriod(p)}
-                className={`relative py-1.5 text-[10px] font-black uppercase tracking-widest transition-all ${active ? 'text-text-dark dark:text-slate-900' : 'text-secondary opacity-70'}`}
+                className={`relative py-1.5 text-[10px] font-extrabold transition-all ${active ? 'text-text-dark dark:text-slate-900' : 'text-secondary opacity-70'}`}
               >
                 {active && (
                   <motion.span
@@ -196,9 +196,7 @@ export function BudgetScreen({
           <div className="absolute -right-6 -top-6 text-white/10">
             <Target size={120} />
           </div>
-          <p className="text-white/80 text-sm font-bold uppercase tracking-wider mb-2 relative z-10">
-            {periodLabel} Budget
-          </p>
+          <p className="text-white/80 text-sm font-bold uppercase tracking-wider mb-2 relative z-10">งบ{periodLabel}</p>
           <div className="flex items-end gap-2 mb-6 relative z-10">
             <h2 className="text-4xl font-extrabold tracking-tight">{fmt(totalSpent)}</h2>
             <p className="text-white/60 text-lg font-medium mb-1">/ {fmt(totalBudgetLimit)}</p>
@@ -206,7 +204,7 @@ export function BudgetScreen({
 
           <div className="relative z-10">
             <div className="flex justify-between text-xs font-bold mb-2">
-              <span>{fmt(totalLeft)} left</span>
+              <span>เหลือ {fmt(totalLeft)}</span>
               <span>{totalPct.toFixed(0)}%</span>
             </div>
             <div className="h-3 w-full bg-black/20 rounded-full overflow-hidden p-0.5">
@@ -221,15 +219,13 @@ export function BudgetScreen({
         {/* Category Budgets */}
         <section className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-sm font-bold text-text-dark dark:text-slate-100">Category Limits</h3>
-            <span className="text-[10px] font-bold text-secondary uppercase tracking-wide">
-              {categoryData.length} active
-            </span>
+            <h3 className="text-sm font-bold text-text-dark dark:text-slate-100">เพดานแต่ละหมวด</h3>
+            <span className="text-[10px] font-bold text-secondary">{categoryData.length} งบที่ใช้งาน</span>
           </div>
           <div className="space-y-3">
             {categoryData.length === 0 ? (
               <div className="text-center py-12 text-secondary text-sm font-bold opacity-60">
-                No budgets set yet. Tap + to add one.
+                ยังไม่มีงบประมาณ แตะ + เพื่อเพิ่มรายการแรก
               </div>
             ) : (
               categoryData.map((cat) => (
@@ -298,17 +294,17 @@ function BudgetCard({
 
   let barColor = 'bg-primary';
   let badgeColor = 'bg-highlight text-primary dark:bg-primary/20';
-  let statusText = 'On Track';
+  let statusText = 'ยังอยู่ในแผน';
 
   if (warning) {
     barColor = 'bg-amber-500';
     badgeColor = 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400';
-    statusText = 'Nearing Limit';
+    statusText = 'ใกล้เต็มงบ';
   }
   if (over) {
     barColor = 'bg-rose-500';
     badgeColor = 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400';
-    statusText = 'Over Budget';
+    statusText = 'เกินงบ';
   }
 
   return (
@@ -343,7 +339,7 @@ function BudgetCard({
 
       <div className="flex justify-between items-end mb-2">
         <p className="font-bold text-lg text-text-dark dark:text-slate-100">{fmt(spent)}</p>
-        <p className="font-bold text-sm text-secondary">of {fmt(limit)}</p>
+        <p className="font-bold text-sm text-secondary">จาก {fmt(limit)}</p>
       </div>
       <div className="h-2 w-full bg-input-bg dark:bg-slate-800 rounded-full overflow-hidden">
         <motion.div
@@ -404,7 +400,7 @@ function AddBudgetModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-black text-text-dark dark:text-white">Add Budget</h2>
+          <h2 className="text-lg font-black text-text-dark dark:text-white">เพิ่มงบประมาณ</h2>
           <button onClick={onClose} className="text-secondary hover:text-text-dark dark:hover:text-white p-1">
             <X size={20} />
           </button>
@@ -414,13 +410,13 @@ function AddBudgetModal({
           {/* Category Input */}
           <div>
             <label className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2">
-              Category
+              หมวดหมู่
             </label>
             <input
               type="text"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              placeholder="e.g. Food, Transport..."
+              placeholder="เช่น อาหาร เดินทาง ช้อปปิ้ง"
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-3 px-4 text-sm font-bold text-text-dark dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
             />
             {suggestedCategories.length > 0 && (
@@ -442,7 +438,7 @@ function AddBudgetModal({
           {/* Budget Limit */}
           <div>
             <label className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2">
-              Limit Amount (฿)
+              วงเงินงบประมาณ (฿)
             </label>
             <input
               type="number"
@@ -459,7 +455,7 @@ function AddBudgetModal({
           {/* Period Selector */}
           <div>
             <label className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2">
-              Budget Period
+              รอบงบประมาณ
             </label>
             <div className="relative">
               <button
@@ -493,10 +489,10 @@ function AddBudgetModal({
                       >
                         {PERIOD_LABELS[p]}
                         <span className="text-[10px] text-secondary ml-2">
-                          {p === 'daily' && '(e.g. ฿200/day)'}
-                          {p === 'weekly' && '(e.g. ฿1,500/week)'}
-                          {p === 'monthly' && '(e.g. ฿5,000/month)'}
-                          {p === 'yearly' && '(e.g. ฿60,000/year)'}
+                          {p === 'daily' && '(เช่น ฿200/วัน)'}
+                          {p === 'weekly' && '(เช่น ฿1,500/สัปดาห์)'}
+                          {p === 'monthly' && '(เช่น ฿5,000/เดือน)'}
+                          {p === 'yearly' && '(เช่น ฿60,000/ปี)'}
                         </span>
                       </button>
                     ))}
@@ -513,7 +509,7 @@ function AddBudgetModal({
             className="w-full bg-text-dark dark:bg-white text-white dark:text-slate-900 font-black py-4 rounded-2xl mt-2 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
           >
             <Plus size={18} />
-            Add Budget
+            เพิ่มงบประมาณ
           </button>
         </form>
       </motion.div>

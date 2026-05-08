@@ -21,7 +21,7 @@ export function SmartInput({
 
   useEffect(() => {
     const endpoint = String(import.meta.env.VITE_SMART_INPUT_ENDPOINT || '').trim();
-    setHint(endpoint ? 'Gemini assist พร้อมใช้เมื่อออนไลน์' : 'Offline parser พร้อมใช้ทันที');
+    setHint(endpoint ? 'พร้อมช่วยอ่านรายการด้วย Gemini เมื่อออนไลน์' : 'อ่านรายการแบบออฟไลน์ได้ทันที');
   }, []);
 
   const handleSubmit = async (event?: React.FormEvent) => {
@@ -66,32 +66,32 @@ export function SmartInput({
         initial={{ y: 14, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         onSubmit={handleSubmit}
-        className="ai-command-surface rounded-[1.75rem] p-4 shadow-xl shadow-slate-900/15 text-white"
+        className="ai-command-surface rounded-[1.35rem] p-3.5 shadow-lg shadow-slate-900/12 text-white"
       >
-        <div className="flex items-center gap-2 mb-3">
-          <div className="size-9 rounded-2xl bg-white/12 flex items-center justify-center">
-            <Wand2 size={18} />
+        <div className="flex items-center gap-2 mb-2.5">
+          <div className="size-9 rounded-xl bg-white/12 flex items-center justify-center">
+            <Wand2 size={17} />
           </div>
           <div>
-            <h3 className="text-sm font-black leading-tight">Smart Add</h3>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-white/60">{hint}</p>
+            <h3 className="text-sm font-extrabold leading-tight">เพิ่มรายการด้วย AI</h3>
+            <p className="text-[11px] font-medium text-white/65">{hint}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-white rounded-2xl px-3 py-2">
+        <div className="flex items-center gap-2 bg-white rounded-2xl px-3 py-2.5">
           <Sparkles className="text-primary shrink-0" size={18} />
           <input
             value={value}
             disabled={disabled || parsing}
             onChange={(event) => setValue(event.target.value)}
-            placeholder="กาแฟ 120 วันนี้ บัตรเครดิต"
-            className="min-w-0 flex-1 bg-transparent text-[15px] font-bold text-slate-950 outline-none placeholder:text-slate-400"
+            placeholder="เช่น กาแฟ 120 วันนี้ บัตรเครดิต"
+            className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-slate-950 outline-none placeholder:text-slate-400"
           />
           <button
             type="submit"
             disabled={disabled || parsing || value.trim().length === 0}
             className="size-10 rounded-xl bg-primary text-white flex items-center justify-center disabled:opacity-40 active:scale-95 transition-all"
-            aria-label="Save smart transaction"
+            aria-label="บันทึกรายการด้วย AI"
           >
             <ArrowRight size={18} />
           </button>

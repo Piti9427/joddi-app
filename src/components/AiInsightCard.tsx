@@ -27,11 +27,11 @@ const TONE_STYLES = {
 
 export function AiInsightCard({ insight, onNavigate }: { insight: AiInsight; onNavigate: (view: ViewState) => void }) {
   const tone = TONE_STYLES[insight.tone];
-  const targetView: ViewState = insight.actionLabel.includes('budget')
+  const targetView: ViewState = insight.actionLabel.includes('งบ')
     ? 'budget'
-    : insight.actionLabel.includes('category')
+    : insight.actionLabel.includes('หมวด')
       ? 'categories'
-      : insight.actionLabel.includes('analytics')
+      : insight.actionLabel.includes('วิเคราะห์')
         ? 'analytics'
         : 'add_transaction';
 
@@ -41,35 +41,35 @@ export function AiInsightCard({ insight, onNavigate }: { insight: AiInsight; onN
         type="button"
         whileTap={{ scale: 0.985 }}
         onClick={() => onNavigate(targetView)}
-        className={`ai-surface w-full bg-gradient-to-br ${tone.shell} text-left rounded-[1.75rem] p-4 border border-white/70 dark:border-slate-700/70 shadow-sm`}
+        className={`ai-surface w-full bg-gradient-to-br ${tone.shell} text-left rounded-[1.35rem] p-3.5 border border-white/70 dark:border-slate-700/70 shadow-sm`}
       >
         <div className="flex items-start gap-3">
-          <div className={`size-11 rounded-2xl ${tone.icon} flex items-center justify-center shadow-lg`}>
-            <BrainCircuit size={21} />
+          <div className={`size-10 rounded-2xl ${tone.icon} flex items-center justify-center shadow-lg`}>
+            <BrainCircuit size={20} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1">
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-widest ${tone.badge}`}
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-extrabold ${tone.badge}`}
               >
                 <Sparkles size={11} />
-                AI Insight
+                อินไซต์ AI
               </span>
-              <span className="inline-flex items-center gap-1 text-[10px] font-black text-secondary">
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-secondary">
                 <Gauge size={12} />
                 {Math.round(insight.confidence * 100)}%
               </span>
             </div>
-            <h3 className="text-[15px] font-black text-text-dark dark:text-white leading-tight">{insight.title}</h3>
-            <p className="text-xs font-semibold text-secondary leading-relaxed mt-1">{insight.summary}</p>
+            <h3 className="text-[15px] font-extrabold text-text-dark dark:text-white leading-snug">{insight.title}</h3>
+            <p className="text-[12px] font-medium text-secondary leading-relaxed mt-1">{insight.summary}</p>
           </div>
-          <div className="size-9 rounded-2xl bg-white/80 dark:bg-slate-900/80 text-text-dark dark:text-white flex items-center justify-center shrink-0">
+          <div className="size-8 rounded-xl bg-white/80 dark:bg-slate-900/80 text-text-dark dark:text-white flex items-center justify-center shrink-0">
             <ChevronRight size={17} />
           </div>
         </div>
-        <div className="mt-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-wide text-secondary">
+        <div className="mt-3 flex items-center gap-2 text-[10px] font-bold text-secondary">
           <ShieldCheck size={13} className="text-primary" />
-          Local-first analysis. Gemini can enhance Smart Add when endpoint is configured.
+          วิเคราะห์จากข้อมูลในเครื่องก่อน และใช้ Gemini เพิ่มความแม่นเมื่อเชื่อม endpoint แล้ว
         </div>
       </motion.button>
     </section>

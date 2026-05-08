@@ -10,13 +10,13 @@ export function Onboarding({ onNavigate }: { onNavigate: (v: ViewState) => void 
           <div className="text-primary flex size-10 items-center justify-center rounded-xl bg-highlight dark:bg-primary/20">
             <Leaf size={24} />
           </div>
-          <h2 className="text-text-dark dark:text-white text-xl font-extrabold tracking-tight">Financely</h2>
+          <h2 className="text-text-dark dark:text-white text-xl font-extrabold">จดดี</h2>
         </div>
         <button
           onClick={() => onNavigate('dashboard')}
           className="text-secondary font-semibold text-sm hover:text-primary transition-colors"
         >
-          Skip
+          ข้าม
         </button>
       </div>
 
@@ -31,10 +31,10 @@ export function Onboarding({ onNavigate }: { onNavigate: (v: ViewState) => void 
 
         <div className="space-y-4">
           <h1 className="text-text-dark dark:text-white tracking-tight text-4xl font-extrabold leading-[1.1]">
-            Track your finances daily <span className="text-primary">with ease</span>
+            จดรายรับรายจ่ายทุกวัน <span className="text-primary">ให้เร็วขึ้น</span>
           </h1>
           <p className="text-text-secondary dark:text-slate-400 text-lg font-medium leading-relaxed max-w-[90%]">
-            Take control of your spending and reach your savings goals with our premium tools.
+            เพิ่มรายการไว ดูงบชัด และให้ AI ช่วยสรุปพฤติกรรมการใช้เงินจากข้อมูลของคุณ
           </p>
         </div>
 
@@ -50,12 +50,12 @@ export function Onboarding({ onNavigate }: { onNavigate: (v: ViewState) => void 
           onClick={() => onNavigate('dashboard')}
           className="w-full bg-primary text-white font-bold py-4 rounded-2xl shadow-lg shadow-primary/20 active:scale-[0.98] transition-all text-lg"
         >
-          Get Started
+          เริ่มใช้งาน
         </button>
         <div className="flex items-center justify-center gap-1">
-          <span className="text-text-secondary text-sm">Already have an account?</span>
+          <span className="text-text-secondary text-sm">มีบัญชีอยู่แล้ว?</span>
           <button onClick={() => onNavigate('dashboard')} className="text-primary font-bold text-sm">
-            Sign In
+            เข้าสู่ระบบ
           </button>
         </div>
       </div>
