@@ -24,7 +24,9 @@ export function ReviewReceipt({
     const image = await captureReceiptPhoto();
     if (!image) return;
     setReceiptImage(image);
-    uploadReceiptImage(image).then(setReceiptPath).catch(() => setReceiptPath(null));
+    uploadReceiptImage(image)
+      .then(setReceiptPath)
+      .catch(() => setReceiptPath(null));
   };
 
   const handleSave = async () => {
@@ -47,11 +49,19 @@ export function ReviewReceipt({
 
   return (
     <div className="flex flex-col min-h-full pb-6 relative bg-background-light dark:bg-background-dark">
-      <header className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}>
-        <button onClick={() => onNavigate('dashboard')} className="text-text-dark dark:text-slate-100 flex size-10 items-center justify-center rounded-full hover:bg-input-bg dark:hover:bg-slate-800 transition-colors">
+      <header
+        className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
+      >
+        <button
+          onClick={() => onNavigate('dashboard')}
+          className="text-text-dark dark:text-slate-100 flex size-10 items-center justify-center rounded-full hover:bg-input-bg dark:hover:bg-slate-800 transition-colors"
+        >
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center pr-10 text-text-dark dark:text-white">Receipt Review</h1>
+        <h1 className="text-lg font-bold leading-tight flex-1 text-center pr-10 text-text-dark dark:text-white">
+          Receipt Review
+        </h1>
       </header>
 
       <main className="flex-1 w-full p-6 space-y-8 overflow-y-auto">
@@ -79,8 +89,21 @@ export function ReviewReceipt({
         <section className="space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Receipt Details</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-6 shadow-sm border border-border dark:border-slate-800 space-y-5">
-            <EditableRow icon={<Store />} label="Merchant" value={merchant} onChange={setMerchant} placeholder="Store name" />
-            <EditableRow icon={<Banknote />} label="Amount" value={amount} onChange={setAmount} placeholder="0.00" inputMode="decimal" />
+            <EditableRow
+              icon={<Store />}
+              label="Merchant"
+              value={merchant}
+              onChange={setMerchant}
+              placeholder="Store name"
+            />
+            <EditableRow
+              icon={<Banknote />}
+              label="Amount"
+              value={amount}
+              onChange={setAmount}
+              placeholder="0.00"
+              inputMode="decimal"
+            />
             <EditableRow icon={<Calendar />} label="Date" value={date} onChange={setDate} type="date" />
             <EditableRow icon={<Tag />} label="Category" value={category} onChange={setCategory} placeholder="Food" />
             <EditableRow icon={<FileEdit />} label="Note" value={note} onChange={setNote} placeholder="Optional note" />

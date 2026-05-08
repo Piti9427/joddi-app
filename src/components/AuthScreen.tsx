@@ -17,7 +17,8 @@ function mapAuthError(message: string) {
   if (normalized.includes('password should be at least')) return 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
   if (normalized.includes('user already registered')) return 'อีเมลนี้ถูกใช้งานแล้ว';
   if (normalized.includes('unable to validate email address')) return 'รูปแบบอีเมลไม่ถูกต้อง';
-  if (normalized.includes('rate limit exceeded')) return 'ขออภัย! คุณทำรายการบ่อยเกินไป โปรดรอสักครู่แล้วลองใหม่อีกครั้ง';
+  if (normalized.includes('rate limit exceeded'))
+    return 'ขออภัย! คุณทำรายการบ่อยเกินไป โปรดรอสักครู่แล้วลองใหม่อีกครั้ง';
 
   return message || 'Authentication failed';
 }
@@ -161,7 +162,10 @@ export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, 
   };
 
   return (
-    <div className="min-h-full flex flex-col justify-center px-6 py-12 bg-background-light dark:bg-background-dark relative overflow-hidden" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 48px)' }}>
+    <div
+      className="min-h-full flex flex-col justify-center px-6 py-12 bg-background-light dark:bg-background-dark relative overflow-hidden"
+      style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 48px)' }}
+    >
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -mr-32 -mt-32"></div>
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -ml-32 -mb-32"></div>
 
@@ -184,13 +188,21 @@ export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, 
         </p>
 
         {errorMsg && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-rose-50 dark:bg-rose-500/10 text-expense p-4 rounded-2xl text-xs font-bold mb-6 border border-rose-100 dark:border-rose-500/20 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-rose-50 dark:bg-rose-500/10 text-expense p-4 rounded-2xl text-xs font-bold mb-6 border border-rose-100 dark:border-rose-500/20 text-center"
+          >
             {errorMsg}
           </motion.div>
         )}
 
         {successMsg && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 p-4 rounded-2xl text-xs font-bold mb-6 border border-emerald-100 dark:border-emerald-500/20 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 p-4 rounded-2xl text-xs font-bold mb-6 border border-emerald-100 dark:border-emerald-500/20 text-center"
+          >
             {successMsg}
           </motion.div>
         )}

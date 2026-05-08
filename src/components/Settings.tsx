@@ -27,8 +27,12 @@ export function Settings({
     }
     return false;
   });
-  const [displayName, setDisplayName] = useState(() => localStorage.getItem('display_name') || userEmail?.split('@')[0] || 'Guest Account');
-  const [notificationsEnabled, setNotificationsEnabled] = useState(() => localStorage.getItem('daily_reminder') === 'true');
+  const [displayName, setDisplayName] = useState(
+    () => localStorage.getItem('display_name') || userEmail?.split('@')[0] || 'Guest Account',
+  );
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    () => localStorage.getItem('daily_reminder') === 'true',
+  );
   const [statusMessage, setStatusMessage] = useState('');
 
   const toggleDarkMode = () => {
@@ -89,7 +93,10 @@ export function Settings({
 
   return (
     <div className="flex flex-col min-h-full pb-6 relative bg-background-light dark:bg-background-dark">
-      <header className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}>
+      <header
+        className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
+      >
         <div className="size-10 shrink-0"></div>
         <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">Settings</h1>
         <div className="size-10 shrink-0"></div>
@@ -127,7 +134,9 @@ export function Settings({
                 onClick={toggleDarkMode}
                 className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${darkMode ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
               >
-                <div className={`size-5 bg-white rounded-full shadow-sm absolute transition-transform duration-300 ${darkMode ? 'translate-x-6' : 'translate-x-1'}`}></div>
+                <div
+                  className={`size-5 bg-white rounded-full shadow-sm absolute transition-transform duration-300 ${darkMode ? 'translate-x-6' : 'translate-x-1'}`}
+                ></div>
               </button>
             </SettingRow>
 
@@ -137,7 +146,9 @@ export function Settings({
                 onClick={toggleReminder}
                 className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${notificationsEnabled ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
               >
-                <div className={`size-5 bg-white rounded-full shadow-sm absolute transition-transform duration-300 ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`}></div>
+                <div
+                  className={`size-5 bg-white rounded-full shadow-sm absolute transition-transform duration-300 ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`}
+                ></div>
               </button>
             </SettingRow>
           </div>

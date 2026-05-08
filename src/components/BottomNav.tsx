@@ -9,7 +9,15 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomNavProps) {
-  const navVisibleViews: ViewState[] = ['dashboard', 'transactions', 'analytics', 'budget', 'settings', 'categories', 'add_transaction'];
+  const navVisibleViews: ViewState[] = [
+    'dashboard',
+    'transactions',
+    'analytics',
+    'budget',
+    'settings',
+    'categories',
+    'add_transaction',
+  ];
   if (!navVisibleViews.includes(currentView)) return null;
 
   return (
@@ -84,7 +92,12 @@ export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomN
   );
 }
 
-function TabItem({ icon, label, active, onClick }: {
+function TabItem({
+  icon,
+  label,
+  active,
+  onClick,
+}: {
   icon: React.ReactNode;
   label: string;
   active: boolean;
@@ -109,12 +122,14 @@ function TabItem({ icon, label, active, onClick }: {
       }}
     >
       {icon}
-      <span style={{
-        fontSize: 10,
-        fontWeight: 700,
-        lineHeight: 1,
-        letterSpacing: '0.02em',
-      }}>
+      <span
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          lineHeight: 1,
+          letterSpacing: '0.02em',
+        }}
+      >
         {label}
       </span>
     </button>

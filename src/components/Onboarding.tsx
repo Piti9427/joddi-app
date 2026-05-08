@@ -12,12 +12,22 @@ export function Onboarding({ onNavigate }: { onNavigate: (v: ViewState) => void 
           </div>
           <h2 className="text-text-dark dark:text-white text-xl font-extrabold tracking-tight">Financely</h2>
         </div>
-        <button onClick={() => onNavigate('dashboard')} className="text-secondary font-semibold text-sm hover:text-primary transition-colors">Skip</button>
+        <button
+          onClick={() => onNavigate('dashboard')}
+          className="text-secondary font-semibold text-sm hover:text-primary transition-colors"
+        >
+          Skip
+        </button>
       </div>
 
       <div className="flex-1 flex flex-col justify-center">
-        <div className="w-full aspect-[4/5] bg-center bg-no-repeat bg-cover rounded-3xl bg-input-bg dark:bg-surface-dark border border-border dark:border-primary/10 mb-8" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDDEsD155JG9_oHBGboTTLSyssfFn1d322EM6h1UEwasTTqhMa0zp5cwo_RfD8igWwNIZmfZUUJUN7ugvAroXlbt7jzEGJYP54Y5tRl9-aItN5N9uR5-zzUEx_wSX2WkDY-tKyGg2qU_gNVCkBpCqPXdwkHgX7STvg0za8MN2vEhRKjfjXZMKDknkqeKSBVoq1Zp3-D2yANgz7pwUGSMoyQWmBk_lVUX4H4U-Fn-2-DMAPYNVvABtlzKXHofWfnc_57C-W1Z0oCXw")' }}>
-        </div>
+        <div
+          className="w-full aspect-[4/5] bg-center bg-no-repeat bg-cover rounded-3xl bg-input-bg dark:bg-surface-dark border border-border dark:border-primary/10 mb-8"
+          style={{
+            backgroundImage:
+              'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDDEsD155JG9_oHBGboTTLSyssfFn1d322EM6h1UEwasTTqhMa0zp5cwo_RfD8igWwNIZmfZUUJUN7ugvAroXlbt7jzEGJYP54Y5tRl9-aItN5N9uR5-zzUEx_wSX2WkDY-tKyGg2qU_gNVCkBpCqPXdwkHgX7STvg0za8MN2vEhRKjfjXZMKDknkqeKSBVoq1Zp3-D2yANgz7pwUGSMoyQWmBk_lVUX4H4U-Fn-2-DMAPYNVvABtlzKXHofWfnc_57C-W1Z0oCXw")',
+          }}
+        ></div>
 
         <div className="space-y-4">
           <h1 className="text-text-dark dark:text-white tracking-tight text-4xl font-extrabold leading-[1.1]">
@@ -36,12 +46,17 @@ export function Onboarding({ onNavigate }: { onNavigate: (v: ViewState) => void 
       </div>
 
       <div className="pb-6 space-y-4 mt-auto">
-        <button onClick={() => onNavigate('dashboard')} className="w-full bg-primary text-white font-bold py-4 rounded-2xl shadow-lg shadow-primary/20 active:scale-[0.98] transition-all text-lg">
+        <button
+          onClick={() => onNavigate('dashboard')}
+          className="w-full bg-primary text-white font-bold py-4 rounded-2xl shadow-lg shadow-primary/20 active:scale-[0.98] transition-all text-lg"
+        >
           Get Started
         </button>
         <div className="flex items-center justify-center gap-1">
           <span className="text-text-secondary text-sm">Already have an account?</span>
-          <button onClick={() => onNavigate('dashboard')} className="text-primary font-bold text-sm">Sign In</button>
+          <button onClick={() => onNavigate('dashboard')} className="text-primary font-bold text-sm">
+            Sign In
+          </button>
         </div>
       </div>
     </div>

@@ -9,7 +9,13 @@ type VirtualRow =
   | { type: 'dateHeader'; id: string; date: string }
   | { type: 'transaction'; id: string; transaction: Transaction };
 
-export function TransactionHistory({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void, transactions: Transaction[] }) {
+export function TransactionHistory({
+  onNavigate,
+  transactions,
+}: {
+  onNavigate: (v: ViewState) => void;
+  transactions: Transaction[];
+}) {
   const [search, setSearch] = useState('');
   const scrollParentRef = useRef<HTMLDivElement | null>(null);
 
@@ -65,38 +71,41 @@ export function TransactionHistory({ onNavigate, transactions }: { onNavigate: (
 
   return (
     <div className="flex flex-col h-full min-h-0 relative bg-slate-50 dark:bg-background-dark">
-      <header className="flex flex-col bg-white dark:bg-surface-dark p-6 border-b border-border dark:border-slate-800 shrink-0 z-20" style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 16px)' }}>
+      <header
+        className="flex flex-col bg-white dark:bg-surface-dark p-6 border-b border-border dark:border-slate-800 shrink-0 z-20"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 16px)' }}
+      >
         <div className="flex items-center justify-between mb-6">
-           <h1 className="text-2xl font-black tracking-tight text-text-dark dark:text-white">Activity</h1>
-           <motion.button 
-             whileTap={{ scale: 0.9 }}
-             className="text-primary p-2 bg-primary/10 rounded-full hover:bg-primary/20 transition-colors"
-           >
-              <Filter size={20} />
-           </motion.button>
+          <h1 className="text-2xl font-black tracking-tight text-text-dark dark:text-white">Activity</h1>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            className="text-primary p-2 bg-primary/10 rounded-full hover:bg-primary/20 transition-colors"
+          >
+            <Filter size={20} />
+          </motion.button>
         </div>
-        
+
         <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 focus-within:ring-2 focus-within:ring-primary/20 focus-within:bg-white dark:focus-within:bg-slate-700 transition-all">
           <Search size={18} className="text-secondary" />
-          <input 
-            type="text" 
-            placeholder="Search by merchant or category..." 
+          <input
+            type="text"
+            placeholder="Search by merchant or category..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="bg-transparent border-none focus:ring-0 text-[13px] font-bold w-full placeholder:text-secondary/60 outline-none text-text-dark dark:text-white" 
+            onChange={(e) => setSearch(e.target.value)}
+            className="bg-transparent border-none focus:ring-0 text-[13px] font-bold w-full placeholder:text-secondary/60 outline-none text-text-dark dark:text-white"
           />
         </div>
       </header>
-      
+
       <main ref={scrollParentRef} className="flex-1 min-h-0 overflow-y-auto ios-scroll">
         {virtualRows.length === 0 ? (
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="flex flex-col items-center justify-center py-20 text-center px-10"
           >
             <div className="size-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 text-slate-300">
-               <Search size={48} />
+              <Search size={48} />
             </div>
             <h3 className="text-lg font-black text-text-dark dark:text-white mb-2">No matching records</h3>
           </motion.div>
@@ -139,9 +148,7 @@ function DateHeader({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 px-2 py-3">
       <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
-      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary opacity-60">
-        {label}
-      </h3>
+      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary opacity-60">{label}</h3>
       <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
     </div>
   );
@@ -156,18 +163,16 @@ function TransactionRow({
 }) {
   const isExpense = transaction.type === 'Expense';
   const syncLabel =
-    transaction.syncStatus === 'pending'
-      ? 'Pending sync'
-      : transaction.syncStatus === 'failed'
-        ? 'Sync failed'
-        : '';
+    transaction.syncStatus === 'pending' ? 'Pending sync' : transaction.syncStatus === 'failed' ? 'Sync failed' : '';
 
   return (
     <motion.div
       whileTap={{ scale: 0.98 }}
       className="mb-2 bg-white dark:bg-surface-dark p-4 rounded-[2rem] shadow-sm border border-border/40 dark:border-slate-800/40 flex items-center gap-4 hover:shadow-md transition-all group cursor-pointer"
     >
-      <div className={`size-12 rounded-2xl flex items-center justify-center shrink-0 ${isExpense ? 'bg-expense-bg/60 text-expense' : 'bg-income-bg/60 text-income'}`}>
+      <div
+        className={`size-12 rounded-2xl flex items-center justify-center shrink-0 ${isExpense ? 'bg-expense-bg/60 text-expense' : 'bg-income-bg/60 text-income'}`}
+      >
         {isExpense ? <TrendingDown size={22} /> : <TrendingUp size={22} />}
       </div>
       <div className="flex-1 overflow-hidden">
@@ -179,7 +184,9 @@ function TransactionRow({
             {transaction.category}
           </p>
           {syncLabel && (
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[8px] font-black uppercase ${transaction.syncStatus === 'failed' ? 'bg-expense-bg text-expense' : 'bg-amber-100 text-amber-700'}`}>
+            <span
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[8px] font-black uppercase ${transaction.syncStatus === 'failed' ? 'bg-expense-bg text-expense' : 'bg-amber-100 text-amber-700'}`}
+            >
               {syncLabel}
             </span>
           )}
@@ -187,9 +194,12 @@ function TransactionRow({
       </div>
       <div className="text-right">
         <p className={`font-black text-[15px] ${isExpense ? 'text-text-dark dark:text-white' : 'text-income'}`}>
-          {isExpense ? '-' : '+'}{formatCurrency(transaction.amount)}
+          {isExpense ? '-' : '+'}
+          {formatCurrency(transaction.amount)}
         </p>
-        {transaction.note && <p className="text-[9px] font-bold text-secondary opacity-40 truncate max-w-[80px]">{transaction.note}</p>}
+        {transaction.note && (
+          <p className="text-[9px] font-bold text-secondary opacity-40 truncate max-w-[80px]">{transaction.note}</p>
+        )}
       </div>
     </motion.div>
   );

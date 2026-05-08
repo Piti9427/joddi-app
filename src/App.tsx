@@ -454,11 +454,7 @@ export default function App() {
                 className="w-full max-h-[95%]"
               >
                 <Suspense fallback={<ScreenFallback />}>
-                  <AddTransaction
-                    onNavigate={navigate}
-                    onAddTransaction={handleAddTransaction}
-                    returnView={baseView}
-                  />
+                  <AddTransaction onNavigate={navigate} onAddTransaction={handleAddTransaction} returnView={baseView} />
                 </Suspense>
               </motion.div>
             </motion.div>
