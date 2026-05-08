@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { ViewState, Transaction } from '../App';
-import { ArrowUpRight, ArrowDownRight, BarChart3, LineChart } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, BarChart3, BrainCircuit, LineChart, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { getLocalAiInsight } from '../lib/aiInsights';
 import { formatMoney } from '../lib/formatters';
 
 type ChartType = 'Bar' | 'Line';
@@ -29,94 +30,96 @@ export function AnalyticsDashboard({
   const [timeRange, setTimeRange] = useState<'Week' | 'Month' | 'Year'>('Month');
   const [chartType, setChartType] = useState<ChartType>('Bar');
 
-  const { totalIncome, totalExpense, chartEntries, netBalance, savingsRate, expenseByCategory } = useMemo(() => {
-    const now = new Date();
-    let income = 0;
-    let expense = 0;
+  const { totalIncome, totalExpense, chartEntries, netBalance, savingsRate, expenseByCategory, aiInsight } =
+    useMemo(() => {
+      const now = new Date();
+      let income = 0;
+      let expense = 0;
 
-    const chartMap: { [key: string]: { income: number; expense: number } } = {};
-    const orderedKeys: string[] = [];
-    const catMap: { [key: string]: number } = {};
-
-    if (timeRange === 'Week') {
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const key = d.toLocaleDateString('en-US', { weekday: 'short' });
-        orderedKeys.push(key);
-        chartMap[key] = { income: 0, expense: 0 };
-      }
-    } else if (timeRange === 'Month') {
-      ['W1', 'W2', 'W3', 'W4', 'W5'].forEach((w) => {
-        orderedKeys.push(w);
-        chartMap[w] = { income: 0, expense: 0 };
-      });
-    } else if (timeRange === 'Year') {
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      months.forEach((m) => {
-        orderedKeys.push(m);
-        chartMap[m] = { income: 0, expense: 0 };
-      });
-    }
-
-    const filtered = transactions.filter((t) => {
-      const tDate = new Date(t.date);
-      if (timeRange === 'Week') {
-        const weekAgo = new Date();
-        weekAgo.setHours(0, 0, 0, 0);
-        weekAgo.setDate(now.getDate() - 6);
-        return tDate >= weekAgo;
-      }
-      if (timeRange === 'Month') {
-        return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
-      }
-      if (timeRange === 'Year') {
-        return tDate.getFullYear() === now.getFullYear();
-      }
-      return true;
-    });
-
-    filtered.forEach((t) => {
-      if (t.type === 'Income') income += t.amount;
-      else {
-        expense += t.amount;
-        catMap[t.category] = (catMap[t.category] || 0) + t.amount;
-      }
-
-      let key = '';
-      const d = new Date(t.date);
+      const chartMap: { [key: string]: { income: number; expense: number } } = {};
+      const orderedKeys: string[] = [];
+      const catMap: { [key: string]: number } = {};
 
       if (timeRange === 'Week') {
-        key = d.toLocaleDateString('en-US', { weekday: 'short' });
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const key = d.toLocaleDateString('en-US', { weekday: 'short' });
+          orderedKeys.push(key);
+          chartMap[key] = { income: 0, expense: 0 };
+        }
       } else if (timeRange === 'Month') {
-        const dayOfMonth = d.getDate();
-        const weekNum = Math.ceil(dayOfMonth / 7);
-        key = `W${Math.min(weekNum, 5)}`;
+        ['W1', 'W2', 'W3', 'W4', 'W5'].forEach((w) => {
+          orderedKeys.push(w);
+          chartMap[w] = { income: 0, expense: 0 };
+        });
       } else if (timeRange === 'Year') {
-        key = d.toLocaleDateString('en-US', { month: 'short' });
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        months.forEach((m) => {
+          orderedKeys.push(m);
+          chartMap[m] = { income: 0, expense: 0 };
+        });
       }
 
-      if (chartMap[key]) {
-        if (t.type === 'Income') chartMap[key].income += t.amount;
-        else chartMap[key].expense += t.amount;
-      }
-    });
+      const filtered = transactions.filter((t) => {
+        const tDate = new Date(t.date);
+        if (timeRange === 'Week') {
+          const weekAgo = new Date();
+          weekAgo.setHours(0, 0, 0, 0);
+          weekAgo.setDate(now.getDate() - 6);
+          return tDate >= weekAgo;
+        }
+        if (timeRange === 'Month') {
+          return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+        }
+        if (timeRange === 'Year') {
+          return tDate.getFullYear() === now.getFullYear();
+        }
+        return true;
+      });
 
-    const entries = orderedKeys.map((k) => [k, chartMap[k]] as [string, { income: number; expense: number }]);
+      filtered.forEach((t) => {
+        if (t.type === 'Income') income += t.amount;
+        else {
+          expense += t.amount;
+          catMap[t.category] = (catMap[t.category] || 0) + t.amount;
+        }
 
-    const expByCat = Object.entries(catMap)
-      .map(([name, amount], i) => ({ name, amount, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
-      .sort((a, b) => b.amount - a.amount);
+        let key = '';
+        const d = new Date(t.date);
 
-    return {
-      totalIncome: income,
-      totalExpense: expense,
-      chartEntries: entries,
-      netBalance: income - expense,
-      savingsRate: income > 0 ? ((income - expense) / income) * 100 : 0,
-      expenseByCategory: expByCat,
-    };
-  }, [transactions, timeRange]);
+        if (timeRange === 'Week') {
+          key = d.toLocaleDateString('en-US', { weekday: 'short' });
+        } else if (timeRange === 'Month') {
+          const dayOfMonth = d.getDate();
+          const weekNum = Math.ceil(dayOfMonth / 7);
+          key = `W${Math.min(weekNum, 5)}`;
+        } else if (timeRange === 'Year') {
+          key = d.toLocaleDateString('en-US', { month: 'short' });
+        }
+
+        if (chartMap[key]) {
+          if (t.type === 'Income') chartMap[key].income += t.amount;
+          else chartMap[key].expense += t.amount;
+        }
+      });
+
+      const entries = orderedKeys.map((k) => [k, chartMap[k]] as [string, { income: number; expense: number }]);
+
+      const expByCat = Object.entries(catMap)
+        .map(([name, amount], i) => ({ name, amount, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
+        .sort((a, b) => b.amount - a.amount);
+
+      return {
+        totalIncome: income,
+        totalExpense: expense,
+        chartEntries: entries,
+        netBalance: income - expense,
+        savingsRate: income > 0 ? ((income - expense) / income) * 100 : 0,
+        expenseByCategory: expByCat,
+        aiInsight: getLocalAiInsight(filtered),
+      };
+    }, [transactions, timeRange]);
 
   const fmt = (val: number, maximumFractionDigits = 0) =>
     formatMoney(val, {
@@ -159,6 +162,27 @@ export function AnalyticsDashboard({
       </header>
 
       <main className="p-4 space-y-6 mt-2">
+        <section className="ai-surface bg-white dark:bg-surface-dark rounded-[2rem] p-5 shadow-sm border border-border dark:border-slate-800">
+          <div className="flex items-start gap-3">
+            <div className="size-11 rounded-2xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center shrink-0">
+              <BrainCircuit size={21} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-1 text-[9px] font-black uppercase tracking-widest">
+                  <Sparkles size={11} />
+                  AI Coach
+                </span>
+                <span className="text-[10px] font-black text-secondary">
+                  {Math.round(aiInsight.confidence * 100)}% signal
+                </span>
+              </div>
+              <h2 className="text-base font-black text-text-dark dark:text-white leading-tight">{aiInsight.title}</h2>
+              <p className="text-xs font-semibold text-secondary leading-relaxed mt-1">{aiInsight.summary}</p>
+            </div>
+          </div>
+        </section>
+
         {/* Net Balance & Chart Section */}
         <section className="bg-white dark:bg-surface-dark rounded-[2.5rem] p-6 shadow-sm border border-border dark:border-slate-800">
           <div className="flex justify-between items-start mb-6">

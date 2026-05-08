@@ -381,6 +381,7 @@ export default function App() {
         return (
           <Dashboard
             onNavigate={navigate}
+            onAddTransaction={handleAddTransaction}
             transactions={transactions}
             canCreateTransactions={canWrite}
             readOnlyMode={false}
@@ -392,7 +393,6 @@ export default function App() {
   return (
     <div className="h-dvh bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased flex justify-center overflow-hidden">
       <div className="w-full max-w-md bg-white dark:bg-background-dark shadow-2xl relative overflow-hidden h-full flex flex-col">
-
         {accessMessage && (
           <div className="absolute left-4 right-4 top-14 z-40 rounded-2xl bg-slate-900/90 text-white px-4 py-3 text-[11px] font-bold text-center shadow-lg">
             {accessMessage}

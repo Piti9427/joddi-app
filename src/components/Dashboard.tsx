@@ -16,21 +16,26 @@ import {
   ArrowDownRight,
   Plus,
   PieChart,
-  Landmark,
+  Sparkles,
 } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
 import { motion } from 'motion/react';
+import { getLocalAiInsight } from '../lib/aiInsights';
 import { formatDateShort, formatMoney } from '../lib/formatters';
+import { AiInsightCard } from './AiInsightCard';
+import { SmartInput } from './SmartInput';
 
 const QUICK_ADD_TYPE_KEY = 'quick_add_type';
 
 export function Dashboard({
   onNavigate,
+  onAddTransaction,
   transactions,
   canCreateTransactions = true,
   readOnlyMode = false,
 }: {
   onNavigate: (v: ViewState) => void;
+  onAddTransaction: (t: Omit<Transaction, 'id'>) => void | Promise<void>;
   transactions: Transaction[];
   canCreateTransactions?: boolean;
   readOnlyMode?: boolean;
@@ -47,6 +52,7 @@ export function Dashboard({
     monthSpendRate,
     topExpenseCategory,
     recentTransactions,
+    aiInsight,
   } = useMemo(() => {
     const now = new Date();
     const today = now.toDateString();
@@ -98,7 +104,8 @@ export function Dashboard({
       monthNet: monthNetValue,
       monthSpendRate: spendRate,
       topExpenseCategory: bestCategory,
-      recentTransactions: transactions.slice(0, 6),
+      recentTransactions: transactions.slice(0, 3),
+      aiInsight: getLocalAiInsight(transactions),
     };
   }, [transactions]);
 
@@ -118,10 +125,6 @@ export function Dashboard({
     onNavigate('add_transaction');
   };
 
-  const monthStatus = monthNet >= 0 ? 'Positive Flow' : 'Negative Flow';
-  const monthStatusStyle =
-    monthNet >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
-
   return (
     <div className="flex flex-col min-h-full pb-6 relative bg-slate-50 dark:bg-background-dark">
       <header
@@ -139,9 +142,7 @@ export function Dashboard({
             <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em]">
               {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
             </p>
-            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">
-              Financial Overview
-            </h2>
+            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">Joddi AI</h2>
           </div>
         </div>
         <div className="flex gap-1">
@@ -171,6 +172,65 @@ export function Dashboard({
           </div>
         </section>
       )}
+
+      <SmartInput onNavigate={onNavigate} onAddTransaction={onAddTransaction} disabled={!canCreateTransactions} />
+
+      <AiInsightCard insight={aiInsight} onNavigate={onNavigate} />
+
+      <section className="px-4 py-4 grid grid-cols-4 gap-2">
+        <QuickActionCard
+          icon={<Sparkles size={18} />}
+          label="Add"
+          onClick={() => openQuickAdd('Expense')}
+          disabled={!canCreateTransactions}
+        />
+        <QuickActionCard
+          icon={<TrendingUp size={18} />}
+          label="Income"
+          onClick={() => openQuickAdd('Income')}
+          disabled={!canCreateTransactions}
+        />
+        <QuickActionCard
+          icon={<Receipt size={18} />}
+          label="Receipt"
+          onClick={() => onNavigate('review_receipt')}
+          disabled={!canCreateTransactions}
+        />
+        <QuickActionCard icon={<PieChart size={18} />} label="Analytics" onClick={() => onNavigate('analytics')} />
+      </section>
+
+      <section className="px-4">
+        <div className="bg-white dark:bg-surface-dark border border-border/70 dark:border-slate-800 rounded-3xl p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-secondary font-black">Budget Status</p>
+              <h3 className="text-lg font-black text-text-dark dark:text-white tabular-nums">
+                {formatCurrency(monthNet)}
+              </h3>
+            </div>
+            <button
+              onClick={() => onNavigate('budget')}
+              className="rounded-2xl bg-slate-950 dark:bg-slate-100 text-white dark:text-slate-950 px-3 py-2 text-[10px] font-black uppercase tracking-wide"
+            >
+              Manage
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            <MetricRow label="Income" value={formatCurrency(monthIncome)} positive />
+            <MetricRow label="Expense" value={formatCurrency(monthExpense)} />
+            <MetricRow label="Spend / Income" value={`${monthSpendRate.toFixed(0)}%`} warning={monthSpendRate > 80} />
+            <MetricRow
+              label="Top Category"
+              value={
+                topExpenseCategory
+                  ? `${topExpenseCategory.category} (${formatCurrency(topExpenseCategory.amount)})`
+                  : 'No expense yet'
+              }
+            />
+          </div>
+        </div>
+      </section>
 
       <section className="px-4 py-4">
         <motion.div
@@ -216,28 +276,6 @@ export function Dashboard({
         </motion.div>
       </section>
 
-      <section className="px-4 grid grid-cols-4 gap-2">
-        <QuickActionCard
-          icon={<Plus size={18} />}
-          label="Expense"
-          onClick={() => openQuickAdd('Expense')}
-          disabled={!canCreateTransactions}
-        />
-        <QuickActionCard
-          icon={<TrendingUp size={18} />}
-          label="Income"
-          onClick={() => openQuickAdd('Income')}
-          disabled={!canCreateTransactions}
-        />
-        <QuickActionCard
-          icon={<Receipt size={18} />}
-          label="Receipt"
-          onClick={() => onNavigate('review_receipt')}
-          disabled={!canCreateTransactions}
-        />
-        <QuickActionCard icon={<PieChart size={18} />} label="Analytics" onClick={() => onNavigate('analytics')} />
-      </section>
-
       <section className="px-4 py-3 grid grid-cols-2 gap-3">
         <motion.div
           initial={{ x: -20, opacity: 0 }}
@@ -271,36 +309,6 @@ export function Dashboard({
             </p>
           </div>
         </motion.div>
-      </section>
-
-      <section className="px-4">
-        <div className="bg-white dark:bg-surface-dark border border-border/70 dark:border-slate-800 rounded-3xl p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-secondary font-black">This Month</p>
-              <h3 className="text-lg font-black text-text-dark dark:text-white tabular-nums">
-                {formatCurrency(monthNet)}
-              </h3>
-            </div>
-            <span className={`text-[10px] font-black uppercase tracking-widest ${monthStatusStyle}`}>
-              {monthStatus}
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            <MetricRow label="Income" value={formatCurrency(monthIncome)} positive />
-            <MetricRow label="Expense" value={formatCurrency(monthExpense)} />
-            <MetricRow label="Spend / Income" value={`${monthSpendRate.toFixed(0)}%`} warning={monthSpendRate > 80} />
-            <MetricRow
-              label="Top Category"
-              value={
-                topExpenseCategory
-                  ? `${topExpenseCategory.category} (${formatCurrency(topExpenseCategory.amount)})`
-                  : 'No expense yet'
-              }
-            />
-          </div>
-        </div>
       </section>
 
       <section className="flex flex-col px-4 mt-5">
@@ -349,16 +357,6 @@ export function Dashboard({
             ))
           )}
         </div>
-      </section>
-
-      <section className="px-4 pb-2">
-        <button
-          onClick={() => onNavigate('budget')}
-          className="w-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 rounded-2xl py-3.5 px-4 text-sm font-bold flex items-center justify-center gap-2"
-        >
-          <Landmark size={16} />
-          Open Budget Planner
-        </button>
       </section>
 
       <div className="h-3" />

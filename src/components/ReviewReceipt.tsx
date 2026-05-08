@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { ArrowLeft, BadgeCheck, Banknote, Calendar, Camera, CheckCircle, FileEdit, Store, Tag } from 'lucide-react';
 import { ViewState } from '../App';
 import { captureReceiptPhoto, lightHaptic } from '../lib/device';
-import { uploadReceiptImage } from '../lib/supabase';
+import {
+  createLocalReceiptDraft,
+  saveLocalReceiptDraft,
+  syncPendingTransactions,
+  type LocalReceiptDraft,
+} from '../lib/supabase';
 
 export function ReviewReceipt({
   onNavigate,
@@ -18,15 +23,34 @@ export function ReviewReceipt({
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
-  const [receiptPath, setReceiptPath] = useState<string | null>(null);
+  const [receiptDraft, setReceiptDraft] = useState<LocalReceiptDraft | null>(null);
+  const [statusMessage, setStatusMessage] = useState('Manual review mode, no paid OCR');
 
   const handleCapture = async () => {
     const image = await captureReceiptPhoto();
     if (!image) return;
+
     setReceiptImage(image);
-    uploadReceiptImage(image)
-      .then(setReceiptPath)
-      .catch(() => setReceiptPath(null));
+    setStatusMessage('Saving receipt draft...');
+
+    const draft = createLocalReceiptDraft({
+      imageDataUrl: image,
+      parsedMerchant: merchant.trim() || undefined,
+      parsedAmount: Number(amount) > 0 ? Number(amount) : null,
+      parsedDate: date,
+    });
+
+    const savedDraft = await saveLocalReceiptDraft(draft);
+    setReceiptDraft(savedDraft);
+    setStatusMessage('Receipt draft saved. Review is optional.');
+
+    syncPendingTransactions()
+      .then((result) => {
+        if (result.receipts?.failed.length) {
+          setStatusMessage('Saved locally. Receipt image will sync when network is ready.');
+        }
+      })
+      .catch(() => setStatusMessage('Saved locally. Receipt image will sync later.'));
   };
 
   const handleSave = async () => {
@@ -39,7 +63,7 @@ export function ReviewReceipt({
       amount: parsedAmount,
       category: category.trim() || 'Food',
       merchant: merchant.trim() || category.trim() || 'Receipt',
-      note: note.trim() || (receiptPath ? `Receipt: ${receiptPath}` : ''),
+      note: note.trim() || (receiptDraft ? `Receipt draft: ${receiptDraft.id}` : ''),
       date,
       paymentMethod: 'cash',
     });
@@ -66,7 +90,7 @@ export function ReviewReceipt({
 
       <main className="flex-1 w-full p-6 space-y-8 overflow-y-auto">
         <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Receipt Photo</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Quick Receipt</h3>
           <button
             onClick={handleCapture}
             className="relative w-full bg-input-bg dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-border aspect-[3/4] flex items-center justify-center"
@@ -76,14 +100,22 @@ export function ReviewReceipt({
             ) : (
               <div className="flex flex-col items-center gap-3 text-secondary">
                 <Camera size={44} />
-                <span className="text-sm font-black uppercase tracking-widest">Capture Receipt</span>
+                <span className="text-sm font-black uppercase tracking-widest">Capture & Save Draft</span>
               </div>
             )}
           </button>
           <div className="flex items-center gap-2 text-secondary text-sm italic font-medium">
             <BadgeCheck size={16} className="text-primary" />
-            {receiptPath ? 'Image saved to Supabase Storage' : 'Manual review mode, no paid OCR'}
+            {statusMessage}
           </div>
+          {receiptDraft && (
+            <button
+              onClick={() => onNavigate('dashboard')}
+              className="w-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-bold py-3 rounded-2xl active:scale-[0.98] transition-all"
+            >
+              Done
+            </button>
+          )}
         </section>
 
         <section className="space-y-4">

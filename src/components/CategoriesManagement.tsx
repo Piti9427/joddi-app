@@ -15,6 +15,13 @@ import {
   Trash,
   Check,
   Tag,
+  BrainCircuit,
+  Sparkles,
+  ScanLine,
+  WalletCards,
+  Landmark,
+  Smartphone,
+  ChartNoAxesCombined,
 } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import {
@@ -38,6 +45,13 @@ const ICONS: Record<string, React.ReactNode> = {
   Banknote: <Banknote />,
   Gift: <Gift />,
   Tag: <Tag />,
+  BrainCircuit: <BrainCircuit />,
+  Sparkles: <Sparkles />,
+  ScanLine: <ScanLine />,
+  WalletCards: <WalletCards />,
+  Landmark: <Landmark />,
+  Smartphone: <Smartphone />,
+  ChartNoAxesCombined: <ChartNoAxesCombined />,
 };
 
 const ICON_OPTIONS = [
@@ -50,6 +64,13 @@ const ICON_OPTIONS = [
   { name: 'Banknote', icon: <Banknote size={20} /> },
   { name: 'Gift', icon: <Gift size={20} /> },
   { name: 'Tag', icon: <Tag size={20} /> },
+  { name: 'BrainCircuit', icon: <BrainCircuit size={20} /> },
+  { name: 'Sparkles', icon: <Sparkles size={20} /> },
+  { name: 'ScanLine', icon: <ScanLine size={20} /> },
+  { name: 'WalletCards', icon: <WalletCards size={20} /> },
+  { name: 'Landmark', icon: <Landmark size={20} /> },
+  { name: 'Smartphone', icon: <Smartphone size={20} /> },
+  { name: 'ChartNoAxesCombined', icon: <ChartNoAxesCombined size={20} /> },
 ];
 
 const COLOR_OPTIONS = [
@@ -206,6 +227,20 @@ export function CategoriesManagement({
       </header>
 
       <main className="p-4 flex flex-col flex-1 space-y-6">
+        <section className="ai-surface bg-surface dark:bg-surface-dark rounded-3xl p-4 border border-border dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="size-11 rounded-2xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-primary">AI-ready taxonomy</p>
+              <h2 className="text-sm font-black text-text-dark dark:text-white">
+                Use clear category names so Smart Add can classify faster.
+              </h2>
+            </div>
+          </div>
+        </section>
+
         {/* ADD FORM */}
         {showAddForm && (
           <section className="bg-surface dark:bg-surface-dark rounded-3xl p-6 shadow-xl border-2 border-primary/40 animate-in fade-in slide-in-from-top-4 duration-200">

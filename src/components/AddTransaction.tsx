@@ -21,6 +21,7 @@ import {
 import { ViewState, Transaction, TransactionType } from '../App';
 import { getCurrencySymbol } from '../lib/formatters';
 import { getLocalCategories, type LocalCategory } from '../lib/supabase';
+import { SMART_INPUT_PREFILL_KEY, type SmartInputPrefill } from '../lib/smartInput';
 
 const PAYMENT_METHODS = [
   { id: 'cash', label: 'Cash', icon: <Banknote size={16} /> },
@@ -81,6 +82,18 @@ export function AddTransaction({
         setType(presetType);
       }
       window.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
+
+      const rawPrefill = window.sessionStorage.getItem(SMART_INPUT_PREFILL_KEY);
+      if (rawPrefill) {
+        const prefill = JSON.parse(rawPrefill) as SmartInputPrefill;
+        if (prefill.type === 'Expense' || prefill.type === 'Income') setType(prefill.type);
+        if (prefill.amount && prefill.amount > 0) setAmount(String(prefill.amount));
+        if (prefill.category) setCategory(prefill.category);
+        if (prefill.note || prefill.rawText) setNote(prefill.note || prefill.rawText);
+        if (prefill.date) setDate(prefill.date.slice(0, 10));
+        if (prefill.paymentMethod) setPaymentMethod(prefill.paymentMethod);
+        window.sessionStorage.removeItem(SMART_INPUT_PREFILL_KEY);
+      }
     } catch {
       // sessionStorage can fail in private browsing contexts, ignore safely.
     }
