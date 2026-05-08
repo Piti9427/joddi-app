@@ -40,6 +40,7 @@
 
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
+  --app-max-width: 28rem;
 }
 
 .dark {
@@ -64,11 +65,16 @@
 /* ── Base ── */
 html {
   height: 100%;
+  width: 100%;
   overflow: hidden;
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 body {
   height: 100%;
+  width: 100%;
   overflow: hidden;
   margin: 0;
   padding: 0;
@@ -78,13 +84,33 @@ body {
   font-family: 'Outfit', sans-serif;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   height: 100%;
+  width: 100%;
   overflow: hidden;
+}
+
+button,
+a,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
 
 /* ── iOS-specific scroll fix ── */
@@ -93,6 +119,7 @@ body {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
+  touch-action: pan-y;
 }
 
 /* ── Safe Area Utilities ── */
@@ -102,6 +129,15 @@ body {
 
 .safe-bottom {
   padding-bottom: var(--safe-bottom);
+}
+
+.app-safe-shell {
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+
+.app-scroll-shell {
+  scroll-padding-top: var(--safe-top);
 }
 
 /* ── Components ── */
