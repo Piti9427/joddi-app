@@ -28,7 +28,7 @@ export function Settings({
     return false;
   });
   const [displayName, setDisplayName] = useState(
-    () => localStorage.getItem('display_name') || userEmail?.split('@')[0] || 'Guest Account',
+    () => localStorage.getItem('display_name') || userEmail?.split('@')[0] || 'บัญชีทดลอง',
   );
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     () => localStorage.getItem('daily_reminder') === 'true',
@@ -47,7 +47,7 @@ export function Settings({
     }
   };
 
-  const supportSettings = [{ icon: <HelpCircle />, label: 'Help Center' }];
+  const supportSettings = [{ icon: <HelpCircle />, label: 'ศูนย์ช่วยเหลือ' }];
 
   const saveProfile = async () => {
     localStorage.setItem('display_name', displayName);
@@ -61,7 +61,7 @@ export function Settings({
       });
       syncAllOfflineData().catch((error) => console.error('Profile sync error:', error));
     }
-    setStatusMessage('Profile saved');
+    setStatusMessage('บันทึกโปรไฟล์แล้ว');
   };
 
   const toggleReminder = async () => {
@@ -70,24 +70,24 @@ export function Settings({
         await cancelDailyReminder();
         localStorage.setItem('daily_reminder', 'false');
         setNotificationsEnabled(false);
-        setStatusMessage('Daily reminder disabled');
+        setStatusMessage('ปิดการแจ้งเตือนรายวันแล้ว');
       } else {
         await scheduleDailyReminder();
         localStorage.setItem('daily_reminder', 'true');
         setNotificationsEnabled(true);
-        setStatusMessage('Daily reminder scheduled for 20:00');
+        setStatusMessage('ตั้งแจ้งเตือนรายวันเวลา 20:00 แล้ว');
       }
     } catch (error: any) {
-      setStatusMessage(error?.message || 'Notification setup failed');
+      setStatusMessage(error?.message || 'ตั้งค่าการแจ้งเตือนไม่สำเร็จ');
     }
   };
 
   const syncNow = async () => {
     try {
       await syncAllOfflineData();
-      setStatusMessage('Sync completed');
+      setStatusMessage('ซิงก์ข้อมูลเรียบร้อย');
     } catch (error: any) {
-      setStatusMessage(error?.message || 'Sync failed');
+      setStatusMessage(error?.message || 'ซิงก์ข้อมูลไม่สำเร็จ');
     }
   };
 
@@ -98,7 +98,7 @@ export function Settings({
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
         <div className="size-10 shrink-0"></div>
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">Settings</h1>
+        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">ตั้งค่า</h1>
         <div className="size-10 shrink-0"></div>
       </header>
 
@@ -115,7 +115,7 @@ export function Settings({
               className="w-full bg-transparent text-lg font-black text-text-dark dark:text-white leading-tight outline-none"
             />
             <p className="text-secondary text-sm font-bold opacity-80">
-              {isAuthenticated && userEmail ? userEmail : 'Sign in to sync your data'}
+              {isAuthenticated && userEmail ? userEmail : 'เข้าสู่ระบบเพื่อซิงก์ข้อมูล'}
             </p>
           </div>
         </div>
@@ -127,9 +127,9 @@ export function Settings({
         )}
 
         <section className="space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary pl-2">Preferences</h3>
+          <h3 className="text-sm font-extrabold text-secondary pl-2">การใช้งาน</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
-            <SettingRow icon={<Moon />} label="Dark Mode">
+            <SettingRow icon={<Moon />} label="โหมดมืด">
               <button
                 onClick={toggleDarkMode}
                 className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${darkMode ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
@@ -140,8 +140,8 @@ export function Settings({
               </button>
             </SettingRow>
 
-            <SettingRow icon={<Globe />} label="Currency" value="Auto" />
-            <SettingRow icon={<Bell />} label="Daily Reminder">
+            <SettingRow icon={<Globe />} label="สกุลเงิน" value="อัตโนมัติ" />
+            <SettingRow icon={<Bell />} label="แจ้งเตือนรายวัน">
               <button
                 onClick={toggleReminder}
                 className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${notificationsEnabled ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
@@ -155,19 +155,19 @@ export function Settings({
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary pl-2">Account</h3>
+          <h3 className="text-sm font-extrabold text-secondary pl-2">บัญชี</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
             <button onClick={syncNow} className="w-full text-left">
-              <SettingRow icon={<RefreshCw />} label="Sync Now" value={isAuthenticated ? 'Cloud' : 'Local only'} />
+              <SettingRow icon={<RefreshCw />} label="ซิงก์ตอนนี้" value={isAuthenticated ? 'คลาวด์' : 'ในเครื่อง'} />
             </button>
             <button onClick={onClearLocalData} className="w-full text-left">
-              <SettingRow icon={<Trash2 />} label="Clear Local Data" />
+              <SettingRow icon={<Trash2 />} label="ล้างข้อมูลในเครื่อง" />
             </button>
           </div>
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary pl-2">Support</h3>
+          <h3 className="text-sm font-extrabold text-secondary pl-2">ช่วยเหลือ</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-[2rem] p-2 shadow-sm border border-border dark:border-slate-800">
             {supportSettings.map((item, index) => (
               <SettingRow key={index} icon={item.icon} label={item.label} />
@@ -181,7 +181,7 @@ export function Settings({
                 <div className="size-10 rounded-[1.2rem] bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center group-hover:bg-rose-100 transition-colors">
                   <LogOut size={20} />
                 </div>
-                <div className="flex-1 font-bold">Sign Out</div>
+                <div className="flex-1 font-bold">ออกจากระบบ</div>
               </button>
             ) : (
               <button
@@ -191,7 +191,7 @@ export function Settings({
                 <div className="size-10 rounded-[1.2rem] bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
                   <LogIn size={20} />
                 </div>
-                <div className="flex-1 font-bold">Sign In to Sync</div>
+                <div className="flex-1 font-bold">เข้าสู่ระบบเพื่อซิงก์</div>
               </button>
             )}
           </div>

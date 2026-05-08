@@ -21,12 +21,13 @@ import {
 import { ViewState, Transaction, TransactionType } from '../App';
 import { getCurrencySymbol } from '../lib/formatters';
 import { getLocalCategories, type LocalCategory } from '../lib/supabase';
+import { SMART_INPUT_PREFILL_KEY, type SmartInputPrefill } from '../lib/smartInput';
 
 const PAYMENT_METHODS = [
-  { id: 'cash', label: 'Cash', icon: <Banknote size={16} /> },
-  { id: 'bank', label: 'Bank Transfer', icon: <LandmarkIcon size={16} /> },
-  { id: 'card', label: 'Credit Card', icon: <CreditCard size={16} /> },
-  { id: 'ewallet', label: 'E-Wallet', icon: <Wallet size={16} /> },
+  { id: 'cash', label: 'เงินสด', icon: <Banknote size={16} /> },
+  { id: 'bank', label: 'โอนธนาคาร', icon: <LandmarkIcon size={16} /> },
+  { id: 'card', label: 'บัตรเครดิต', icon: <CreditCard size={16} /> },
+  { id: 'ewallet', label: 'วอลเล็ต', icon: <Wallet size={16} /> },
   { id: 'promptpay', label: 'PromptPay', icon: <Smartphone size={16} /> },
 ];
 
@@ -81,6 +82,18 @@ export function AddTransaction({
         setType(presetType);
       }
       window.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
+
+      const rawPrefill = window.sessionStorage.getItem(SMART_INPUT_PREFILL_KEY);
+      if (rawPrefill) {
+        const prefill = JSON.parse(rawPrefill) as SmartInputPrefill;
+        if (prefill.type === 'Expense' || prefill.type === 'Income') setType(prefill.type);
+        if (prefill.amount && prefill.amount > 0) setAmount(String(prefill.amount));
+        if (prefill.category) setCategory(prefill.category);
+        if (prefill.note || prefill.rawText) setNote(prefill.note || prefill.rawText);
+        if (prefill.date) setDate(prefill.date.slice(0, 10));
+        if (prefill.paymentMethod) setPaymentMethod(prefill.paymentMethod);
+        window.sessionStorage.removeItem(SMART_INPUT_PREFILL_KEY);
+      }
     } catch {
       // sessionStorage can fail in private browsing contexts, ignore safely.
     }
@@ -132,7 +145,7 @@ export function AddTransaction({
     await onAddTransaction({
       type,
       amount: val,
-      category: category || (type === 'Expense' ? 'Misc' : 'Income'),
+      category: category || (type === 'Expense' ? 'อื่น ๆ' : 'รายรับ'),
       note,
       date,
       merchant: note || category,
@@ -169,22 +182,22 @@ export function AddTransaction({
           <div className="flex bg-white dark:bg-slate-900 p-1 rounded-2xl shadow-inner border border-border dark:border-slate-800">
             <button
               onClick={() => setType('Expense')}
-              className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${type === 'Expense' ? 'bg-expense text-white shadow-lg' : 'text-secondary hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+              className={`px-6 py-2 rounded-xl text-xs font-extrabold transition-all duration-300 ${type === 'Expense' ? 'bg-expense text-white shadow-lg' : 'text-secondary hover:bg-slate-50 dark:hover:bg-slate-800'}`}
             >
-              Expense
+              รายจ่าย
             </button>
             <button
               onClick={() => setType('Income')}
-              className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${type === 'Income' ? 'bg-primary text-white shadow-lg' : 'text-secondary hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+              className={`px-6 py-2 rounded-xl text-xs font-extrabold transition-all duration-300 ${type === 'Income' ? 'bg-primary text-white shadow-lg' : 'text-secondary hover:bg-slate-50 dark:hover:bg-slate-800'}`}
             >
-              Income
+              รายรับ
             </button>
           </div>
           <div className="size-10" /> {/* Spacer */}
         </div>
 
         <div className="text-center group">
-          <p className="text-secondary text-xs font-black uppercase tracking-[0.2em] mb-2 opacity-60">Amount</p>
+          <p className="text-secondary text-xs font-extrabold mb-2 opacity-70">จำนวนเงิน</p>
           <div className="flex items-center justify-center gap-2 group-active:scale-110 transition-transform">
             <span className={`text-4xl font-black ${type === 'Expense' ? 'text-expense' : 'text-primary'}`}>
               {currencySymbol}
@@ -201,7 +214,7 @@ export function AddTransaction({
         {/* Categories Horizontal Scroll */}
         <section>
           <div className="flex justify-between items-center mb-4 px-2">
-            <p className="text-[10px] text-secondary font-black uppercase tracking-widest">Select Category</p>
+            <p className="text-[11px] text-secondary font-semibold">เลือกหมวดหมู่</p>
             <button
               onClick={() => onNavigate('categories')}
               className="text-primary hover:text-text-dark transition-colors"
@@ -229,7 +242,7 @@ export function AddTransaction({
             <Calendar className="text-secondary group-focus-within:text-primary transition-colors" size={20} />
             <div className="flex-1">
               <p className="text-[10px] text-secondary font-black uppercase tracking-widest mb-1 opacity-50">
-                Transaction Date
+                วันที่ทำรายการ
               </p>
               <input
                 type="date"
@@ -244,11 +257,11 @@ export function AddTransaction({
             <Tag className="text-secondary group-focus-within:text-primary transition-colors" size={20} />
             <div className="flex-1">
               <p className="text-[10px] text-secondary font-black uppercase tracking-widest mb-1 opacity-50">
-                Note / Merchant
+                หมายเหตุ / ร้านค้า
               </p>
               <input
                 type="text"
-                placeholder="What was this for?"
+                placeholder="รายการนี้คืออะไร?"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="w-full bg-transparent border-none p-0 focus:ring-0 text-[15px] font-bold text-text-dark dark:text-white placeholder:text-secondary/40"
@@ -258,7 +271,7 @@ export function AddTransaction({
 
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2 px-2">
-              <p className="text-[10px] text-secondary font-black uppercase tracking-widest">Payment Method</p>
+              <p className="text-[11px] text-secondary font-semibold">วิธีชำระเงิน</p>
             </div>
             <div className="flex overflow-x-auto no-scrollbar gap-2 -mx-2 px-2">
               {PAYMENT_METHODS.map((method) => (

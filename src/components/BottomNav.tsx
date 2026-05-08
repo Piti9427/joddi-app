@@ -41,13 +41,13 @@ export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomN
       >
         <TabItem
           icon={<Home size={22} strokeWidth={currentView === 'dashboard' ? 2.2 : 1.6} />}
-          label="Home"
+          label="หน้าแรก"
           active={currentView === 'dashboard'}
           onClick={() => onNavigate('dashboard')}
         />
         <TabItem
           icon={<Receipt size={22} strokeWidth={currentView === 'transactions' ? 2.2 : 1.6} />}
-          label="Activity"
+          label="รายการ"
           active={currentView === 'transactions'}
           onClick={() => onNavigate('transactions')}
         />
@@ -77,13 +77,13 @@ export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomN
 
         <TabItem
           icon={<PieChart size={22} strokeWidth={currentView === 'analytics' ? 2.2 : 1.6} />}
-          label="Stats"
+          label="สถิติ"
           active={currentView === 'analytics'}
           onClick={() => onNavigate('analytics')}
         />
         <TabItem
           icon={<Landmark size={22} strokeWidth={currentView === 'budget' ? 2.2 : 1.6} />}
-          label="Budget"
+          label="งบ"
           active={currentView === 'budget'}
           onClick={() => onNavigate('budget')}
         />
@@ -124,7 +124,7 @@ function TabItem({
       {icon}
       <span
         style={{
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 700,
           lineHeight: 1,
           letterSpacing: '0.02em',

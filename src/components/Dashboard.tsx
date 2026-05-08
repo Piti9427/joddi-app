@@ -16,21 +16,26 @@ import {
   ArrowDownRight,
   Plus,
   PieChart,
-  Landmark,
+  Sparkles,
 } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
 import { motion } from 'motion/react';
+import { getLocalAiInsight } from '../lib/aiInsights';
 import { formatDateShort, formatMoney } from '../lib/formatters';
+import { AiInsightCard } from './AiInsightCard';
+import { SmartInput } from './SmartInput';
 
 const QUICK_ADD_TYPE_KEY = 'quick_add_type';
 
 export function Dashboard({
   onNavigate,
+  onAddTransaction,
   transactions,
   canCreateTransactions = true,
   readOnlyMode = false,
 }: {
   onNavigate: (v: ViewState) => void;
+  onAddTransaction: (t: Omit<Transaction, 'id'>) => void | Promise<void>;
   transactions: Transaction[];
   canCreateTransactions?: boolean;
   readOnlyMode?: boolean;
@@ -47,6 +52,7 @@ export function Dashboard({
     monthSpendRate,
     topExpenseCategory,
     recentTransactions,
+    aiInsight,
   } = useMemo(() => {
     const now = new Date();
     const today = now.toDateString();
@@ -98,7 +104,8 @@ export function Dashboard({
       monthNet: monthNetValue,
       monthSpendRate: spendRate,
       topExpenseCategory: bestCategory,
-      recentTransactions: transactions.slice(0, 6),
+      recentTransactions: transactions.slice(0, 3),
+      aiInsight: getLocalAiInsight(transactions),
     };
   }, [transactions]);
 
@@ -118,12 +125,8 @@ export function Dashboard({
     onNavigate('add_transaction');
   };
 
-  const monthStatus = monthNet >= 0 ? 'Positive Flow' : 'Negative Flow';
-  const monthStatusStyle =
-    monthNet >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
-
   return (
-    <div className="flex flex-col min-h-full pb-6 relative bg-slate-50 dark:bg-background-dark">
+    <div className="flex flex-col min-h-full pb-5 relative bg-slate-50 dark:bg-background-dark">
       <header
         className="flex items-center bg-white dark:bg-surface-dark px-4 pb-3 justify-between sticky top-0 z-20 border-b border-border/70 dark:border-slate-800/80"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
@@ -137,11 +140,9 @@ export function Dashboard({
           </motion.div>
           <div>
             <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em]">
-              {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+              {new Date().toLocaleDateString('th-TH', { weekday: 'short', month: 'short', day: 'numeric' })}
             </p>
-            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">
-              Financial Overview
-            </h2>
+            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">จดดี AI</h2>
           </div>
         </div>
         <div className="flex gap-1">
@@ -167,31 +168,90 @@ export function Dashboard({
       {readOnlyMode && (
         <section className="px-4 pt-3">
           <div className="rounded-2xl bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] font-black tracking-wide uppercase px-4 py-2.5 text-center">
-            Guest read-only mode: Sign in to add or edit data
+            โหมดทดลองอ่านอย่างเดียว: เข้าสู่ระบบก่อนเพิ่มหรือแก้ไขข้อมูล
           </div>
         </section>
       )}
 
-      <section className="px-4 py-4">
+      <SmartInput onNavigate={onNavigate} onAddTransaction={onAddTransaction} disabled={!canCreateTransactions} />
+
+      <AiInsightCard insight={aiInsight} onNavigate={onNavigate} />
+
+      <section className="px-4 py-3 grid grid-cols-4 gap-2">
+        <QuickActionCard
+          icon={<Sparkles size={18} />}
+          label="เพิ่ม"
+          onClick={() => openQuickAdd('Expense')}
+          disabled={!canCreateTransactions}
+        />
+        <QuickActionCard
+          icon={<TrendingUp size={18} />}
+          label="รายรับ"
+          onClick={() => openQuickAdd('Income')}
+          disabled={!canCreateTransactions}
+        />
+        <QuickActionCard
+          icon={<Receipt size={18} />}
+          label="สลิป"
+          onClick={() => onNavigate('review_receipt')}
+          disabled={!canCreateTransactions}
+        />
+        <QuickActionCard icon={<PieChart size={18} />} label="วิเคราะห์" onClick={() => onNavigate('analytics')} />
+      </section>
+
+      <section className="px-4">
+        <div className="bg-white dark:bg-surface-dark border border-border/70 dark:border-slate-800 rounded-3xl p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[11px] text-secondary font-extrabold">สถานะงบเดือนนี้</p>
+              <h3 className="text-lg font-black text-text-dark dark:text-white tabular-nums">
+                {formatCurrency(monthNet)}
+              </h3>
+            </div>
+            <button
+              onClick={() => onNavigate('budget')}
+              className="rounded-xl bg-slate-950 dark:bg-slate-100 text-white dark:text-slate-950 px-3 py-2 text-[11px] font-extrabold"
+            >
+              จัดการ
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            <MetricRow label="รายรับ" value={formatCurrency(monthIncome)} positive />
+            <MetricRow label="รายจ่าย" value={formatCurrency(monthExpense)} />
+            <MetricRow label="ใช้เทียบรายรับ" value={`${monthSpendRate.toFixed(0)}%`} warning={monthSpendRate > 80} />
+            <MetricRow
+              label="หมวดที่ใช้มากสุด"
+              value={
+                topExpenseCategory
+                  ? `${topExpenseCategory.category} (${formatCurrency(topExpenseCategory.amount)})`
+                  : 'ยังไม่มีรายจ่าย'
+              }
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 py-3">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-          className="bg-gradient-to-br from-emerald-500 via-primary to-emerald-700 rounded-[2.2rem] p-6 shadow-2xl shadow-primary/25 text-white relative overflow-hidden"
+          className="bg-gradient-to-br from-emerald-500 via-primary to-emerald-700 rounded-[1.6rem] p-5 shadow-xl shadow-primary/18 text-white relative overflow-hidden"
         >
           <div className="absolute -right-4 -top-4 p-4 opacity-10">
             <Wallet size={140} />
           </div>
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-1">
-              <span className="text-white/75 text-xs font-bold uppercase tracking-wider">Available Balance</span>
+              <span className="text-white/75 text-xs font-semibold">ยอดคงเหลือทั้งหมด</span>
               <CreditCard size={18} className="text-white/45" />
             </div>
             <motion.h1
               key={balance}
               initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="text-[2.2rem] leading-none font-black tracking-tight mb-6 tabular-nums"
+              className="text-[2rem] leading-none font-black mb-5 tabular-nums"
             >
               {formatCurrency(balance)}
             </motion.h1>
@@ -200,42 +260,20 @@ export function Dashboard({
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1.5 text-white/65">
                   <ArrowUpRight size={14} className="text-emerald-200" />
-                  <span className="text-[10px] font-bold uppercase tracking-wide">Total Income</span>
+                  <span className="text-[11px] font-semibold">รายรับรวม</span>
                 </div>
                 <p className="text-lg font-bold tabular-nums">{formatCurrency(totalIncome)}</p>
               </div>
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1.5 text-white/65">
                   <ArrowDownRight size={14} className="text-rose-200" />
-                  <span className="text-[10px] font-bold uppercase tracking-wide">Total Expense</span>
+                  <span className="text-[11px] font-semibold">รายจ่ายรวม</span>
                 </div>
                 <p className="text-lg font-bold tabular-nums">{formatCurrency(totalExpense)}</p>
               </div>
             </div>
           </div>
         </motion.div>
-      </section>
-
-      <section className="px-4 grid grid-cols-4 gap-2">
-        <QuickActionCard
-          icon={<Plus size={18} />}
-          label="Expense"
-          onClick={() => openQuickAdd('Expense')}
-          disabled={!canCreateTransactions}
-        />
-        <QuickActionCard
-          icon={<TrendingUp size={18} />}
-          label="Income"
-          onClick={() => openQuickAdd('Income')}
-          disabled={!canCreateTransactions}
-        />
-        <QuickActionCard
-          icon={<Receipt size={18} />}
-          label="Receipt"
-          onClick={() => onNavigate('review_receipt')}
-          disabled={!canCreateTransactions}
-        />
-        <QuickActionCard icon={<PieChart size={18} />} label="Analytics" onClick={() => onNavigate('analytics')} />
       </section>
 
       <section className="px-4 py-3 grid grid-cols-2 gap-3">
@@ -249,7 +287,7 @@ export function Dashboard({
             <TrendingUp size={18} />
           </div>
           <div>
-            <p className="text-secondary text-[10px] font-bold uppercase mb-0.5">Today In</p>
+            <p className="text-secondary text-[11px] font-semibold mb-0.5">รับวันนี้</p>
             <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
               {formatCurrency(todayIncome, 2)}
             </p>
@@ -265,7 +303,7 @@ export function Dashboard({
             <TrendingDown size={18} />
           </div>
           <div>
-            <p className="text-secondary text-[10px] font-bold uppercase mb-0.5">Today Out</p>
+            <p className="text-secondary text-[11px] font-semibold mb-0.5">จ่ายวันนี้</p>
             <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
               {formatCurrency(todayExpense, 2)}
             </p>
@@ -273,45 +311,15 @@ export function Dashboard({
         </motion.div>
       </section>
 
-      <section className="px-4">
-        <div className="bg-white dark:bg-surface-dark border border-border/70 dark:border-slate-800 rounded-3xl p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-secondary font-black">This Month</p>
-              <h3 className="text-lg font-black text-text-dark dark:text-white tabular-nums">
-                {formatCurrency(monthNet)}
-              </h3>
-            </div>
-            <span className={`text-[10px] font-black uppercase tracking-widest ${monthStatusStyle}`}>
-              {monthStatus}
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            <MetricRow label="Income" value={formatCurrency(monthIncome)} positive />
-            <MetricRow label="Expense" value={formatCurrency(monthExpense)} />
-            <MetricRow label="Spend / Income" value={`${monthSpendRate.toFixed(0)}%`} warning={monthSpendRate > 80} />
-            <MetricRow
-              label="Top Category"
-              value={
-                topExpenseCategory
-                  ? `${topExpenseCategory.category} (${formatCurrency(topExpenseCategory.amount)})`
-                  : 'No expense yet'
-              }
-            />
-          </div>
-        </div>
-      </section>
-
       <section className="flex flex-col px-4 mt-5">
         <div className="flex items-center justify-between mb-4 px-2">
-          <h3 className="text-text-dark dark:text-slate-100 text-lg font-black tracking-tight">Recent Activity</h3>
+          <h3 className="text-text-dark dark:text-slate-100 text-lg font-extrabold">รายการล่าสุด</h3>
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={() => onNavigate('transactions')}
             className="flex items-center gap-1 text-primary text-xs font-bold transition-all"
           >
-            See all
+            ดูทั้งหมด
             <ChevronRight size={14} />
           </motion.button>
         </div>
@@ -326,13 +334,13 @@ export function Dashboard({
               <div className="size-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
                 <Receipt size={32} />
               </div>
-              <p className="text-secondary font-bold text-sm">No transactions yet</p>
+              <p className="text-secondary font-bold text-sm">ยังไม่มีรายการ</p>
               <button
                 disabled={!canCreateTransactions}
                 onClick={() => onNavigate('add_transaction')}
                 className={`mt-4 text-xs font-bold underline underline-offset-4 ${canCreateTransactions ? 'text-primary' : 'text-secondary opacity-60 cursor-not-allowed'}`}
               >
-                {canCreateTransactions ? 'Add your first one' : 'Sign in to add transactions'}
+                {canCreateTransactions ? 'เพิ่มรายการแรก' : 'เข้าสู่ระบบเพื่อเพิ่มรายการ'}
               </button>
             </motion.div>
           ) : (
@@ -349,16 +357,6 @@ export function Dashboard({
             ))
           )}
         </div>
-      </section>
-
-      <section className="px-4 pb-2">
-        <button
-          onClick={() => onNavigate('budget')}
-          className="w-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 rounded-2xl py-3.5 px-4 text-sm font-bold flex items-center justify-center gap-2"
-        >
-          <Landmark size={16} />
-          Open Budget Planner
-        </button>
       </section>
 
       <div className="h-3" />
@@ -382,12 +380,12 @@ function QuickActionCard({
       whileTap={disabled ? undefined : { scale: 0.97 }}
       onClick={onClick}
       disabled={disabled}
-      className={`bg-white dark:bg-surface-dark border border-border dark:border-slate-800 rounded-2xl py-3 px-2 shadow-sm flex flex-col items-center justify-center gap-1 ${
+      className={`bg-white dark:bg-surface-dark border border-border dark:border-slate-800 rounded-2xl py-3 px-2 shadow-sm flex flex-col items-center justify-center gap-1 min-h-[72px] ${
         disabled ? 'text-secondary opacity-60 cursor-not-allowed' : 'text-text-dark dark:text-white'
       }`}
     >
       <span className="text-primary">{icon}</span>
-      <span className="text-[10px] uppercase tracking-wide font-black">{label}</span>
+      <span className="text-[11px] font-extrabold leading-none">{label}</span>
     </motion.button>
   );
 }
@@ -410,8 +408,8 @@ function MetricRow({
       : 'text-text-dark dark:text-white';
 
   return (
-    <div className="flex items-center justify-between text-xs">
-      <span className="text-secondary font-bold uppercase tracking-wide">{label}</span>
+    <div className="flex items-center justify-between text-xs gap-3">
+      <span className="text-secondary font-semibold">{label}</span>
       <span className={`font-black tabular-nums ${textStyle}`}>{value}</span>
     </div>
   );
@@ -464,9 +462,9 @@ function TransactionItem({
             {merchant || category}
           </p>
           <div className="flex items-center gap-1 mt-0.5">
-            <span className="text-[10px] font-bold text-secondary uppercase tracking-tight">{category}</span>
+            <span className="text-[10px] font-bold text-secondary">{category}</span>
             <span className="size-1 bg-slate-200 dark:bg-slate-700 rounded-full"></span>
-            <span className="text-[10px] font-bold text-secondary opacity-60 uppercase">{formatDateShort(date)}</span>
+            <span className="text-[10px] font-bold text-secondary opacity-60">{formatDateShort(date, 'th-TH')}</span>
           </div>
         </div>
         <div className="text-right shrink-0">

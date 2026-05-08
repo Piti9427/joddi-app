@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { ArrowLeft, BadgeCheck, Banknote, Calendar, Camera, CheckCircle, FileEdit, Store, Tag } from 'lucide-react';
 import { ViewState } from '../App';
 import { captureReceiptPhoto, lightHaptic } from '../lib/device';
-import { uploadReceiptImage } from '../lib/supabase';
+import {
+  createLocalReceiptDraft,
+  saveLocalReceiptDraft,
+  syncPendingTransactions,
+  type LocalReceiptDraft,
+} from '../lib/supabase';
 
 export function ReviewReceipt({
   onNavigate,
@@ -18,15 +23,34 @@ export function ReviewReceipt({
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
-  const [receiptPath, setReceiptPath] = useState<string | null>(null);
+  const [receiptDraft, setReceiptDraft] = useState<LocalReceiptDraft | null>(null);
+  const [statusMessage, setStatusMessage] = useState('ตรวจทานเองได้ ไม่บังคับใช้ OCR');
 
   const handleCapture = async () => {
     const image = await captureReceiptPhoto();
     if (!image) return;
+
     setReceiptImage(image);
-    uploadReceiptImage(image)
-      .then(setReceiptPath)
-      .catch(() => setReceiptPath(null));
+    setStatusMessage('กำลังบันทึกสลิปแบบร่าง...');
+
+    const draft = createLocalReceiptDraft({
+      imageDataUrl: image,
+      parsedMerchant: merchant.trim() || undefined,
+      parsedAmount: Number(amount) > 0 ? Number(amount) : null,
+      parsedDate: date,
+    });
+
+    const savedDraft = await saveLocalReceiptDraft(draft);
+    setReceiptDraft(savedDraft);
+    setStatusMessage('บันทึกสลิปแล้ว จะตรวจทานต่อหรือจบเลยก็ได้');
+
+    syncPendingTransactions()
+      .then((result) => {
+        if (result.receipts?.failed.length) {
+          setStatusMessage('บันทึกในเครื่องแล้ว รูปจะซิงก์เมื่อเครือข่ายพร้อม');
+        }
+      })
+      .catch(() => setStatusMessage('บันทึกในเครื่องแล้ว รูปจะซิงก์ภายหลัง'));
   };
 
   const handleSave = async () => {
@@ -38,8 +62,8 @@ export function ReviewReceipt({
       type: 'Expense',
       amount: parsedAmount,
       category: category.trim() || 'Food',
-      merchant: merchant.trim() || category.trim() || 'Receipt',
-      note: note.trim() || (receiptPath ? `Receipt: ${receiptPath}` : ''),
+      merchant: merchant.trim() || category.trim() || 'สลิป',
+      note: note.trim() || (receiptDraft ? `สลิปแบบร่าง: ${receiptDraft.id}` : ''),
       date,
       paymentMethod: 'cash',
     });
@@ -60,53 +84,61 @@ export function ReviewReceipt({
           <ArrowLeft size={24} />
         </button>
         <h1 className="text-lg font-bold leading-tight flex-1 text-center pr-10 text-text-dark dark:text-white">
-          Receipt Review
+          ตรวจสลิป
         </h1>
       </header>
 
-      <main className="flex-1 w-full p-6 space-y-8 overflow-y-auto">
-        <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Receipt Photo</h3>
+      <main className="flex-1 w-full p-4 space-y-5 overflow-y-auto">
+        <section className="space-y-3">
+          <h3 className="text-sm font-extrabold text-text-dark dark:text-white">ถ่ายสลิปแบบเร็ว</h3>
           <button
             onClick={handleCapture}
-            className="relative w-full bg-input-bg dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-border aspect-[3/4] flex items-center justify-center"
+            className="relative w-full bg-input-bg dark:bg-slate-800 rounded-[1.35rem] overflow-hidden shadow-sm border border-border aspect-[4/5] flex items-center justify-center"
           >
             {receiptImage ? (
-              <img className="w-full h-full object-cover" src={receiptImage} alt="Receipt" />
+              <img className="w-full h-full object-cover" src={receiptImage} alt="รูปสลิป" />
             ) : (
               <div className="flex flex-col items-center gap-3 text-secondary">
                 <Camera size={44} />
-                <span className="text-sm font-black uppercase tracking-widest">Capture Receipt</span>
+                <span className="text-sm font-extrabold">ถ่ายรูปและบันทึกแบบร่าง</span>
               </div>
             )}
           </button>
           <div className="flex items-center gap-2 text-secondary text-sm italic font-medium">
             <BadgeCheck size={16} className="text-primary" />
-            {receiptPath ? 'Image saved to Supabase Storage' : 'Manual review mode, no paid OCR'}
+            {statusMessage}
           </div>
+          {receiptDraft && (
+            <button
+              onClick={() => onNavigate('dashboard')}
+              className="w-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-bold py-3 rounded-2xl active:scale-[0.98] transition-all"
+            >
+              เสร็จแล้ว
+            </button>
+          )}
         </section>
 
         <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Receipt Details</h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-3xl p-6 shadow-sm border border-border dark:border-slate-800 space-y-5">
+          <h3 className="text-sm font-extrabold text-text-dark dark:text-white">รายละเอียดสำหรับบันทึกเป็นรายการ</h3>
+          <div className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-5 shadow-sm border border-border dark:border-slate-800 space-y-5">
             <EditableRow
               icon={<Store />}
-              label="Merchant"
+              label="ร้านค้า"
               value={merchant}
               onChange={setMerchant}
-              placeholder="Store name"
+              placeholder="ชื่อร้าน"
             />
             <EditableRow
               icon={<Banknote />}
-              label="Amount"
+              label="จำนวนเงิน"
               value={amount}
               onChange={setAmount}
               placeholder="0.00"
               inputMode="decimal"
             />
-            <EditableRow icon={<Calendar />} label="Date" value={date} onChange={setDate} type="date" />
-            <EditableRow icon={<Tag />} label="Category" value={category} onChange={setCategory} placeholder="Food" />
-            <EditableRow icon={<FileEdit />} label="Note" value={note} onChange={setNote} placeholder="Optional note" />
+            <EditableRow icon={<Calendar />} label="วันที่" value={date} onChange={setDate} type="date" />
+            <EditableRow icon={<Tag />} label="หมวดหมู่" value={category} onChange={setCategory} placeholder="อาหาร" />
+            <EditableRow icon={<FileEdit />} label="หมายเหตุ" value={note} onChange={setNote} placeholder="ไม่บังคับ" />
           </div>
 
           <button
@@ -115,7 +147,7 @@ export function ReviewReceipt({
             className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-2xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-40"
           >
             <CheckCircle size={20} />
-            {saving ? 'Saving...' : 'Confirm & Save'}
+            {saving ? 'กำลังบันทึก...' : 'ยืนยันและบันทึก'}
           </button>
         </section>
       </main>
@@ -146,7 +178,7 @@ function EditableRow({
         {React.cloneElement(icon, { size: 22 })}
       </div>
       <div className="flex-1">
-        <p className="text-[11px] text-secondary font-bold uppercase tracking-wider">{label}</p>
+        <p className="text-[11px] text-secondary font-semibold">{label}</p>
         <input
           type={type}
           inputMode={inputMode}

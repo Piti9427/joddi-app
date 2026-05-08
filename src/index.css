@@ -37,6 +37,10 @@
   --highlight: #f0fdf4;
   --input-bg: #f1f5f9;
   --border: #e2e8f0;
+  --ai-ink: #0f172a;
+  --ai-accent-a: #14b8a6;
+  --ai-accent-b: #6366f1;
+  --ai-accent-c: #f43f5e;
 
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
@@ -60,6 +64,10 @@
   --highlight: #064e3b;
   --input-bg: #334155;
   --border: #334155;
+  --ai-ink: #f8fafc;
+  --ai-accent-a: #2dd4bf;
+  --ai-accent-b: #818cf8;
+  --ai-accent-c: #fb7185;
 }
 
 /* ── Base ── */
@@ -83,7 +91,13 @@ body {
   transition:
     background-color 0.3s,
     color 0.3s;
-  font-family: 'Outfit', sans-serif;
+  font-family:
+    'Noto Sans Thai',
+    'Outfit',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
@@ -150,6 +164,47 @@ select,
     background: rgba(255, 255, 255, 0.7);
   }
 
+  .ai-command-surface {
+    background:
+      linear-gradient(135deg, rgba(20, 184, 166, 0.92), rgba(15, 23, 42, 0.98) 46%, rgba(99, 102, 241, 0.94)),
+      var(--ai-ink);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .ai-surface {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .ai-surface::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0)),
+      repeating-linear-gradient(
+        135deg,
+        rgba(15, 23, 42, 0.035) 0,
+        rgba(15, 23, 42, 0.035) 1px,
+        transparent 1px,
+        transparent 11px
+      );
+  }
+
+  .dark .ai-surface::before {
+    background:
+      linear-gradient(90deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0)),
+      repeating-linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.045) 0,
+        rgba(255, 255, 255, 0.045) 1px,
+        transparent 1px,
+        transparent 11px
+      );
+  }
+
   .dark .glass {
     border-color: rgba(51, 65, 85, 0.3);
     background: rgba(15, 23, 42, 0.7);
@@ -199,7 +254,7 @@ h1,
 h2,
 h3,
 h4 {
-  letter-spacing: -0.025em;
+  letter-spacing: 0;
 }
 
 input[type='date']::-webkit-inner-spin-button,

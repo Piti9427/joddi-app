@@ -64,19 +64,19 @@ export function TransactionHistory({
   const formatDateHeader = (dateString: string) => {
     const today = new Date().toDateString();
     const yesterday = new Date(Date.now() - 86400000).toDateString();
-    if (dateString === today) return 'Today';
-    if (dateString === yesterday) return 'Yesterday';
-    return new Date(dateString).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    if (dateString === today) return 'วันนี้';
+    if (dateString === yesterday) return 'เมื่อวาน';
+    return new Date(dateString).toLocaleDateString('th-TH', { weekday: 'short', month: 'short', day: 'numeric' });
   };
 
   return (
     <div className="flex flex-col h-full min-h-0 relative bg-slate-50 dark:bg-background-dark">
       <header
-        className="flex flex-col bg-white dark:bg-surface-dark p-6 border-b border-border dark:border-slate-800 shrink-0 z-20"
+        className="flex flex-col bg-white dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 shrink-0 z-20"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 16px)' }}
       >
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-black tracking-tight text-text-dark dark:text-white">Activity</h1>
+          <h1 className="text-2xl font-black text-text-dark dark:text-white">รายการทั้งหมด</h1>
           <motion.button
             whileTap={{ scale: 0.9 }}
             className="text-primary p-2 bg-primary/10 rounded-full hover:bg-primary/20 transition-colors"
@@ -89,7 +89,7 @@ export function TransactionHistory({
           <Search size={18} className="text-secondary" />
           <input
             type="text"
-            placeholder="Search by merchant or category..."
+            placeholder="ค้นหาจากร้านค้า หมวดหมู่ หรือหมายเหตุ"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="bg-transparent border-none focus:ring-0 text-[13px] font-bold w-full placeholder:text-secondary/60 outline-none text-text-dark dark:text-white"
@@ -107,7 +107,7 @@ export function TransactionHistory({
             <div className="size-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 text-slate-300">
               <Search size={48} />
             </div>
-            <h3 className="text-lg font-black text-text-dark dark:text-white mb-2">No matching records</h3>
+            <h3 className="text-lg font-black text-text-dark dark:text-white mb-2">ไม่พบรายการที่ตรงกัน</h3>
           </motion.div>
         ) : (
           <div
@@ -148,7 +148,7 @@ function DateHeader({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 px-2 py-3">
       <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
-      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary opacity-60">{label}</h3>
+      <h3 className="text-[11px] font-extrabold text-secondary opacity-70">{label}</h3>
       <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
     </div>
   );
@@ -163,12 +163,12 @@ function TransactionRow({
 }) {
   const isExpense = transaction.type === 'Expense';
   const syncLabel =
-    transaction.syncStatus === 'pending' ? 'Pending sync' : transaction.syncStatus === 'failed' ? 'Sync failed' : '';
+    transaction.syncStatus === 'pending' ? 'รอซิงก์' : transaction.syncStatus === 'failed' ? 'ซิงก์ไม่สำเร็จ' : '';
 
   return (
     <motion.div
       whileTap={{ scale: 0.98 }}
-      className="mb-2 bg-white dark:bg-surface-dark p-4 rounded-[2rem] shadow-sm border border-border/40 dark:border-slate-800/40 flex items-center gap-4 hover:shadow-md transition-all group cursor-pointer"
+      className="mb-2 bg-white dark:bg-surface-dark p-4 rounded-[1.35rem] shadow-sm border border-border/40 dark:border-slate-800/40 flex items-center gap-4 hover:shadow-md transition-all group cursor-pointer"
     >
       <div
         className={`size-12 rounded-2xl flex items-center justify-center shrink-0 ${isExpense ? 'bg-expense-bg/60 text-expense' : 'bg-income-bg/60 text-income'}`}
@@ -180,12 +180,10 @@ function TransactionRow({
           {transaction.merchant || transaction.category}
         </p>
         <div className="flex items-center gap-2 overflow-hidden">
-          <p className="text-[10px] font-bold text-secondary uppercase tracking-tighter opacity-70 truncate">
-            {transaction.category}
-          </p>
+          <p className="text-[10px] font-semibold text-secondary opacity-70 truncate">{transaction.category}</p>
           {syncLabel && (
             <span
-              className={`shrink-0 rounded-full px-2 py-0.5 text-[8px] font-black uppercase ${transaction.syncStatus === 'failed' ? 'bg-expense-bg text-expense' : 'bg-amber-100 text-amber-700'}`}
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold ${transaction.syncStatus === 'failed' ? 'bg-expense-bg text-expense' : 'bg-amber-100 text-amber-700'}`}
             >
               {syncLabel}
             </span>

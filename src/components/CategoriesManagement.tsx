@@ -15,6 +15,13 @@ import {
   Trash,
   Check,
   Tag,
+  BrainCircuit,
+  Sparkles,
+  ScanLine,
+  WalletCards,
+  Landmark,
+  Smartphone,
+  ChartNoAxesCombined,
 } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import {
@@ -38,6 +45,13 @@ const ICONS: Record<string, React.ReactNode> = {
   Banknote: <Banknote />,
   Gift: <Gift />,
   Tag: <Tag />,
+  BrainCircuit: <BrainCircuit />,
+  Sparkles: <Sparkles />,
+  ScanLine: <ScanLine />,
+  WalletCards: <WalletCards />,
+  Landmark: <Landmark />,
+  Smartphone: <Smartphone />,
+  ChartNoAxesCombined: <ChartNoAxesCombined />,
 };
 
 const ICON_OPTIONS = [
@@ -50,6 +64,13 @@ const ICON_OPTIONS = [
   { name: 'Banknote', icon: <Banknote size={20} /> },
   { name: 'Gift', icon: <Gift size={20} /> },
   { name: 'Tag', icon: <Tag size={20} /> },
+  { name: 'BrainCircuit', icon: <BrainCircuit size={20} /> },
+  { name: 'Sparkles', icon: <Sparkles size={20} /> },
+  { name: 'ScanLine', icon: <ScanLine size={20} /> },
+  { name: 'WalletCards', icon: <WalletCards size={20} /> },
+  { name: 'Landmark', icon: <Landmark size={20} /> },
+  { name: 'Smartphone', icon: <Smartphone size={20} /> },
+  { name: 'ChartNoAxesCombined', icon: <ChartNoAxesCombined size={20} /> },
 ];
 
 const COLOR_OPTIONS = [
@@ -134,7 +155,7 @@ export function CategoriesManagement({
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Delete this category?')) {
+    if (window.confirm('ลบหมวดหมู่นี้หรือไม่?')) {
       await deleteLocalCategory(id);
       await loadCategories();
       syncAllOfflineData().catch((error) => console.error('Category delete sync error:', error));
@@ -191,9 +212,7 @@ export function CategoriesManagement({
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
         <div className="size-10 shrink-0"></div>
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">
-          Categories
-        </h1>
+        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">หมวดหมู่</h1>
         <button
           onClick={() => {
             setShowAddForm(!showAddForm);
@@ -205,12 +224,26 @@ export function CategoriesManagement({
         </button>
       </header>
 
-      <main className="p-4 flex flex-col flex-1 space-y-6">
+      <main className="p-4 flex flex-col flex-1 space-y-5">
+        <section className="ai-surface bg-surface dark:bg-surface-dark rounded-[1.35rem] p-4 border border-border dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="size-11 rounded-2xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <p className="text-[11px] font-extrabold text-primary">หมวดหมู่พร้อมใช้กับ AI</p>
+              <h2 className="text-sm font-extrabold text-text-dark dark:text-white leading-snug">
+                ตั้งชื่อหมวดให้ชัดเจน เพื่อให้ช่องเพิ่มอัจฉริยะจัดประเภทได้แม่นขึ้น
+              </h2>
+            </div>
+          </div>
+        </section>
+
         {/* ADD FORM */}
         {showAddForm && (
-          <section className="bg-surface dark:bg-surface-dark rounded-3xl p-6 shadow-xl border-2 border-primary/40 animate-in fade-in slide-in-from-top-4 duration-200">
+          <section className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-5 shadow-xl border-2 border-primary/40 animate-in fade-in slide-in-from-top-4 duration-200">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-sm font-extrabold text-primary flex items-center gap-2">Create New Category</h3>
+              <h3 className="text-sm font-extrabold text-primary flex items-center gap-2">สร้างหมวดใหม่</h3>
               <button
                 onClick={() => setShowAddForm(false)}
                 className="text-secondary hover:text-rose-500 transition-colors"
@@ -223,7 +256,7 @@ export function CategoriesManagement({
               <input
                 autoFocus
                 type="text"
-                placeholder="Ex: Groceries, Games, etc."
+                placeholder="เช่น ของใช้ เกม ค่าเดินทาง"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 className="w-full bg-input-bg dark:bg-slate-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/50 text-text-dark dark:text-white font-bold"
@@ -234,18 +267,18 @@ export function CategoriesManagement({
                   onClick={() => setNewType('Expense')}
                   className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${newType === 'Expense' ? 'bg-expense text-white shadow-md' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}
                 >
-                  Expense
+                  รายจ่าย
                 </button>
                 <button
                   onClick={() => setNewType('Income')}
                   className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${newType === 'Income' ? 'bg-income text-white shadow-md' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}
                 >
-                  Income
+                  รายรับ
                 </button>
               </div>
 
               <div>
-                <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-2">Select Icon</p>
+                <p className="text-[11px] text-secondary font-semibold mb-2">เลือกไอคอน</p>
                 <div className="flex flex-wrap gap-2">
                   {ICON_OPTIONS.map((opt) => (
                     <button
@@ -260,7 +293,7 @@ export function CategoriesManagement({
               </div>
 
               <div>
-                <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-2">Select Color</p>
+                <p className="text-[11px] text-secondary font-semibold mb-2">เลือกสี</p>
                 <div className="flex flex-wrap gap-2">
                   {COLOR_OPTIONS.map((opt) => (
                     <button
@@ -277,7 +310,7 @@ export function CategoriesManagement({
                 disabled={!newName.trim()}
                 className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all disabled:opacity-30 flex items-center justify-center gap-2"
               >
-                <Check size={20} /> Create Category
+                <Check size={20} /> สร้างหมวดหมู่
               </button>
             </div>
           </section>
@@ -285,10 +318,8 @@ export function CategoriesManagement({
 
         {/* Expenses */}
         <section className="space-y-3">
-          <h3 className="text-xs font-black uppercase tracking-widest text-secondary pl-2">
-            Expenses ({expenses.length})
-          </h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
+          <h3 className="text-sm font-extrabold text-secondary pl-2">รายจ่าย ({expenses.length})</h3>
+          <div className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
             {expenses.map((cat) => (
               <CategoryRow
                 key={cat.id}
@@ -312,10 +343,8 @@ export function CategoriesManagement({
 
         {/* Income */}
         <section className="space-y-3">
-          <h3 className="text-xs font-black uppercase tracking-widest text-secondary pl-2">
-            Income ({incomes.length})
-          </h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
+          <h3 className="text-sm font-extrabold text-secondary pl-2">รายรับ ({incomes.length})</h3>
+          <div className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
             {incomes.map((cat) => (
               <CategoryRow
                 key={cat.id}
@@ -403,7 +432,7 @@ function CategoryRow({
             onClick={onSave}
             className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-primary/20"
           >
-            <Check size={18} /> Save
+            <Check size={18} /> บันทึก
           </button>
           <button
             onClick={onDelete}
@@ -435,8 +464,8 @@ function CategoryRow({
       <div className="flex-1 flex justify-between items-center">
         <div>
           <p className="text-text-dark dark:text-slate-100 font-extrabold text-[15px]">{category.name}</p>
-          <p className="text-text-secondary dark:text-slate-500 text-[11px] font-bold uppercase tracking-tight mt-0.5">
-            {count} transactions{category.syncStatus !== 'synced' ? ` · ${category.syncStatus}` : ''}
+          <p className="text-text-secondary dark:text-slate-500 text-[11px] font-semibold mt-0.5">
+            ใช้แล้ว {count} รายการ{category.syncStatus !== 'synced' ? ` · ${category.syncStatus}` : ''}
           </p>
         </div>
         <div className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
