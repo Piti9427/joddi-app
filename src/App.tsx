@@ -39,7 +39,7 @@ export interface Transaction {
   updatedAt?: string;
 }
 
-const READ_ONLY_WRITE_BLOCKED_MESSAGE = 'โหมด Read-only: กรุณา Sign in ก่อนเพิ่มหรือแก้ไขข้อมูล';
+const LOCAL_WRITE_BLOCKED_MESSAGE = 'ยังไม่พร้อมบันทึกข้อมูลในเครื่อง กรุณาลองใหม่อีกครั้ง';
 
 function buildDemoTransactions(): Transaction[] {
   const now = Date.now();
@@ -118,7 +118,8 @@ export default function App() {
   const [accessMessage, setAccessMessage] = useState('');
   const accessMessageTimeout = useRef<number | null>(null);
 
-  const canWrite = Boolean(session);
+  const isAuthenticated = Boolean(session);
+  const canWrite = isAuthenticated || isGuestMode;
 
   useEffect(() => {
     return () => {
@@ -173,7 +174,9 @@ export default function App() {
         setBaseView('dashboard');
         await fetchTransactions();
       } else {
-        await clearLocalTransactions().catch((clearError) => console.error('Offline cache clear error:', clearError));
+        setIsGuestMode(true);
+        setCurrentView('dashboard');
+        setBaseView('dashboard');
         setLoading(false);
       }
     };
@@ -192,9 +195,8 @@ export default function App() {
         setBaseView('dashboard');
         await fetchTransactions();
       } else {
-        await clearLocalTransactions().catch((clearError) => console.error('Offline cache clear error:', clearError));
-        setTransactions([]);
-        setCurrentView('onboarding');
+        setIsGuestMode(true);
+        setCurrentView('dashboard');
         setBaseView('dashboard');
         setLoading(false);
       }
@@ -246,7 +248,7 @@ export default function App() {
 
   const handleAddTransaction = async (t: Omit<Transaction, 'id'>) => {
     if (!canWrite) {
-      showAccessMessage(READ_ONLY_WRITE_BLOCKED_MESSAGE);
+      showAccessMessage(LOCAL_WRITE_BLOCKED_MESSAGE);
       return;
     }
 
@@ -299,9 +301,10 @@ export default function App() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    setIsGuestMode(false);
+    await clearLocalTransactions().catch((clearError) => console.error('Offline cache clear error:', clearError));
+    setIsGuestMode(true);
     setTransactions([]);
-    setCurrentView('onboarding');
+    setCurrentView('dashboard');
     setBaseView('dashboard');
   };
 
@@ -317,7 +320,7 @@ export default function App() {
     const blockedViewForReadOnly: ViewState[] = ['add_transaction', 'review_receipt', 'categories'];
 
     if (!canWrite && blockedViewForReadOnly.includes(nextView)) {
-      showAccessMessage(READ_ONLY_WRITE_BLOCKED_MESSAGE);
+      showAccessMessage(LOCAL_WRITE_BLOCKED_MESSAGE);
       return;
     }
 
@@ -359,7 +362,7 @@ export default function App() {
             onNavigate={navigate}
             transactions={transactions}
             canCreateTransactions={canWrite}
-            readOnlyMode={isGuestMode}
+            readOnlyMode={false}
           />
         );
       case 'review_receipt':
@@ -376,7 +379,7 @@ export default function App() {
         return (
           <Settings
             onNavigate={navigate}
-            isAuthenticated={canWrite}
+            isAuthenticated={isAuthenticated}
             onSignOut={handleSignOut}
             onRequestSignIn={closeGuestModeAndRequireAuth}
             userEmail={session?.user?.email}
@@ -388,7 +391,7 @@ export default function App() {
             onNavigate={navigate}
             transactions={transactions}
             canCreateTransactions={canWrite}
-            readOnlyMode={isGuestMode}
+            readOnlyMode={false}
           />
         );
     }
@@ -399,7 +402,7 @@ export default function App() {
       <div className="w-full max-w-md bg-white dark:bg-background-dark shadow-2xl relative overflow-hidden h-full flex flex-col">
         {isGuestMode && (
           <div className="absolute top-3 right-3 z-40 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 px-3 py-1 text-[10px] font-black uppercase tracking-wide">
-            Read-only
+            Local only
           </div>
         )}
 

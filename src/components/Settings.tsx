@@ -110,7 +110,7 @@ export function Settings({
                 <div className="size-10 rounded-[1.2rem] bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
                   <LogIn size={20} />
                 </div>
-                <div className="flex-1 font-bold">Sign In to Unlock Writing</div>
+                <div className="flex-1 font-bold">Sign In to Sync</div>
               </button>
             )}
           </div>
