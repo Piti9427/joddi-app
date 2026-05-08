@@ -31,7 +31,7 @@ function LandmarkIcon({ size }: { size: number }) {
 
 export function AddTransaction({ onNavigate, onAddTransaction, returnView = 'dashboard' }: { 
   onNavigate: (v: ViewState) => void, 
-  onAddTransaction: (t: Omit<Transaction, 'id'>) => void,
+  onAddTransaction: (t: Omit<Transaction, 'id'>) => void | Promise<void>,
   returnView?: ViewState,
 }) {
   const [amount, setAmount] = useState('0');
@@ -110,11 +110,11 @@ export function AddTransaction({ onNavigate, onAddTransaction, returnView = 'das
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const val = parseFloat(amount);
     if (val === 0) return;
     
-    onAddTransaction({
+    await onAddTransaction({
       type,
       amount: val,
       category: category || (type === 'Expense' ? 'Misc' : 'Income'),

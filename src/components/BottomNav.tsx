@@ -19,6 +19,8 @@ export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomN
         borderTop: '1px solid #e5e7eb',
         backgroundColor: '#ffffff',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        paddingLeft: 'env(safe-area-inset-left, 0px)',
+        paddingRight: 'env(safe-area-inset-right, 0px)',
       }}
     >
       <div

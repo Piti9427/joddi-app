@@ -1,7 +1,17 @@
 import React, { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Session } from '@supabase/supabase-js';
-import { supabase, allowGuestReadOnly } from './lib/supabase';
+import {
+  allowGuestReadOnly,
+  clearLocalTransactions,
+  createOptimisticTransaction,
+  getLocalTransactions,
+  replaceSyncedTransactions,
+  saveLocalTransaction,
+  supabase,
+  syncPendingTransactions,
+  type TransactionSyncStatus,
+} from './lib/supabase';
 
 export type ViewState =
   | 'onboarding'
@@ -23,6 +33,10 @@ export interface Transaction {
   note: string;
   date: string;
   merchant?: string;
+  localId?: string;
+  syncStatus?: TransactionSyncStatus;
+  syncError?: string;
+  updatedAt?: string;
 }
 
 const READ_ONLY_WRITE_BLOCKED_MESSAGE = 'โหมด Read-only: กรุณา Sign in ก่อนเพิ่มหรือแก้ไขข้อมูล';
@@ -38,6 +52,7 @@ function buildDemoTransactions(): Transaction[] {
       merchant: 'Demo Company',
       note: 'Demo data',
       date: new Date(now - 86400000 * 2).toISOString(),
+      syncStatus: 'synced',
     },
     {
       id: 'demo-2',
@@ -47,6 +62,7 @@ function buildDemoTransactions(): Transaction[] {
       merchant: 'Cafe',
       note: 'Demo data',
       date: new Date(now - 86400000).toISOString(),
+      syncStatus: 'synced',
     },
     {
       id: 'demo-3',
@@ -56,6 +72,7 @@ function buildDemoTransactions(): Transaction[] {
       merchant: 'BTS',
       note: 'Demo data',
       date: new Date(now).toISOString(),
+      syncStatus: 'synced',
     },
   ];
 }
@@ -131,6 +148,16 @@ export default function App() {
 
     const initAuth = async () => {
       setSessionChecked(false);
+
+      try {
+        const localTransactions = await getLocalTransactions();
+        if (localTransactions.length > 0) {
+          setTransactions(localTransactions);
+        }
+      } catch (error) {
+        console.error('Offline cache read error:', error);
+      }
+
       const { data, error } = await supabase.auth.getSession();
       if (error) {
         console.error('Auth getSession error:', error);
@@ -144,8 +171,9 @@ export default function App() {
         setIsGuestMode(false);
         setCurrentView('dashboard');
         setBaseView('dashboard');
-        await fetchTransactions(existingSession);
+        await fetchTransactions();
       } else {
+        await clearLocalTransactions().catch((clearError) => console.error('Offline cache clear error:', clearError));
         setLoading(false);
       }
     };
@@ -162,8 +190,9 @@ export default function App() {
         setIsGuestMode(false);
         setCurrentView('dashboard');
         setBaseView('dashboard');
-        await fetchTransactions(nextSession);
+        await fetchTransactions();
       } else {
+        await clearLocalTransactions().catch((clearError) => console.error('Offline cache clear error:', clearError));
         setTransactions([]);
         setCurrentView('onboarding');
         setBaseView('dashboard');
@@ -174,20 +203,42 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchTransactions = async (activeSession: Session) => {
+  useEffect(() => {
+    const handleOnline = () => {
+      if (!session || isGuestMode) return;
+      syncPendingTransactions()
+        .then(() => getLocalTransactions())
+        .then((localTransactions) => setTransactions(localTransactions))
+        .catch((error) => console.error('Background sync error:', error));
+    };
+
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [session, isGuestMode]);
+
+  const fetchTransactions = async () => {
     setLoading(true);
     try {
+      const syncResult = await syncPendingTransactions();
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .order('date', { ascending: false });
 
       if (error) throw error;
-      setTransactions(data ?? []);
+      const mergedTransactions = await replaceSyncedTransactions((data ?? []) as Transaction[]);
+      setTransactions(mergedTransactions);
+
+      if (syncResult.failed.length > 0) {
+        showAccessMessage('มีรายการบางส่วนยัง sync ไม่สำเร็จ ระบบจะลองใหม่เมื่อพร้อม');
+      }
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      setTransactions([]);
-      showAccessMessage('โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      const localTransactions = await getLocalTransactions().catch(() => []);
+      setTransactions(localTransactions);
+      if (localTransactions.length === 0 || (typeof navigator !== 'undefined' && navigator.onLine)) {
+        showAccessMessage('โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      }
     } finally {
       setLoading(false);
     }
@@ -199,22 +250,29 @@ export default function App() {
       return;
     }
 
-    const tempId = Math.random().toString(36).substring(7);
-    const newTransaction = { ...t, id: tempId };
+    const newTransaction = createOptimisticTransaction(t);
     setTransactions((prev) => [newTransaction, ...prev]);
 
     try {
-      const { data, error } = await supabase.from('transactions').insert([t]).select().single();
-
-      if (error) throw error;
-
-      if (data) {
-        setTransactions((prev) => prev.map((item) => (item.id === tempId ? data : item)));
-      }
+      await saveLocalTransaction(newTransaction);
+      syncPendingTransactions()
+        .then((result) => {
+          if (result.failed.length > 0) {
+            showAccessMessage('บันทึกในเครื่องแล้ว แต่ยัง sync ไม่สำเร็จ ระบบจะลองใหม่เมื่อออนไลน์');
+          }
+          return getLocalTransactions();
+        })
+        .then((localTransactions) => setTransactions(localTransactions))
+        .catch((syncError) => console.error('Transaction background sync error:', syncError));
     } catch (error: any) {
-      console.error('Error saving transaction:', error);
-      setTransactions((prev) => prev.filter((item) => item.id !== tempId));
-      showAccessMessage(mapMutationError(error?.message || 'Failed to save transaction'));
+      console.error('Error saving transaction locally:', error);
+      const failedTransaction = {
+        ...newTransaction,
+        syncStatus: 'failed' as const,
+        syncError: error?.message || 'Failed to save transaction locally',
+      };
+      setTransactions((prev) => prev.map((item) => (item.id === newTransaction.id ? failedTransaction : item)));
+      showAccessMessage(mapMutationError(error?.message || 'Failed to save transaction locally'));
     }
   };
 
@@ -352,7 +410,7 @@ export default function App() {
         )}
 
         {/* Scrollable content area */}
-        <div className="flex-1 overflow-y-auto ios-scroll bg-white dark:bg-background-dark">
+        <div className="flex-1 min-h-0 overflow-y-auto ios-scroll app-scroll-shell bg-white dark:bg-background-dark">
           <AnimatePresence mode="wait">
             <motion.div
               key={contentView + (isGuestMode ? '-guest' : '-auth')}
@@ -360,6 +418,7 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
+              className="h-full"
             >
               <Suspense fallback={<ScreenFallback />}>{renderScreen()}</Suspense>
             </motion.div>
@@ -382,6 +441,7 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 z-50 flex flex-col justify-end bg-black/40"
+              style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
             >
               <motion.div
                 initial={{ y: '100%' }}
@@ -405,4 +465,3 @@ export default function App() {
     </div>
   );
 }
-

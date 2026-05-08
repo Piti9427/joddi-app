@@ -211,19 +211,20 @@ export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: Vie
               </div>
             ) : (
               categoryData.map(cat => (
-                <BudgetCard
-                  key={cat.id}
-                  label={cat.category}
-                  spent={cat.spent}
-                  limit={cat.normalisedLimit}
-                  originalLimit={cat.limit}
-                  originalPeriod={cat.period}
-                  icon={cat.icon}
-                  warning={cat.warning}
-                  over={cat.over}
-                  percent={cat.percent}
-                  onDelete={() => removeBudget(cat.id)}
-                />
+                <React.Fragment key={cat.id}>
+                  <BudgetCard
+                    label={cat.category}
+                    spent={cat.spent}
+                    limit={cat.normalisedLimit}
+                    originalLimit={cat.limit}
+                    originalPeriod={cat.period}
+                    icon={cat.icon}
+                    warning={cat.warning}
+                    over={cat.over}
+                    percent={cat.percent}
+                    onDelete={() => removeBudget(cat.id)}
+                  />
+                </React.Fragment>
               ))
             )}
           </div>
