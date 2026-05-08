@@ -91,7 +91,13 @@ body {
   transition:
     background-color 0.3s,
     color 0.3s;
-  font-family: 'Outfit', sans-serif;
+  font-family:
+    'Noto Sans Thai',
+    'Outfit',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
@@ -248,7 +254,7 @@ h1,
 h2,
 h3,
 h4 {
-  letter-spacing: -0.025em;
+  letter-spacing: 0;
 }
 
 input[type='date']::-webkit-inner-spin-button,
