@@ -1,19 +1,25 @@
 import React, { useState } from 'react';
-import { User, Bell, Shield, Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn } from 'lucide-react';
+import { User, Bell, Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn, RefreshCw, Trash2 } from 'lucide-react';
 import { ViewState } from '../App';
+import { cancelDailyReminder, scheduleDailyReminder } from '../lib/device';
+import { saveLocalProfile, syncAllOfflineData } from '../lib/supabase';
 
 export function Settings({
   onNavigate,
   isAuthenticated = true,
   onSignOut,
   onRequestSignIn,
+  onClearLocalData,
   userEmail,
+  userId,
 }: {
   onNavigate: (v: ViewState) => void;
   isAuthenticated?: boolean;
   onSignOut?: () => void | Promise<void>;
   onRequestSignIn?: () => void;
+  onClearLocalData?: () => void | Promise<void>;
   userEmail?: string;
+  userId?: string;
 }) {
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -21,6 +27,13 @@ export function Settings({
     }
     return false;
   });
+  const [displayName, setDisplayName] = useState(
+    () => localStorage.getItem('display_name') || userEmail?.split('@')[0] || 'Guest Account',
+  );
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    () => localStorage.getItem('daily_reminder') === 'true',
+  );
+  const [statusMessage, setStatusMessage] = useState('');
 
   const toggleDarkMode = () => {
     const newDarkMode = !darkMode;
@@ -36,29 +49,82 @@ export function Settings({
 
   const supportSettings = [{ icon: <HelpCircle />, label: 'Help Center' }];
 
+  const saveProfile = async () => {
+    localStorage.setItem('display_name', displayName);
+    if (userId) {
+      await saveLocalProfile({
+        id: userId,
+        email: userEmail,
+        displayName,
+        syncStatus: 'pending',
+        updatedAt: new Date().toISOString(),
+      });
+      syncAllOfflineData().catch((error) => console.error('Profile sync error:', error));
+    }
+    setStatusMessage('Profile saved');
+  };
+
+  const toggleReminder = async () => {
+    try {
+      if (notificationsEnabled) {
+        await cancelDailyReminder();
+        localStorage.setItem('daily_reminder', 'false');
+        setNotificationsEnabled(false);
+        setStatusMessage('Daily reminder disabled');
+      } else {
+        await scheduleDailyReminder();
+        localStorage.setItem('daily_reminder', 'true');
+        setNotificationsEnabled(true);
+        setStatusMessage('Daily reminder scheduled for 20:00');
+      }
+    } catch (error: any) {
+      setStatusMessage(error?.message || 'Notification setup failed');
+    }
+  };
+
+  const syncNow = async () => {
+    try {
+      await syncAllOfflineData();
+      setStatusMessage('Sync completed');
+    } catch (error: any) {
+      setStatusMessage(error?.message || 'Sync failed');
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-full pb-6 relative bg-background-light dark:bg-background-dark">
-      <header className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}>
+      <header
+        className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
+      >
         <div className="size-10 shrink-0"></div>
         <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">Settings</h1>
         <div className="size-10 shrink-0"></div>
       </header>
 
       <main className="p-4 flex flex-col flex-1 space-y-6">
-        <div className="bg-surface dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800 flex items-center gap-4 cursor-pointer hover:bg-input-bg dark:hover:bg-slate-800/50 transition-colors">
+        <div className="bg-surface dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800 flex items-center gap-4">
           <div className="size-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-black shadow-lg shadow-primary/20">
-            {isAuthenticated && userEmail ? userEmail[0].toUpperCase() : 'G'}
+            {displayName ? displayName[0].toUpperCase() : 'G'}
           </div>
           <div className="flex-1">
-            <h2 className="text-lg font-black text-text-dark dark:text-white leading-tight">
-              {isAuthenticated && userEmail ? userEmail.split('@')[0] : 'Guest Account'}
-            </h2>
+            <input
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
+              onBlur={saveProfile}
+              className="w-full bg-transparent text-lg font-black text-text-dark dark:text-white leading-tight outline-none"
+            />
             <p className="text-secondary text-sm font-bold opacity-80">
               {isAuthenticated && userEmail ? userEmail : 'Sign in to sync your data'}
             </p>
           </div>
-          <ChevronRight className="text-secondary opacity-40" />
         </div>
+
+        {statusMessage && (
+          <div className="rounded-2xl bg-primary/10 text-primary px-4 py-3 text-xs font-bold text-center">
+            {statusMessage}
+          </div>
+        )}
 
         <section className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary pl-2">Preferences</h3>
@@ -68,20 +134,35 @@ export function Settings({
                 onClick={toggleDarkMode}
                 className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${darkMode ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
               >
-                <div className={`size-5 bg-white rounded-full shadow-sm absolute transition-transform duration-300 ${darkMode ? 'translate-x-6' : 'translate-x-1'}`}></div>
+                <div
+                  className={`size-5 bg-white rounded-full shadow-sm absolute transition-transform duration-300 ${darkMode ? 'translate-x-6' : 'translate-x-1'}`}
+                ></div>
               </button>
             </SettingRow>
 
             <SettingRow icon={<Globe />} label="Currency" value="Auto" />
-            <SettingRow icon={<Bell />} label="Notifications" />
+            <SettingRow icon={<Bell />} label="Daily Reminder">
+              <button
+                onClick={toggleReminder}
+                className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${notificationsEnabled ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
+              >
+                <div
+                  className={`size-5 bg-white rounded-full shadow-sm absolute transition-transform duration-300 ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`}
+                ></div>
+              </button>
+            </SettingRow>
           </div>
         </section>
 
         <section className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary pl-2">Account</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
-            <SettingRow icon={<User />} label="Personal Information" />
-            <SettingRow icon={<Shield />} label="Security & Privacy" />
+            <button onClick={syncNow} className="w-full text-left">
+              <SettingRow icon={<RefreshCw />} label="Sync Now" value={isAuthenticated ? 'Cloud' : 'Local only'} />
+            </button>
+            <button onClick={onClearLocalData} className="w-full text-left">
+              <SettingRow icon={<Trash2 />} label="Clear Local Data" />
+            </button>
           </div>
         </section>
 
@@ -110,7 +191,7 @@ export function Settings({
                 <div className="size-10 rounded-[1.2rem] bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
                   <LogIn size={20} />
                 </div>
-                <div className="flex-1 font-bold">Sign In to Unlock Writing</div>
+                <div className="flex-1 font-bold">Sign In to Sync</div>
               </button>
             )}
           </div>

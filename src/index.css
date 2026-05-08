@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
@@ -21,10 +21,10 @@
 }
 
 :root {
-  --primary: #10b981; 
+  --primary: #10b981;
   --primary-dark: #059669;
   --secondary: #64748b;
-  --background-light: #fdfcf9; 
+  --background-light: #fdfcf9;
   --background-dark: #0f172a;
   --surface: #ffffff;
   --surface-dark: #1e293b;
@@ -32,7 +32,7 @@
   --text-secondary: #64748b;
   --income: #10b981;
   --income-bg: #ecfdf5;
-  --expense: #f43f5e; 
+  --expense: #f43f5e;
   --expense-bg: #fff1f2;
   --highlight: #f0fdf4;
   --input-bg: #f1f5f9;
@@ -40,6 +40,7 @@
 
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
+  --app-max-width: 28rem;
 }
 
 .dark {
@@ -64,27 +65,54 @@
 /* ── Base ── */
 html {
   height: 100%;
+  width: 100%;
   overflow: hidden;
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 body {
   height: 100%;
+  width: 100%;
   overflow: hidden;
   margin: 0;
   padding: 0;
   background-color: var(--background-light);
   color: var(--text-dark);
-  transition: background-color 0.3s, color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
   font-family: 'Outfit', sans-serif;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   height: 100%;
+  width: 100%;
   overflow: hidden;
+}
+
+button,
+a,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+input,
+textarea,
+select,
+[contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
 
 /* ── iOS-specific scroll fix ── */
@@ -93,6 +121,7 @@ body {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
+  touch-action: pan-y;
 }
 
 /* ── Safe Area Utilities ── */
@@ -102,6 +131,15 @@ body {
 
 .safe-bottom {
   padding-bottom: var(--safe-bottom);
+}
+
+.app-safe-shell {
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+
+.app-scroll-shell {
+  scroll-padding-top: var(--safe-top);
 }
 
 /* ── Components ── */
@@ -139,24 +177,33 @@ body {
       filter: brightness(1.1);
     }
   }
-  
+
   .slide-up {
     animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   @keyframes slideUp {
-    from { transform: translateY(100%); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 }
 
 /* ── Typography ── */
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   letter-spacing: -0.025em;
 }
 
-input[type="date"]::-webkit-inner-spin-button,
-input[type="date"]::-webkit-calendar-picker-indicator {
+input[type='date']::-webkit-inner-spin-button,
+input[type='date']::-webkit-calendar-picker-indicator {
   display: none;
   -webkit-appearance: none;
 }
@@ -173,7 +220,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 1rem 2rem;
   border-radius: 1rem;
   box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .btn-primary:hover {

@@ -3,16 +3,15 @@ import { Target, Plus, Trash2, X, ChevronDown } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import { formatMoney } from '../lib/formatters';
 import { motion, AnimatePresence } from 'motion/react';
-
-type BudgetPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
-
-interface BudgetItem {
-  id: string;
-  category: string;
-  limit: number;
-  period: BudgetPeriod;
-  icon: string;
-}
+import {
+  createLocalBudget,
+  deleteLocalBudget,
+  getLocalBudgets,
+  saveLocalBudgets,
+  syncAllOfflineData,
+  type BudgetPeriod,
+  type LocalBudget,
+} from '../lib/supabase';
 
 const PERIOD_LABELS: Record<BudgetPeriod, string> = {
   daily: 'Daily',
@@ -22,44 +21,59 @@ const PERIOD_LABELS: Record<BudgetPeriod, string> = {
 };
 
 const DEFAULT_ICONS: Record<string, string> = {
-  Food: '🍔', Shopping: '🛍️', Transport: '🚗', Entertainment: '🍿',
-  Lifestyle: '☕', Coffee: '☕', Salary: '💰', Education: '📚',
-  Health: '🏥', Utilities: '💡', Rent: '🏠', Travel: '✈️',
+  Food: '🍔',
+  Shopping: '🛍️',
+  Transport: '🚗',
+  Entertainment: '🍿',
+  Lifestyle: '☕',
+  Coffee: '☕',
+  Salary: '💰',
+  Education: '📚',
+  Health: '🏥',
+  Utilities: '💡',
+  Rent: '🏠',
+  Travel: '✈️',
 };
 
-const STORAGE_KEY = 'joddi_budgets';
-
-function loadBudgets(): BudgetItem[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return [
-    { id: '1', category: 'Food', limit: 200, period: 'daily', icon: '🍔' },
-    { id: '2', category: 'Shopping', limit: 3000, period: 'monthly', icon: '🛍️' },
-    { id: '3', category: 'Transport', limit: 1500, period: 'monthly', icon: '🚗' },
-    { id: '4', category: 'Entertainment', limit: 800, period: 'monthly', icon: '🍿' },
-  ];
-}
-
-function saveBudgets(budgets: BudgetItem[]) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(budgets)); } catch {}
-}
-
-export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: ViewState) => void, transactions: Transaction[] }) {
-  const [budgets, setBudgets] = useState<BudgetItem[]>(loadBudgets);
+export function BudgetScreen({
+  onNavigate,
+  transactions,
+}: {
+  onNavigate: (v: ViewState) => void;
+  transactions: Transaction[];
+}) {
+  const [budgets, setBudgets] = useState<LocalBudget[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewPeriod, setViewPeriod] = useState<BudgetPeriod>('monthly');
 
-  const persist = (next: BudgetItem[]) => { setBudgets(next); saveBudgets(next); };
+  React.useEffect(() => {
+    const load = async () => {
+      try {
+        setBudgets(await getLocalBudgets());
+      } catch (error) {
+        console.error('Failed to load budgets', error);
+      }
+    };
+    load();
+    window.addEventListener('joddi:budgets-changed', load);
+    return () => window.removeEventListener('joddi:budgets-changed', load);
+  }, []);
 
-  const removeBudget = (id: string) => {
-    persist(budgets.filter(b => b.id !== id));
+  const persist = async (next: LocalBudget[]) => {
+    setBudgets(next);
+    await saveLocalBudgets(next);
+    syncAllOfflineData().catch((error) => console.error('Budget sync error:', error));
   };
 
-  const addBudget = (item: Omit<BudgetItem, 'id'>) => {
-    const newItem: BudgetItem = { ...item, id: Date.now().toString(36) };
-    persist([...budgets, newItem]);
+  const removeBudget = async (id: string) => {
+    await deleteLocalBudget(id);
+    setBudgets(await getLocalBudgets());
+    syncAllOfflineData().catch((error) => console.error('Budget delete sync error:', error));
+  };
+
+  const addBudget = async (item: Omit<LocalBudget, 'id' | 'localId' | 'syncStatus' | 'updatedAt'>) => {
+    const newItem = createLocalBudget(item);
+    await persist([...budgets, newItem]);
     setShowAddForm(false);
   };
 
@@ -68,7 +82,7 @@ export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: Vie
     const now = new Date();
 
     // Calculate spending from transactions within the viewPeriod
-    const periodFilteredTx = transactions.filter(t => {
+    const periodFilteredTx = transactions.filter((t) => {
       if (t.type !== 'Expense') return false;
       const d = new Date(t.date);
 
@@ -92,7 +106,7 @@ export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: Vie
 
     // Spending map by category
     const spendingMap: Record<string, number> = {};
-    periodFilteredTx.forEach(t => {
+    periodFilteredTx.forEach((t) => {
       spendingMap[t.category] = (spendingMap[t.category] || 0) + t.amount;
     });
 
@@ -108,23 +122,25 @@ export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: Vie
     let totalLimit = 0;
     let totalSpend = 0;
 
-    const data = budgets.map(b => {
-      const normLimit = normaliseLimitToView(b.limit, b.period);
-      const spent = spendingMap[b.category] || 0;
-      totalLimit += normLimit;
-      totalSpend += spent;
+    const data = budgets
+      .map((b) => {
+        const normLimit = normaliseLimitToView(b.limit, b.period);
+        const spent = spendingMap[b.category] || 0;
+        totalLimit += normLimit;
+        totalSpend += spent;
 
-      const pct = normLimit > 0 ? (spent / normLimit) * 100 : 0;
-      return {
-        ...b,
-        normalisedLimit: normLimit,
-        spent,
-        percent: Math.min(pct, 100),
-        rawPercent: pct,
-        warning: pct > 70 && pct <= 100,
-        over: pct > 100,
-      };
-    }).sort((a, b) => b.rawPercent - a.rawPercent);
+        const pct = normLimit > 0 ? (spent / normLimit) * 100 : 0;
+        return {
+          ...b,
+          normalisedLimit: normLimit,
+          spent,
+          percent: Math.min(pct, 100),
+          rawPercent: pct,
+          warning: pct > 70 && pct <= 100,
+          over: pct > 100,
+        };
+      })
+      .sort((a, b) => b.rawPercent - a.rawPercent);
 
     return { totalBudgetLimit: totalLimit, totalSpent: totalSpend, categoryData: data };
   }, [transactions, budgets, viewPeriod]);
@@ -137,7 +153,10 @@ export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: Vie
 
   return (
     <div className="flex flex-col min-h-full pb-6 relative bg-background-light dark:bg-background-dark">
-      <header className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}>
+      <header
+        className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
+      >
         <div className="size-10 shrink-0"></div>
         <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">Budgets</h1>
         <button
@@ -149,10 +168,9 @@ export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: Vie
       </header>
 
       <main className="p-4 flex flex-col flex-1 space-y-6">
-
         {/* Period Selector */}
         <div className="grid grid-cols-4 bg-slate-100 dark:bg-slate-900 rounded-xl p-1">
-          {(['daily', 'weekly', 'monthly', 'yearly'] as BudgetPeriod[]).map(p => {
+          {(['daily', 'weekly', 'monthly', 'yearly'] as BudgetPeriod[]).map((p) => {
             const active = viewPeriod === p;
             return (
               <button
@@ -178,12 +196,14 @@ export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: Vie
           <div className="absolute -right-6 -top-6 text-white/10">
             <Target size={120} />
           </div>
-          <p className="text-white/80 text-sm font-bold uppercase tracking-wider mb-2 relative z-10">{periodLabel} Budget</p>
+          <p className="text-white/80 text-sm font-bold uppercase tracking-wider mb-2 relative z-10">
+            {periodLabel} Budget
+          </p>
           <div className="flex items-end gap-2 mb-6 relative z-10">
             <h2 className="text-4xl font-extrabold tracking-tight">{fmt(totalSpent)}</h2>
             <p className="text-white/60 text-lg font-medium mb-1">/ {fmt(totalBudgetLimit)}</p>
           </div>
-          
+
           <div className="relative z-10">
             <div className="flex justify-between text-xs font-bold mb-2">
               <span>{fmt(totalLeft)} left</span>
@@ -202,7 +222,9 @@ export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: Vie
         <section className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-sm font-bold text-text-dark dark:text-slate-100">Category Limits</h3>
-            <span className="text-[10px] font-bold text-secondary uppercase tracking-wide">{categoryData.length} active</span>
+            <span className="text-[10px] font-bold text-secondary uppercase tracking-wide">
+              {categoryData.length} active
+            </span>
           </div>
           <div className="space-y-3">
             {categoryData.length === 0 ? (
@@ -210,20 +232,22 @@ export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: Vie
                 No budgets set yet. Tap + to add one.
               </div>
             ) : (
-              categoryData.map(cat => (
-                <BudgetCard
-                  key={cat.id}
-                  label={cat.category}
-                  spent={cat.spent}
-                  limit={cat.normalisedLimit}
-                  originalLimit={cat.limit}
-                  originalPeriod={cat.period}
-                  icon={cat.icon}
-                  warning={cat.warning}
-                  over={cat.over}
-                  percent={cat.percent}
-                  onDelete={() => removeBudget(cat.id)}
-                />
+              categoryData.map((cat) => (
+                <React.Fragment key={cat.id}>
+                  <BudgetCard
+                    label={cat.category}
+                    spent={cat.spent}
+                    limit={cat.normalisedLimit}
+                    originalLimit={cat.limit}
+                    originalPeriod={cat.period}
+                    icon={cat.icon}
+                    syncStatus={cat.syncStatus}
+                    warning={cat.warning}
+                    over={cat.over}
+                    percent={cat.percent}
+                    onDelete={() => removeBudget(cat.id)}
+                  />
+                </React.Fragment>
               ))
             )}
           </div>
@@ -236,7 +260,7 @@ export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: Vie
           <AddBudgetModal
             onClose={() => setShowAddForm(false)}
             onAdd={addBudget}
-            existingCategories={budgets.map(b => b.category)}
+            existingCategories={budgets.map((b) => b.category)}
           />
         )}
       </AnimatePresence>
@@ -245,9 +269,30 @@ export function BudgetScreen({ onNavigate, transactions }: { onNavigate: (v: Vie
 }
 
 /* ── Budget Card ── */
-function BudgetCard({ label, spent, limit, originalLimit, originalPeriod, icon, warning, over, percent, onDelete }: {
-  label: string; spent: number; limit: number; originalLimit: number; originalPeriod: BudgetPeriod; icon: string;
-  warning: boolean; over: boolean; percent: number; onDelete: () => void;
+function BudgetCard({
+  label,
+  spent,
+  limit,
+  originalLimit,
+  originalPeriod,
+  icon,
+  syncStatus,
+  warning,
+  over,
+  percent,
+  onDelete,
+}: {
+  label: string;
+  spent: number;
+  limit: number;
+  originalLimit: number;
+  originalPeriod: BudgetPeriod;
+  icon: string;
+  syncStatus: string;
+  warning: boolean;
+  over: boolean;
+  percent: number;
+  onDelete: () => void;
 }) {
   const fmt = (v: number) => formatMoney(v, { maximumFractionDigits: 0 });
 
@@ -276,11 +321,14 @@ function BudgetCard({ label, spent, limit, originalLimit, originalPeriod, icon, 
           <div>
             <p className="font-bold text-text-dark dark:text-slate-100 text-[15px]">{label}</p>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${badgeColor}`}>
+              <span
+                className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${badgeColor}`}
+              >
                 {statusText}
               </span>
               <span className="text-[9px] text-secondary font-bold opacity-60">
                 ({fmt(originalLimit)}/{PERIOD_LABELS[originalPeriod].toLowerCase()})
+                {syncStatus !== 'synced' ? ` · ${syncStatus}` : ''}
               </span>
             </div>
           </div>
@@ -310,9 +358,13 @@ function BudgetCard({ label, spent, limit, originalLimit, originalPeriod, icon, 
 }
 
 /* ── Add Budget Modal ── */
-function AddBudgetModal({ onClose, onAdd, existingCategories }: {
+function AddBudgetModal({
+  onClose,
+  onAdd,
+  existingCategories,
+}: {
   onClose: () => void;
-  onAdd: (item: Omit<BudgetItem, 'id'>) => void;
+  onAdd: (item: Omit<LocalBudget, 'id' | 'localId' | 'syncStatus' | 'updatedAt'>) => void;
   existingCategories: string[];
 }) {
   const [category, setCategory] = useState('');
@@ -320,7 +372,7 @@ function AddBudgetModal({ onClose, onAdd, existingCategories }: {
   const [period, setPeriod] = useState<BudgetPeriod>('monthly');
   const [showPeriodMenu, setShowPeriodMenu] = useState(false);
 
-  const suggestedCategories = Object.keys(DEFAULT_ICONS).filter(c => !existingCategories.includes(c));
+  const suggestedCategories = Object.keys(DEFAULT_ICONS).filter((c) => !existingCategories.includes(c));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -349,7 +401,7 @@ function AddBudgetModal({ onClose, onAdd, existingCategories }: {
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className="w-full max-w-md bg-white dark:bg-surface-dark rounded-t-[2rem] p-6 pb-10"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-black text-text-dark dark:text-white">Add Budget</h2>
@@ -361,17 +413,19 @@ function AddBudgetModal({ onClose, onAdd, existingCategories }: {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Category Input */}
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2">Category</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2">
+              Category
+            </label>
             <input
               type="text"
               value={category}
-              onChange={e => setCategory(e.target.value)}
+              onChange={(e) => setCategory(e.target.value)}
               placeholder="e.g. Food, Transport..."
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-3 px-4 text-sm font-bold text-text-dark dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
             />
             {suggestedCategories.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
-                {suggestedCategories.slice(0, 6).map(c => (
+                {suggestedCategories.slice(0, 6).map((c) => (
                   <button
                     type="button"
                     key={c}
@@ -387,12 +441,14 @@ function AddBudgetModal({ onClose, onAdd, existingCategories }: {
 
           {/* Budget Limit */}
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2">Limit Amount (฿)</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2">
+              Limit Amount (฿)
+            </label>
             <input
               type="number"
               inputMode="decimal"
               value={limit}
-              onChange={e => setLimit(e.target.value)}
+              onChange={(e) => setLimit(e.target.value)}
               placeholder="0.00"
               min="0"
               step="any"
@@ -402,7 +458,9 @@ function AddBudgetModal({ onClose, onAdd, existingCategories }: {
 
           {/* Period Selector */}
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2">Budget Period</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2">
+              Budget Period
+            </label>
             <div className="relative">
               <button
                 type="button"
@@ -410,7 +468,10 @@ function AddBudgetModal({ onClose, onAdd, existingCategories }: {
                 className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-3 px-4 text-sm font-bold text-text-dark dark:text-white flex justify-between items-center"
               >
                 <span>{PERIOD_LABELS[period]}</span>
-                <ChevronDown size={16} className={`text-secondary transition-transform ${showPeriodMenu ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  size={16}
+                  className={`text-secondary transition-transform ${showPeriodMenu ? 'rotate-180' : ''}`}
+                />
               </button>
               <AnimatePresence>
                 {showPeriodMenu && (
@@ -420,11 +481,14 @@ function AddBudgetModal({ onClose, onAdd, existingCategories }: {
                     exit={{ opacity: 0, y: -8 }}
                     className="absolute top-full mt-1 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xl z-20"
                   >
-                    {(['daily', 'weekly', 'monthly', 'yearly'] as BudgetPeriod[]).map(p => (
+                    {(['daily', 'weekly', 'monthly', 'yearly'] as BudgetPeriod[]).map((p) => (
                       <button
                         key={p}
                         type="button"
-                        onClick={() => { setPeriod(p); setShowPeriodMenu(false); }}
+                        onClick={() => {
+                          setPeriod(p);
+                          setShowPeriodMenu(false);
+                        }}
                         className={`w-full text-left px-4 py-2.5 text-sm font-bold transition-colors ${period === p ? 'bg-primary/10 text-primary' : 'text-text-dark dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                       >
                         {PERIOD_LABELS[p]}

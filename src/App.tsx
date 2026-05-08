@@ -1,7 +1,17 @@
 import React, { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Session } from '@supabase/supabase-js';
-import { supabase, allowGuestReadOnly } from './lib/supabase';
+import {
+  allowGuestReadOnly,
+  clearLocalTransactions,
+  createOptimisticTransaction,
+  fetchRemoteTransactionsIntoLocal,
+  getLocalTransactions,
+  saveLocalTransaction,
+  supabase,
+  syncPendingTransactions,
+  type TransactionSyncStatus,
+} from './lib/supabase';
 
 export type ViewState =
   | 'onboarding'
@@ -23,9 +33,16 @@ export interface Transaction {
   note: string;
   date: string;
   merchant?: string;
+  paymentMethod?: string;
+  localId?: string;
+  syncStatus?: TransactionSyncStatus;
+  syncError?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string;
 }
 
-const READ_ONLY_WRITE_BLOCKED_MESSAGE = 'โหมด Read-only: กรุณา Sign in ก่อนเพิ่มหรือแก้ไขข้อมูล';
+const LOCAL_WRITE_BLOCKED_MESSAGE = 'ยังไม่พร้อมบันทึกข้อมูลในเครื่อง กรุณาลองใหม่อีกครั้ง';
 
 function buildDemoTransactions(): Transaction[] {
   const now = Date.now();
@@ -38,6 +55,7 @@ function buildDemoTransactions(): Transaction[] {
       merchant: 'Demo Company',
       note: 'Demo data',
       date: new Date(now - 86400000 * 2).toISOString(),
+      syncStatus: 'synced',
     },
     {
       id: 'demo-2',
@@ -47,6 +65,7 @@ function buildDemoTransactions(): Transaction[] {
       merchant: 'Cafe',
       note: 'Demo data',
       date: new Date(now - 86400000).toISOString(),
+      syncStatus: 'synced',
     },
     {
       id: 'demo-3',
@@ -56,6 +75,7 @@ function buildDemoTransactions(): Transaction[] {
       merchant: 'BTS',
       note: 'Demo data',
       date: new Date(now).toISOString(),
+      syncStatus: 'synced',
     },
   ];
 }
@@ -101,12 +121,13 @@ export default function App() {
   const [accessMessage, setAccessMessage] = useState('');
   const accessMessageTimeout = useRef<number | null>(null);
 
-  const canWrite = Boolean(session);
+  const isAuthenticated = Boolean(session);
+  const canWrite = isAuthenticated || isGuestMode;
 
   useEffect(() => {
     return () => {
       if (accessMessageTimeout.current) {
-        window.clearTimeout(accessMessageTimeout.current);
+        globalThis.clearTimeout(accessMessageTimeout.current);
       }
     };
   }, []);
@@ -114,9 +135,9 @@ export default function App() {
   const showAccessMessage = (message: string) => {
     setAccessMessage(message);
     if (accessMessageTimeout.current) {
-      window.clearTimeout(accessMessageTimeout.current);
+      globalThis.clearTimeout(accessMessageTimeout.current);
     }
-    accessMessageTimeout.current = window.setTimeout(() => setAccessMessage(''), 3000);
+    accessMessageTimeout.current = globalThis.setTimeout(() => setAccessMessage(''), 3000);
   };
 
   useEffect(() => {
@@ -131,6 +152,16 @@ export default function App() {
 
     const initAuth = async () => {
       setSessionChecked(false);
+
+      try {
+        const localTransactions = await getLocalTransactions();
+        if (localTransactions.length > 0) {
+          setTransactions(localTransactions);
+        }
+      } catch (error) {
+        console.error('Offline cache read error:', error);
+      }
+
       const { data, error } = await supabase.auth.getSession();
       if (error) {
         console.error('Auth getSession error:', error);
@@ -144,8 +175,11 @@ export default function App() {
         setIsGuestMode(false);
         setCurrentView('dashboard');
         setBaseView('dashboard');
-        await fetchTransactions(existingSession);
+        await fetchTransactions();
       } else {
+        setIsGuestMode(true);
+        setCurrentView('dashboard');
+        setBaseView('dashboard');
         setLoading(false);
       }
     };
@@ -162,10 +196,10 @@ export default function App() {
         setIsGuestMode(false);
         setCurrentView('dashboard');
         setBaseView('dashboard');
-        await fetchTransactions(nextSession);
+        await fetchTransactions();
       } else {
-        setTransactions([]);
-        setCurrentView('onboarding');
+        setIsGuestMode(true);
+        setCurrentView('dashboard');
         setBaseView('dashboard');
         setLoading(false);
       }
@@ -174,20 +208,31 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchTransactions = async (activeSession: Session) => {
+  useEffect(() => {
+    const handleOnline = () => {
+      if (!session || isGuestMode) return;
+      syncPendingTransactions()
+        .then(() => getLocalTransactions())
+        .then((localTransactions) => setTransactions(localTransactions))
+        .catch((error) => console.error('Background sync error:', error));
+    };
+
+    globalThis.addEventListener('online', handleOnline);
+    return () => globalThis.removeEventListener('online', handleOnline);
+  }, [session, isGuestMode]);
+
+  const fetchTransactions = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .order('date', { ascending: false });
-
-      if (error) throw error;
-      setTransactions(data ?? []);
+      const mergedTransactions = await fetchRemoteTransactionsIntoLocal();
+      setTransactions(mergedTransactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      setTransactions([]);
-      showAccessMessage('โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      const localTransactions = await getLocalTransactions().catch(() => []);
+      setTransactions(localTransactions);
+      if (localTransactions.length === 0 || (typeof navigator !== 'undefined' && navigator.onLine)) {
+        showAccessMessage('โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      }
     } finally {
       setLoading(false);
     }
@@ -195,26 +240,33 @@ export default function App() {
 
   const handleAddTransaction = async (t: Omit<Transaction, 'id'>) => {
     if (!canWrite) {
-      showAccessMessage(READ_ONLY_WRITE_BLOCKED_MESSAGE);
+      showAccessMessage(LOCAL_WRITE_BLOCKED_MESSAGE);
       return;
     }
 
-    const tempId = Math.random().toString(36).substring(7);
-    const newTransaction = { ...t, id: tempId };
+    const newTransaction = createOptimisticTransaction(t);
     setTransactions((prev) => [newTransaction, ...prev]);
 
     try {
-      const { data, error } = await supabase.from('transactions').insert([t]).select().single();
-
-      if (error) throw error;
-
-      if (data) {
-        setTransactions((prev) => prev.map((item) => (item.id === tempId ? data : item)));
-      }
+      await saveLocalTransaction(newTransaction);
+      syncPendingTransactions()
+        .then((result) => {
+          if (result.failed.length > 0) {
+            showAccessMessage('บันทึกในเครื่องแล้ว แต่ยัง sync ไม่สำเร็จ ระบบจะลองใหม่เมื่อออนไลน์');
+          }
+          return getLocalTransactions();
+        })
+        .then((localTransactions) => setTransactions(localTransactions))
+        .catch((syncError) => console.error('Transaction background sync error:', syncError));
     } catch (error: any) {
-      console.error('Error saving transaction:', error);
-      setTransactions((prev) => prev.filter((item) => item.id !== tempId));
-      showAccessMessage(mapMutationError(error?.message || 'Failed to save transaction'));
+      console.error('Error saving transaction locally:', error);
+      const failedTransaction = {
+        ...newTransaction,
+        syncStatus: 'failed' as const,
+        syncError: error?.message || 'Failed to save transaction locally',
+      };
+      setTransactions((prev) => prev.map((item) => (item.id === newTransaction.id ? failedTransaction : item)));
+      showAccessMessage(mapMutationError(error?.message || 'Failed to save transaction locally'));
     }
   };
 
@@ -241,10 +293,17 @@ export default function App() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    setIsGuestMode(false);
+    await clearLocalTransactions().catch((clearError) => console.error('Offline cache clear error:', clearError));
+    setIsGuestMode(true);
     setTransactions([]);
-    setCurrentView('onboarding');
+    setCurrentView('dashboard');
     setBaseView('dashboard');
+  };
+
+  const handleClearLocalData = async () => {
+    await clearLocalTransactions();
+    setTransactions([]);
+    showAccessMessage('ล้างข้อมูลในเครื่องเรียบร้อย');
   };
 
   if (loading) {
@@ -259,7 +318,7 @@ export default function App() {
     const blockedViewForReadOnly: ViewState[] = ['add_transaction', 'review_receipt', 'categories'];
 
     if (!canWrite && blockedViewForReadOnly.includes(nextView)) {
-      showAccessMessage(READ_ONLY_WRITE_BLOCKED_MESSAGE);
+      showAccessMessage(LOCAL_WRITE_BLOCKED_MESSAGE);
       return;
     }
 
@@ -295,15 +354,6 @@ export default function App() {
     switch (contentView) {
       case 'onboarding':
         return <Onboarding onNavigate={navigate} />;
-      case 'dashboard':
-        return (
-          <Dashboard
-            onNavigate={navigate}
-            transactions={transactions}
-            canCreateTransactions={canWrite}
-            readOnlyMode={isGuestMode}
-          />
-        );
       case 'review_receipt':
         return <ReviewReceipt onNavigate={navigate} onAddTransaction={handleAddTransaction} />;
       case 'transactions':
@@ -318,19 +368,22 @@ export default function App() {
         return (
           <Settings
             onNavigate={navigate}
-            isAuthenticated={canWrite}
+            isAuthenticated={isAuthenticated}
             onSignOut={handleSignOut}
             onRequestSignIn={closeGuestModeAndRequireAuth}
+            onClearLocalData={handleClearLocalData}
             userEmail={session?.user?.email}
+            userId={session?.user?.id}
           />
         );
+      case 'dashboard':
       default:
         return (
           <Dashboard
             onNavigate={navigate}
             transactions={transactions}
             canCreateTransactions={canWrite}
-            readOnlyMode={isGuestMode}
+            readOnlyMode={false}
           />
         );
     }
@@ -339,11 +392,6 @@ export default function App() {
   return (
     <div className="h-dvh bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased flex justify-center overflow-hidden">
       <div className="w-full max-w-md bg-white dark:bg-background-dark shadow-2xl relative overflow-hidden h-full flex flex-col">
-        {isGuestMode && (
-          <div className="absolute top-3 right-3 z-40 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 px-3 py-1 text-[10px] font-black uppercase tracking-wide">
-            Read-only
-          </div>
-        )}
 
         {accessMessage && (
           <div className="absolute left-4 right-4 top-14 z-40 rounded-2xl bg-slate-900/90 text-white px-4 py-3 text-[11px] font-bold text-center shadow-lg">
@@ -352,7 +400,7 @@ export default function App() {
         )}
 
         {/* Scrollable content area */}
-        <div className="flex-1 overflow-y-auto ios-scroll bg-white dark:bg-background-dark">
+        <div className="flex-1 min-h-0 overflow-y-auto ios-scroll app-scroll-shell bg-white dark:bg-background-dark">
           <AnimatePresence mode="wait">
             <motion.div
               key={contentView + (isGuestMode ? '-guest' : '-auth')}
@@ -360,6 +408,7 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
+              className="h-full"
             >
               <Suspense fallback={<ScreenFallback />}>{renderScreen()}</Suspense>
             </motion.div>
@@ -382,6 +431,7 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 z-50 flex flex-col justify-end bg-black/40"
+              style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
             >
               <motion.div
                 initial={{ y: '100%' }}
@@ -391,11 +441,7 @@ export default function App() {
                 className="w-full max-h-[95%]"
               >
                 <Suspense fallback={<ScreenFallback />}>
-                  <AddTransaction
-                    onNavigate={navigate}
-                    onAddTransaction={handleAddTransaction}
-                    returnView={baseView}
-                  />
+                  <AddTransaction onNavigate={navigate} onAddTransaction={handleAddTransaction} returnView={baseView} />
                 </Suspense>
               </motion.div>
             </motion.div>
@@ -405,4 +451,3 @@ export default function App() {
     </div>
   );
 }
-

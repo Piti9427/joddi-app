@@ -62,8 +62,7 @@ export function Dashboard({
     transactions.forEach((transaction) => {
       const transactionDate = new Date(transaction.date);
       const isCurrentMonth =
-        transactionDate.getMonth() === now.getMonth() &&
-        transactionDate.getFullYear() === now.getFullYear();
+        transactionDate.getMonth() === now.getMonth() && transactionDate.getFullYear() === now.getFullYear();
 
       if (transaction.type === 'Income') {
         totalIncomeValue += transaction.amount;
@@ -74,7 +73,8 @@ export function Dashboard({
         if (transactionDate.toDateString() === today) todayExpenseValue += transaction.amount;
         if (isCurrentMonth) {
           monthExpenseValue += transaction.amount;
-          monthCategoryExpenseMap[transaction.category] = (monthCategoryExpenseMap[transaction.category] || 0) + transaction.amount;
+          monthCategoryExpenseMap[transaction.category] =
+            (monthCategoryExpenseMap[transaction.category] || 0) + transaction.amount;
         }
       }
     });
@@ -119,11 +119,15 @@ export function Dashboard({
   };
 
   const monthStatus = monthNet >= 0 ? 'Positive Flow' : 'Negative Flow';
-  const monthStatusStyle = monthNet >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+  const monthStatusStyle =
+    monthNet >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
 
   return (
     <div className="flex flex-col min-h-full pb-6 relative bg-slate-50 dark:bg-background-dark">
-      <header className="flex items-center bg-white dark:bg-surface-dark px-4 pb-3 justify-between sticky top-0 z-20 border-b border-border/70 dark:border-slate-800/80" style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}>
+      <header
+        className="flex items-center bg-white dark:bg-surface-dark px-4 pb-3 justify-between sticky top-0 z-20 border-b border-border/70 dark:border-slate-800/80"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
+      >
         <div className="flex items-center gap-3">
           <motion.div
             whileTap={{ scale: 0.95 }}
@@ -135,7 +139,9 @@ export function Dashboard({
             <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em]">
               {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
             </p>
-            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">Financial Overview</h2>
+            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">
+              Financial Overview
+            </h2>
           </div>
         </div>
         <div className="flex gap-1">
@@ -210,9 +216,25 @@ export function Dashboard({
         </motion.div>
       </section>
 
-      <section className="px-4 grid grid-cols-3 gap-2">
-        <QuickActionCard icon={<Plus size={18} />} label="Expense" onClick={() => openQuickAdd('Expense')} disabled={!canCreateTransactions} />
-        <QuickActionCard icon={<TrendingUp size={18} />} label="Income" onClick={() => openQuickAdd('Income')} disabled={!canCreateTransactions} />
+      <section className="px-4 grid grid-cols-4 gap-2">
+        <QuickActionCard
+          icon={<Plus size={18} />}
+          label="Expense"
+          onClick={() => openQuickAdd('Expense')}
+          disabled={!canCreateTransactions}
+        />
+        <QuickActionCard
+          icon={<TrendingUp size={18} />}
+          label="Income"
+          onClick={() => openQuickAdd('Income')}
+          disabled={!canCreateTransactions}
+        />
+        <QuickActionCard
+          icon={<Receipt size={18} />}
+          label="Receipt"
+          onClick={() => onNavigate('review_receipt')}
+          disabled={!canCreateTransactions}
+        />
         <QuickActionCard icon={<PieChart size={18} />} label="Analytics" onClick={() => onNavigate('analytics')} />
       </section>
 
@@ -228,7 +250,9 @@ export function Dashboard({
           </div>
           <div>
             <p className="text-secondary text-[10px] font-bold uppercase mb-0.5">Today In</p>
-            <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">{formatCurrency(todayIncome, 2)}</p>
+            <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
+              {formatCurrency(todayIncome, 2)}
+            </p>
           </div>
         </motion.div>
         <motion.div
@@ -242,7 +266,9 @@ export function Dashboard({
           </div>
           <div>
             <p className="text-secondary text-[10px] font-bold uppercase mb-0.5">Today Out</p>
-            <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">{formatCurrency(todayExpense, 2)}</p>
+            <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
+              {formatCurrency(todayExpense, 2)}
+            </p>
           </div>
         </motion.div>
       </section>
@@ -252,9 +278,13 @@ export function Dashboard({
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-[10px] uppercase tracking-widest text-secondary font-black">This Month</p>
-              <h3 className="text-lg font-black text-text-dark dark:text-white tabular-nums">{formatCurrency(monthNet)}</h3>
+              <h3 className="text-lg font-black text-text-dark dark:text-white tabular-nums">
+                {formatCurrency(monthNet)}
+              </h3>
             </div>
-            <span className={`text-[10px] font-black uppercase tracking-widest ${monthStatusStyle}`}>{monthStatus}</span>
+            <span className={`text-[10px] font-black uppercase tracking-widest ${monthStatusStyle}`}>
+              {monthStatus}
+            </span>
           </div>
 
           <div className="space-y-2">
@@ -263,7 +293,11 @@ export function Dashboard({
             <MetricRow label="Spend / Income" value={`${monthSpendRate.toFixed(0)}%`} warning={monthSpendRate > 80} />
             <MetricRow
               label="Top Category"
-              value={topExpenseCategory ? `${topExpenseCategory.category} (${formatCurrency(topExpenseCategory.amount)})` : 'No expense yet'}
+              value={
+                topExpenseCategory
+                  ? `${topExpenseCategory.category} (${formatCurrency(topExpenseCategory.amount)})`
+                  : 'No expense yet'
+              }
             />
           </div>
         </div>
@@ -358,8 +392,22 @@ function QuickActionCard({
   );
 }
 
-function MetricRow({ label, value, positive, warning }: { label: string; value: string; positive?: boolean; warning?: boolean }) {
-  const textStyle = warning ? 'text-amber-600 dark:text-amber-400' : positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-text-dark dark:text-white';
+function MetricRow({
+  label,
+  value,
+  positive,
+  warning,
+}: {
+  label: string;
+  value: string;
+  positive?: boolean;
+  warning?: boolean;
+}) {
+  const textStyle = warning
+    ? 'text-amber-600 dark:text-amber-400'
+    : positive
+      ? 'text-emerald-600 dark:text-emerald-400'
+      : 'text-text-dark dark:text-white';
 
   return (
     <div className="flex items-center justify-between text-xs">
@@ -405,12 +453,16 @@ function TransactionItem({
       whileTap={{ scale: 0.98 }}
       className="flex items-center gap-4 bg-white dark:bg-surface-dark p-4 rounded-3xl border border-border/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer shadow-sm"
     >
-      <div className={`size-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${isExpense ? 'bg-expense-bg/60 text-expense' : 'bg-income-bg/60 text-income'}`}>
+      <div
+        className={`size-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${isExpense ? 'bg-expense-bg/60 text-expense' : 'bg-income-bg/60 text-income'}`}
+      >
         {getIcon()}
       </div>
       <div className="flex-1 flex justify-between items-center overflow-hidden">
         <div className="overflow-hidden">
-          <p className="text-text-dark dark:text-slate-100 font-extrabold text-[15px] truncate">{merchant || category}</p>
+          <p className="text-text-dark dark:text-slate-100 font-extrabold text-[15px] truncate">
+            {merchant || category}
+          </p>
           <div className="flex items-center gap-1 mt-0.5">
             <span className="text-[10px] font-bold text-secondary uppercase tracking-tight">{category}</span>
             <span className="size-1 bg-slate-200 dark:bg-slate-700 rounded-full"></span>
@@ -418,7 +470,9 @@ function TransactionItem({
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className={`${isExpense ? 'text-text-dark dark:text-slate-100' : 'text-income dark:text-income'} font-black text-[16px] tabular-nums`}>
+          <p
+            className={`${isExpense ? 'text-text-dark dark:text-slate-100' : 'text-income dark:text-income'} font-black text-[16px] tabular-nums`}
+          >
             {isExpense ? '-' : '+'}
             {formatMoney(amount, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
           </p>
