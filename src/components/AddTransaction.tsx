@@ -20,6 +20,7 @@ import {
   Sparkles,
   ArrowRight,
   Wand2,
+  Camera,
 } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
 import { getCurrencySymbol } from '../lib/formatters';
@@ -38,7 +39,7 @@ const PAYMENT_METHODS = [
 
 const QUICK_ADD_TYPE_KEY = 'quick_add_type';
 
-function LandmarkIcon({ size }: { size: number }) {
+function LandmarkIcon({ size }: Readonly<{ size: number }>) {
   return (
     <svg
       width={size}
@@ -81,12 +82,11 @@ export function AddTransaction({
   const [userCategories, setUserCategories] = useState<LocalCategory[]>([]);
   const currencySymbol = getCurrencySymbol();
 
-  // Format amount with commas for display
   const displayAmount = React.useMemo(() => {
     if (amount === '0' || amount === '') return '0';
     const [integerPart, decimalPart] = amount.split('.');
     const formattedInteger = Number(integerPart).toLocaleString('en-US');
-    return decimalPart !== undefined ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+    return decimalPart === undefined ? formattedInteger : `${formattedInteger}.${decimalPart}`;
   }, [amount]);
 
   // AI mode state
@@ -95,27 +95,34 @@ export function AddTransaction({
   const [aiHint, setAiHint] = useState('พิมพ์รายการ เช่น "กาแฟ 65 บัตรเครดิต"');
 
   useEffect(() => {
+    const handleSessionPreset = () => {
+      const presetType = globalThis.sessionStorage.getItem(QUICK_ADD_TYPE_KEY);
+      if (presetType === 'Expense' || presetType === 'Income') {
+        setType(presetType);
+      }
+      globalThis.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
+    };
+
+    const handleSessionPrefill = () => {
+      const rawPrefill = globalThis.sessionStorage.getItem(SMART_INPUT_PREFILL_KEY);
+      if (!rawPrefill) return;
+      
+      const prefill = JSON.parse(rawPrefill) as SmartInputPrefill;
+      if (prefill.type === 'Expense' || prefill.type === 'Income') setType(prefill.type);
+      if (prefill.amount && prefill.amount > 0) setAmount(String(prefill.amount));
+      if (prefill.category) setCategory(prefill.category);
+      if (prefill.note || prefill.rawText) setNote(prefill.note || prefill.rawText);
+      if (prefill.date) setDate(prefill.date.slice(0, 10));
+      if (prefill.paymentMethod) setPaymentMethod(prefill.paymentMethod);
+      globalThis.sessionStorage.removeItem(SMART_INPUT_PREFILL_KEY);
+    };
+
     const handlePrefill = () => {
       try {
-        const presetType = globalThis.sessionStorage.getItem(QUICK_ADD_TYPE_KEY);
-        if (presetType === 'Expense' || presetType === 'Income') {
-          setType(presetType);
-        }
-        globalThis.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
-
-        const rawPrefill = globalThis.sessionStorage.getItem(SMART_INPUT_PREFILL_KEY);
-        if (rawPrefill) {
-          const prefill = JSON.parse(rawPrefill) as SmartInputPrefill;
-          if (prefill.type === 'Expense' || prefill.type === 'Income') setType(prefill.type);
-          if (prefill.amount && prefill.amount > 0) setAmount(String(prefill.amount));
-          if (prefill.category) setCategory(prefill.category);
-          if (prefill.note || prefill.rawText) setNote(prefill.note || prefill.rawText);
-          if (prefill.date) setDate(prefill.date.slice(0, 10));
-          if (prefill.paymentMethod) setPaymentMethod(prefill.paymentMethod);
-          globalThis.sessionStorage.removeItem(SMART_INPUT_PREFILL_KEY);
-        }
+        handleSessionPreset();
+        handleSessionPrefill();
       } catch {
-        // sessionStorage can fail in private browsing contexts, ignore safely.
+        // Ignore storage errors.
       }
     };
     handlePrefill();
@@ -144,6 +151,7 @@ export function AddTransaction({
   }, [type, filteredCategories]);
 
   const handleKeyPress = (num: string) => {
+    lightHaptic();
     setAmount((prev) => {
       if (num === '.') {
         if (prev.includes('.')) return prev;
@@ -162,6 +170,7 @@ export function AddTransaction({
   };
 
   const handleDelete = () => {
+    lightHaptic();
     if (amount.length <= 1) {
       setAmount('0');
     } else {
@@ -266,7 +275,13 @@ export function AddTransaction({
             </button>
           </div>
 
-          <div className="size-10" />
+          <button
+            onClick={() => onNavigate('review_receipt')}
+            className="size-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow-sm text-primary hover:text-primary-dark transition-colors"
+            aria-label="สแกนสลิป"
+          >
+            <Camera size={20} />
+          </button>
         </div>
 
         {/* Type Toggle */}
@@ -407,7 +422,11 @@ export function AddTransaction({
                     <button
                       key={method.id}
                       onClick={() => setPaymentMethod(method.id)}
-                      className={`flex items-center gap-1.5 whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold transition-all border ${paymentMethod === method.id ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary hover:border-slate-200'}`}
+                      className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition-all border active:scale-95 ${
+                        paymentMethod === method.id 
+                          ? 'bg-primary/10 border-primary/30 text-primary shadow-sm' 
+                          : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary hover:border-slate-200'
+                      }`}
                     >
                       {method.icon}
                       {method.label}
@@ -447,7 +466,20 @@ export function AddTransaction({
   );
 }
 
-function CategoryChip({ icon, label, color, selected, onClick }: any) {
+function CategoryChip({
+  icon,
+  label,
+  color,
+  selected,
+  onClick,
+}: Readonly<{
+  icon: string;
+  label: string;
+  color: string;
+  selected: boolean;
+  onClick: () => void;
+  key?: React.Key;
+}>) {
   const getIcon = () => {
     switch (icon) {
       case 'Utensils':
@@ -476,14 +508,14 @@ function CategoryChip({ icon, label, color, selected, onClick }: any) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all border whitespace-nowrap ${
+      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all border whitespace-nowrap active:scale-95 ${
         selected
-          ? `bg-white dark:bg-slate-800 border-primary/30 shadow-sm ${color}`
-          : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary hover:border-slate-100'
+          ? `bg-white dark:bg-slate-800 border-primary shadow-md shadow-primary/10 ${color} ring-1 ring-primary/20`
+          : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary hover:border-slate-200'
       }`}
     >
       <span className={selected ? color : 'text-inherit opacity-60'}>{getIcon()}</span>
-      <span className="text-[12px] font-bold">{label}</span>
+      <span className="text-[13px] font-extrabold">{label}</span>
     </button>
   );
 }

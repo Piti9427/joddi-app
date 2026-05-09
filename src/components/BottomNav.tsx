@@ -55,7 +55,7 @@ export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomN
 
         <TabItem
           icon={<PieChart size={22} strokeWidth={activeView === 'analytics' ? 2.2 : 1.6} />}
-          label="สถิติ"
+          label="วิเคราะห์"
           active={activeView === 'analytics'}
           onClick={() => onNavigate('analytics')}
         />

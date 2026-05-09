@@ -12,7 +12,7 @@ import {
   ChevronRight,
   ArrowUpRight,
   ArrowDownRight,
-  PieChart,
+  Landmark,
   Plus,
 } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
@@ -25,12 +25,14 @@ export function Dashboard({
   onNavigate,
   onAddTransaction,
   transactions,
+  userName,
   canCreateTransactions = true,
   readOnlyMode = false,
 }: Readonly<{
   onNavigate: (v: ViewState) => void;
   onAddTransaction: (t: Omit<Transaction, 'id'>) => void | Promise<void>;
   transactions: Transaction[];
+  userName?: string;
   canCreateTransactions?: boolean;
   readOnlyMode?: boolean;
 }>) {
@@ -132,7 +134,7 @@ export function Dashboard({
             <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em]">
               {new Date().toLocaleDateString('th-TH', { weekday: 'short', month: 'short', day: 'numeric' })}
             </p>
-            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">จดดี</h2>
+            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">{userName || 'จดดี'}</h2>
           </div>
         </div>
         <motion.button
@@ -241,28 +243,35 @@ export function Dashboard({
         </motion.div>
       </section>
 
-      {/* Quick Actions — enlarged, touch-friendly */}
+      {/* Quick Actions — semantic colors for clarity */}
       <section className="px-4 pt-4 grid grid-cols-4 gap-2.5">
         <QuickActionCard
           icon={<Plus size={20} />}
-          label="เพิ่ม"
+          label="จ่าย"
           onClick={() => openQuickAdd('Expense')}
           disabled={!canCreateTransactions}
-          accent
+          colorClass="bg-expense/10 text-expense border-expense/20"
         />
         <QuickActionCard
           icon={<TrendingUp size={20} />}
           label="รายรับ"
           onClick={() => openQuickAdd('Income')}
           disabled={!canCreateTransactions}
+          colorClass="bg-income/10 text-income border-income/20"
         />
         <QuickActionCard
           icon={<Receipt size={20} />}
           label="สลิป"
           onClick={() => onNavigate('review_receipt')}
           disabled={!canCreateTransactions}
+          colorClass="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-border/60"
         />
-        <QuickActionCard icon={<PieChart size={20} />} label="วิเคราะห์" onClick={() => onNavigate('analytics')} />
+        <QuickActionCard 
+          icon={<Landmark size={20} />} 
+          label="งบประมาณ" 
+          onClick={() => onNavigate('budget')} 
+          colorClass="bg-primary/10 text-primary border-primary/20"
+        />
       </section>
 
       {/* Monthly Budget Summary — compact */}
@@ -358,16 +367,17 @@ function QuickActionCard({
   label,
   onClick,
   disabled = false,
-  accent = false,
+  colorClass = '',
 }: Readonly<{
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   disabled?: boolean;
-  accent?: boolean;
+  colorClass?: string;
+  key?: React.Key;
 }>) {
-  const baseClasses = accent
-    ? 'bg-primary text-white shadow-md shadow-primary/15'
+  const baseClasses = colorClass 
+    ? `${colorClass} border`
     : 'bg-white dark:bg-surface-dark border border-border/60 dark:border-slate-800 text-text-dark dark:text-white shadow-sm';
 
   return (
@@ -379,7 +389,7 @@ function QuickActionCard({
         disabled ? 'opacity-50 cursor-not-allowed' : ''
       }`}
     >
-      <span className={accent ? 'text-white' : 'text-primary'}>{icon}</span>
+      <span>{icon}</span>
       <span className="text-[11px] font-extrabold leading-none">{label}</span>
     </motion.button>
   );
@@ -395,6 +405,7 @@ function MetricRow({
   value: string;
   positive?: boolean;
   warning?: boolean;
+  key?: React.Key;
 }>) {
   const getTextStyle = () => {
     if (warning) return 'text-amber-600 dark:text-amber-400';
@@ -425,6 +436,7 @@ function TransactionItem({
   date: string;
   amount: number;
   index: number;
+  key?: React.Key;
 }>) {
   const isExpense = type === 'Expense';
 

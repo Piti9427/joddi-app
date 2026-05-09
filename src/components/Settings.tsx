@@ -34,6 +34,15 @@ export function Settings({
     () => localStorage.getItem('daily_reminder') === 'true',
   );
   const [statusMessage, setStatusMessage] = useState('');
+  const [syncing, setSyncing] = useState(false);
+
+  React.useEffect(() => {
+    if (statusMessage) {
+      const timer = setTimeout(() => setStatusMessage(''), 3000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [statusMessage]);
 
   const toggleDarkMode = () => {
     const newDarkMode = !darkMode;
@@ -83,11 +92,16 @@ export function Settings({
   };
 
   const syncNow = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    setStatusMessage('กำลังซิงก์ข้อมูล...');
     try {
       await syncAllOfflineData();
       setStatusMessage('ซิงก์ข้อมูลเรียบร้อย');
     } catch (error: any) {
       setStatusMessage(error?.message || 'ซิงก์ข้อมูลไม่สำเร็จ');
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -157,8 +171,12 @@ export function Settings({
         <section className="space-y-3">
           <h3 className="text-sm font-extrabold text-secondary pl-2">บัญชี</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
-            <button onClick={syncNow} className="w-full text-left">
-              <SettingRow icon={<RefreshCw />} label="ซิงก์ตอนนี้" value={isAuthenticated ? 'คลาวด์' : 'ในเครื่อง'} />
+            <button onClick={syncNow} disabled={syncing} className="w-full text-left disabled:opacity-50">
+              <SettingRow 
+                icon={syncing ? <RefreshCw className="animate-spin" /> : <RefreshCw />} 
+                label="ซิงก์ตอนนี้" 
+                value={syncing ? 'กำลังซิงก์...' : (isAuthenticated ? 'คลาวด์' : 'ในเครื่อง')} 
+              />
             </button>
             <button onClick={onClearLocalData} className="w-full text-left">
               <SettingRow icon={<Trash2 />} label="ล้างข้อมูลในเครื่อง" />

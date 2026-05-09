@@ -177,8 +177,8 @@ export default function App() {
         setBaseView('dashboard');
         await fetchTransactions();
       } else {
-        setIsGuestMode(true);
-        setCurrentView('dashboard');
+        setIsGuestMode(false);
+        setCurrentView('onboarding');
         setBaseView('dashboard');
         setLoading(false);
       }
@@ -198,8 +198,8 @@ export default function App() {
         setBaseView('dashboard');
         await fetchTransactions();
       } else {
-        setIsGuestMode(true);
-        setCurrentView('dashboard');
+        setIsGuestMode(false);
+        setCurrentView('onboarding');
         setBaseView('dashboard');
         setLoading(false);
       }
@@ -294,9 +294,9 @@ export default function App() {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     await clearLocalTransactions().catch((clearError) => console.error('Offline cache clear error:', clearError));
-    setIsGuestMode(true);
+    setIsGuestMode(false);
     setTransactions([]);
-    setCurrentView('dashboard');
+    setCurrentView('onboarding');
     setBaseView('dashboard');
   };
 
@@ -338,7 +338,7 @@ export default function App() {
   const renderScreen = () => {
     if (!sessionChecked) return <ScreenFallback />;
 
-    if (!session && !isGuestMode) {
+    if (!session && !isGuestMode && contentView !== 'onboarding') {
       return (
         <AuthScreen
           onAuthSuccess={() => {
@@ -377,16 +377,21 @@ export default function App() {
           />
         );
       case 'dashboard':
-      default:
+      default: {
+        const userName = session?.user?.user_metadata?.display_name || 
+                        session?.user?.email?.split('@')[0] || 
+                        (isGuestMode ? 'ผู้ใช้ทั่วไป' : 'จดดี');
         return (
           <Dashboard
             onNavigate={navigate}
             onAddTransaction={handleAddTransaction}
             transactions={transactions}
+            userName={userName}
             canCreateTransactions={canWrite}
             readOnlyMode={false}
           />
         );
+      }
     }
   };
 
