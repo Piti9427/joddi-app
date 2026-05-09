@@ -8,14 +8,15 @@ import {
   syncPendingTransactions,
   type LocalReceiptDraft,
 } from '../lib/supabase';
+import { parseReceiptImage } from '../lib/ocr';
 
 export function ReviewReceipt({
   onNavigate,
   onAddTransaction,
-}: {
-  onNavigate: (v: ViewState) => void;
+}: Readonly<{
+  onNavigate: (v: ViewState, payload?: any) => void;
   onAddTransaction: (t: any) => void | Promise<void>;
-}) {
+}>) {
   const [receiptImage, setReceiptImage] = useState('');
   const [merchant, setMerchant] = useState('');
   const [amount, setAmount] = useState('');
@@ -31,7 +32,10 @@ export function ReviewReceipt({
     if (!image) return;
 
     setReceiptImage(image);
-    setStatusMessage('กำลังบันทึกสลิปแบบร่าง...');
+    setStatusMessage('กำลังอ่านข้อมูลด้วย AI...');
+
+    // Run OCR in parallel with saving draft
+    const ocrPromise = parseReceiptImage(image);
 
     const draft = createLocalReceiptDraft({
       imageDataUrl: image,
@@ -42,7 +46,18 @@ export function ReviewReceipt({
 
     const savedDraft = await saveLocalReceiptDraft(draft);
     setReceiptDraft(savedDraft);
-    setStatusMessage('บันทึกสลิปแล้ว จะตรวจทานต่อหรือจบเลยก็ได้');
+
+    // Wait for OCR and update state
+    const parsed = await ocrPromise;
+    if (parsed) {
+      setMerchant(parsed.merchant);
+      setAmount(parsed.amount.toString());
+      setDate(parsed.date);
+      setCategory(parsed.category);
+      setStatusMessage(`AI อ่านเรียบร้อย (ความมั่นใจ ${Math.round(parsed.confidence * 100)}%)`);
+    } else {
+      setStatusMessage('บันทึกสลิปแล้ว จะตรวจทานต่อหรือจบเลยก็ได้');
+    }
 
     syncPendingTransactions()
       .then((result) => {
@@ -51,6 +66,21 @@ export function ReviewReceipt({
         }
       })
       .catch(() => setStatusMessage('บันทึกในเครื่องแล้ว รูปจะซิงก์ภายหลัง'));
+  };
+
+  const handleAiScan = async () => {
+    if (!receiptImage) return;
+    setStatusMessage('กำลังวิเคราะห์ใหม่ด้วย AI...');
+    const parsed = await parseReceiptImage(receiptImage);
+    if (parsed) {
+      setMerchant(parsed.merchant);
+      setAmount(parsed.amount.toString());
+      setDate(parsed.date);
+      setCategory(parsed.category);
+      setStatusMessage(`AI วิเคราะห์ใหม่เรียบร้อย (${Math.round(parsed.confidence * 100)}%)`);
+    } else {
+      setStatusMessage('AI ไม่สามารถอ่านข้อมูลได้ โปรดลองอีกครั้ง');
+    }
   };
 
   const handleSave = async () => {
@@ -104,9 +134,19 @@ export function ReviewReceipt({
               </div>
             )}
           </button>
-          <div className="flex items-center gap-2 text-secondary text-sm italic font-medium">
-            <BadgeCheck size={16} className="text-primary" />
-            {statusMessage}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-secondary text-sm italic font-medium">
+              <BadgeCheck size={16} className="text-primary" />
+              {statusMessage}
+            </div>
+            {receiptImage && (
+              <button
+                onClick={handleAiScan}
+                className="text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md text-secondary hover:text-primary transition-colors"
+              >
+                Scan with AI
+              </button>
+            )}
           </div>
           {receiptDraft && (
             <button
@@ -163,7 +203,7 @@ function EditableRow({
   placeholder,
   type = 'text',
   inputMode,
-}: {
+}: Readonly<{
   icon: React.ReactElement;
   label: string;
   value: string;
@@ -171,11 +211,11 @@ function EditableRow({
   placeholder?: string;
   type?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
-}) {
+}>) {
   return (
     <label className="flex items-center gap-4">
       <div className="size-12 bg-input-bg dark:bg-slate-800 rounded-2xl flex items-center justify-center text-secondary shrink-0">
-        {React.cloneElement(icon, { size: 22 })}
+        {React.cloneElement(icon, { size: 22, strokeWidth: 1.5 })}
       </div>
       <div className="flex-1">
         <p className="text-[11px] text-secondary font-semibold">{label}</p>

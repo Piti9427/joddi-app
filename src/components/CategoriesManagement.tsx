@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import {
-  ArrowLeft,
   Plus,
   Coffee,
   Utensils,
@@ -87,10 +86,10 @@ const COLOR_OPTIONS = [
 export function CategoriesManagement({
   onNavigate,
   transactions,
-}: {
-  onNavigate: (v: ViewState) => void;
+}: Readonly<{
+  onNavigate: (v: ViewState, payload?: any) => void;
   transactions: Transaction[];
-}) {
+}>) {
   const [categories, setCategories] = useState<LocalCategory[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -117,8 +116,8 @@ export function CategoriesManagement({
 
   useEffect(() => {
     loadCategories();
-    window.addEventListener('joddi:categories-changed', loadCategories);
-    return () => window.removeEventListener('joddi:categories-changed', loadCategories);
+    globalThis.addEventListener('joddi:categories-changed', loadCategories);
+    return () => globalThis.removeEventListener('joddi:categories-changed', loadCategories);
   }, []);
 
   const saveCategories = async (cats: LocalCategory[]) => {
@@ -155,7 +154,7 @@ export function CategoriesManagement({
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('ลบหมวดหมู่นี้หรือไม่?')) {
+    if (globalThis.confirm('ลบหมวดหมู่นี้หรือไม่?')) {
       await deleteLocalCategory(id);
       await loadCategories();
       syncAllOfflineData().catch((error) => console.error('Category delete sync error:', error));
@@ -452,9 +451,9 @@ function CategoryRow({
   }
 
   return (
-    <div
+    <button
       onClick={onEdit}
-      className="flex items-center gap-4 group cursor-pointer p-4 rounded-2xl hover:bg-highlight/50 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/50"
+      className="w-full text-left flex items-center gap-4 group cursor-pointer p-4 rounded-2xl hover:bg-highlight/50 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/50"
     >
       <div
         className={`size-12 rounded-2xl bg-input-bg dark:bg-slate-800 flex items-center justify-center shrink-0 ${category.color} transition-transform group-hover:scale-105`}
@@ -465,13 +464,13 @@ function CategoryRow({
         <div>
           <p className="text-text-dark dark:text-slate-100 font-extrabold text-[15px]">{category.name}</p>
           <p className="text-text-secondary dark:text-slate-500 text-[11px] font-semibold mt-0.5">
-            ใช้แล้ว {count} รายการ{category.syncStatus !== 'synced' ? ` · ${category.syncStatus}` : ''}
+            ใช้แล้ว {count} รายการ{category.syncStatus === 'synced' ? '' : ` · ${category.syncStatus}`}
           </p>
         </div>
         <div className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
           <MoreHorizontal size={20} />
         </div>
       </div>
-    </div>
+    </button>
   );
 }

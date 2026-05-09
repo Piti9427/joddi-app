@@ -3,7 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Search, Filter, TrendingDown, TrendingUp } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import { motion } from 'motion/react';
-import { formatMoney } from '../lib/formatters';
+import { formatMoney, getUserLocale } from '../lib/formatters';
 
 type VirtualRow =
   | { type: 'dateHeader'; id: string; date: string }
@@ -12,14 +12,26 @@ type VirtualRow =
 export function TransactionHistory({
   onNavigate,
   transactions,
-}: {
-  onNavigate: (v: ViewState) => void;
+  lang,
+  currency,
+}: Readonly<{
+  onNavigate: (v: ViewState, payload?: any) => void;
   transactions: Transaction[];
-}) {
+  lang?: 'th' | 'en';
+  currency?: string;
+}>) {
+  const currentLang = lang || 'th';
+  const locale = getUserLocale();
   const [search, setSearch] = useState('');
   const scrollParentRef = useRef<HTMLDivElement | null>(null);
 
-  const formatCurrency = (val: number) => formatMoney(val, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+  const formatCurrency = (val: number) =>
+    formatMoney(val, {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
+      currency,
+      locale,
+    });
 
   const virtualRows = useMemo<VirtualRow[]>(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -89,7 +101,9 @@ export function TransactionHistory({
           <Search size={18} className="text-secondary" />
           <input
             type="text"
-            placeholder="ค้นหาจากร้านค้า หมวดหมู่ หรือหมายเหตุ"
+            placeholder={
+              currentLang === 'en' ? 'Search merchant, category, or note' : 'ค้นหาจากร้านค้า หมวดหมู่ หรือหมายเหตุ'
+            }
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="bg-transparent border-none focus:ring-0 text-[13px] font-bold w-full placeholder:text-secondary/60 outline-none text-text-dark dark:text-white"
@@ -107,7 +121,9 @@ export function TransactionHistory({
             <div className="size-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 text-slate-300">
               <Search size={48} />
             </div>
-            <h3 className="text-lg font-black text-text-dark dark:text-white mb-2">ไม่พบรายการที่ตรงกัน</h3>
+            <h3 className="text-lg font-black text-text-dark dark:text-white mb-2">
+              {currentLang === 'en' ? 'No matching transactions' : 'ไม่พบรายการที่ตรงกัน'}
+            </h3>
           </motion.div>
         ) : (
           <div
@@ -132,7 +148,11 @@ export function TransactionHistory({
                   {row.type === 'dateHeader' ? (
                     <DateHeader label={formatDateHeader(row.date)} />
                   ) : (
-                    <TransactionRow transaction={row.transaction} formatCurrency={formatCurrency} />
+                    <TransactionRow
+                      transaction={row.transaction}
+                      formatCurrency={formatCurrency}
+                      onClick={(id) => onNavigate('transaction_detail', id)}
+                    />
                   )}
                 </div>
               );
@@ -144,7 +164,7 @@ export function TransactionHistory({
   );
 }
 
-function DateHeader({ label }: { label: string }) {
+function DateHeader({ label }: Readonly<{ label: string }>) {
   return (
     <div className="flex items-center gap-3 px-2 py-3">
       <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
@@ -157,23 +177,28 @@ function DateHeader({ label }: { label: string }) {
 function TransactionRow({
   transaction,
   formatCurrency,
-}: {
+  onClick,
+}: Readonly<{
   transaction: Transaction;
   formatCurrency: (value: number) => string;
-}) {
+  onClick?: (id: string) => void;
+}>) {
   const isExpense = transaction.type === 'Expense';
-  const syncLabel =
-    transaction.syncStatus === 'pending' ? 'รอซิงก์' : transaction.syncStatus === 'failed' ? 'ซิงก์ไม่สำเร็จ' : '';
+  const getSyncLabel = (status: string) => {
+    if (status === 'pending') return 'รอซิงก์';
+    if (status === 'failed') return 'ซิงก์ไม่สำเร็จ';
+    return '';
+  };
+  const syncLabel = getSyncLabel(transaction.syncStatus);
 
   return (
     <motion.div
       whileTap={{ scale: 0.98 }}
+      onClick={() => onClick?.(transaction.id)}
       className="mb-2 bg-white dark:bg-surface-dark p-4 rounded-[1.35rem] shadow-sm border border-border/40 dark:border-slate-800/40 flex items-center gap-4 hover:shadow-md transition-all group cursor-pointer"
     >
-      <div
-        className={`size-12 rounded-2xl flex items-center justify-center shrink-0 ${isExpense ? 'bg-expense-bg/60 text-expense' : 'bg-income-bg/60 text-income'}`}
-      >
-        {isExpense ? <TrendingDown size={22} /> : <TrendingUp size={22} />}
+      <div className="size-12 rounded-2xl flex items-center justify-center shrink-0 bg-slate-50 dark:bg-slate-800 text-slate-500">
+        {isExpense ? <TrendingDown size={22} strokeWidth={1.5} /> : <TrendingUp size={22} strokeWidth={1.5} />}
       </div>
       <div className="flex-1 overflow-hidden">
         <p className="font-extrabold text-[15px] text-text-dark dark:text-white truncate">

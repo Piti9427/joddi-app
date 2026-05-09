@@ -73,7 +73,7 @@ const PAYMENT_HINTS: Array<{ id: string; keywords: string[] }> = [
 ];
 
 function normalizeText(value: string) {
-  return value.trim().replace(/\s+/g, ' ');
+  return value.trim().replaceAll(/\s+/g, ' ');
 }
 
 function lower(value: string) {
@@ -81,9 +81,10 @@ function lower(value: string) {
 }
 
 function parseAmount(text: string): number | null {
-  const match = text.match(/(?:฿|บาท|thb)?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i);
+  const amountRegex = /(?:฿|บาท|thb)?\s*(\d[\d,]*(?:\.\d{1,2})?)/i;
+  const match = amountRegex.exec(text);
   if (!match) return null;
-  const amount = Number(match[1].replace(/,/g, ''));
+  const amount = Number(match[1].replaceAll(',', ''));
   return Number.isFinite(amount) && amount > 0 ? amount : null;
 }
 
@@ -129,9 +130,9 @@ function inferCategory(text: string, type: TransactionType, categories: LocalCat
 
 function inferMerchant(text: string, amount: number | null) {
   let merchant = normalizeText(text)
-    .replace(/(?:฿|บาท|thb)?\s*[0-9][0-9,]*(?:\.[0-9]{1,2})?/i, '')
-    .replace(/\b(today|yesterday|tomorrow|cash|card|credit|debit|bank|transfer|promptpay)\b/gi, '')
-    .replace(/วันนี้|เมื่อวาน|พรุ่งนี้|เงินสด|บัตรเครดิต|บัตร|โอน|พร้อมเพย์/g, '')
+    .replaceAll(/(?:฿|บาท|thb)?\s*\d[\d,]*(?:\.\d{1,2})?/gi, '')
+    .replaceAll(/\b(today|yesterday|tomorrow|cash|card|credit|debit|bank|transfer|promptpay)\b/gi, '')
+    .replaceAll(/วันนี้|เมื่อวาน|พรุ่งนี้|เงินสด|บัตรเครดิต|บัตร|โอน|พร้อมเพย์/g, '')
     .trim();
 
   merchant = merchant.split(' ').slice(0, 4).join(' ');
@@ -169,6 +170,7 @@ function sanitizeGeminiResponse(response: GeminiParseResponse, fallback: SmartIn
   };
 }
 
+// ตัววิเคราะห์ข้อความฝั่ง Client (ทำงานทันที ไม่ต้องใช้อินเทอร์เน็ต)
 export function parseSmartInputLocally(rawText: string, categories: LocalCategory[]): SmartInputParseResult {
   const text = normalizeText(rawText);
   const amount = parseAmount(text);
@@ -186,6 +188,7 @@ export function parseSmartInputLocally(rawText: string, categories: LocalCategor
     date,
     paymentMethod,
   };
+  // คำนวณความแม่นยำเบื้องต้นตามกฎที่ตั้งไว้ (Heuristics)
   const confidence = calculateConfidence(base, text);
 
   return {
@@ -195,15 +198,18 @@ export function parseSmartInputLocally(rawText: string, categories: LocalCategor
   };
 }
 
+// ฟังก์ชันหลักสำหรับวิเคราะห์ข้อความ โดยจะพยายามใช้ AI (Gemini) ก่อน ถ้าไม่ได้จะใช้ Local Parser แทน
 export async function parseSmartInput(rawText: string, categories: LocalCategory[]): Promise<SmartInputParseResult> {
   const localResult = parseSmartInputLocally(rawText, categories);
   const endpoint = String(import.meta.env.VITE_SMART_INPUT_ENDPOINT || '').trim();
 
+  // ถ้าไม่มี Endpoint หรือ ออฟไลน์อยู่ ให้ใช้ผลลัพธ์จาก Local ทันที
   if (!endpoint || (typeof navigator !== 'undefined' && !navigator.onLine)) {
     return localResult;
   }
 
   try {
+    // ส่งข้อความไปวิเคราะห์ผ่าน API ที่เชื่อมต่อกับ Gemini
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -217,6 +223,7 @@ export async function parseSmartInput(rawText: string, categories: LocalCategory
     if (!response.ok) return localResult;
 
     const data = (await response.json()) as GeminiParseResponse;
+    // นำผลลัพธ์จาก AI มาปรับจูนและตรวจสอบความถูกต้องอีกครั้ง
     return sanitizeGeminiResponse(data, localResult);
   } catch (error) {
     console.warn('Smart input endpoint unavailable; using local parser', error);

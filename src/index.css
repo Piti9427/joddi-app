@@ -21,26 +21,26 @@
 }
 
 :root {
-  --primary: #10b981;
-  --primary-dark: #059669;
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
   --secondary: #64748b;
-  --background-light: #fdfcf9;
+  --background-light: #f8fafc;
   --background-dark: #0f172a;
   --surface: #ffffff;
   --surface-dark: #1e293b;
-  --text-dark: #0f172a;
+  --text-dark: #1e293b;
   --text-secondary: #64748b;
-  --income: #10b981;
-  --income-bg: #ecfdf5;
-  --expense: #f43f5e;
-  --expense-bg: #fff1f2;
-  --highlight: #f0fdf4;
+  --income: #16a34a;
+  --income-bg: #f0fdf4;
+  --expense: #dc2626;
+  --expense-bg: #fef2f2;
+  --highlight: #eff6ff;
   --input-bg: #f1f5f9;
   --border: #e2e8f0;
-  --ai-ink: #0f172a;
-  --ai-accent-a: #14b8a6;
+  --ai-ink: #1e293b;
+  --ai-accent-a: #2563eb;
   --ai-accent-b: #6366f1;
-  --ai-accent-c: #f43f5e;
+  --ai-accent-c: #dc2626;
 
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
@@ -48,8 +48,8 @@
 }
 
 .dark {
-  --primary: #10b981;
-  --primary-dark: #059669;
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
   --secondary: #94a3b8;
   --background-light: #0f172a;
   --background-dark: #080d1a;
@@ -57,17 +57,17 @@
   --surface-dark: #1e293b;
   --text-dark: #f8fafc;
   --text-secondary: #94a3b8;
-  --income: #10b981;
-  --income-bg: rgba(16, 185, 129, 0.1);
-  --expense: #f43f5e;
-  --expense-bg: rgba(244, 63, 94, 0.1);
-  --highlight: #064e3b;
+  --income: #22c55e;
+  --income-bg: rgba(34, 197, 94, 0.1);
+  --expense: #ef4444;
+  --expense-bg: rgba(239, 68, 68, 0.1);
+  --highlight: #1e3a5f;
   --input-bg: #334155;
   --border: #334155;
   --ai-ink: #f8fafc;
-  --ai-accent-a: #2dd4bf;
+  --ai-accent-a: #60a5fa;
   --ai-accent-b: #818cf8;
-  --ai-accent-c: #fb7185;
+  --ai-accent-c: #f87171;
 }
 
 /* ── Base ── */
@@ -166,7 +166,7 @@ select,
 
   .ai-command-surface {
     background:
-      linear-gradient(135deg, rgba(20, 184, 166, 0.92), rgba(15, 23, 42, 0.98) 46%, rgba(99, 102, 241, 0.94)),
+      linear-gradient(135deg, rgba(37, 99, 235, 0.92), rgba(30, 41, 59, 0.98) 46%, rgba(99, 102, 241, 0.94)),
       var(--ai-ink);
     border: 1px solid rgba(255, 255, 255, 0.18);
   }
@@ -269,19 +269,19 @@ input[type='date']::-webkit-calendar-picker-indicator {
 
 /* ── Buttons ── */
 .btn-primary {
-  background: linear-gradient(to right, #10b981, var(--primary));
+  background: linear-gradient(to right, #2563eb, var(--primary));
   color: #fff;
   font-weight: 900;
   padding: 1rem 2rem;
   border-radius: 1rem;
-  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
 }
 
 .btn-primary:hover {
-  box-shadow: 0 14px 28px rgba(16, 185, 129, 0.28);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.28);
   transform: scale(1.02);
 }
 

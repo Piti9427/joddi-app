@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { User, Bell, Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn, RefreshCw, Trash2 } from 'lucide-react';
+import { Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn, RefreshCw, Trash2, Banknote } from 'lucide-react';
 import { ViewState } from '../App';
-import { cancelDailyReminder, scheduleDailyReminder } from '../lib/device';
 import { saveLocalProfile, syncAllOfflineData } from '../lib/supabase';
+import { getTranslation } from '../lib/i18n';
 
 export function Settings({
   onNavigate,
@@ -12,17 +12,27 @@ export function Settings({
   onClearLocalData,
   userEmail,
   userId,
-}: {
-  onNavigate: (v: ViewState) => void;
+  lang,
+  onLanguageChange,
+  currency,
+  onCurrencyChange,
+}: Readonly<{
+  onNavigate: (v: ViewState, payload?: any) => void;
   isAuthenticated?: boolean;
   onSignOut?: () => void | Promise<void>;
   onRequestSignIn?: () => void;
   onClearLocalData?: () => void | Promise<void>;
   userEmail?: string;
   userId?: string;
-}) {
+  lang?: 'th' | 'en';
+  onLanguageChange?: (lang: 'th' | 'en') => void;
+  currency?: string;
+  onCurrencyChange?: (curr: string) => void;
+}>) {
+  const currentLang = lang || 'th';
+  const t = getTranslation(currentLang);
   const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
+    if (globalThis.window !== undefined) {
       return localStorage.getItem('theme') === 'dark';
     }
     return false;
@@ -30,10 +40,16 @@ export function Settings({
   const [displayName, setDisplayName] = useState(
     () => localStorage.getItem('display_name') || userEmail?.split('@')[0] || 'บัญชีทดลอง',
   );
-  const [notificationsEnabled, setNotificationsEnabled] = useState(
-    () => localStorage.getItem('daily_reminder') === 'true',
-  );
   const [statusMessage, setStatusMessage] = useState('');
+  const [syncing, setSyncing] = useState(false);
+
+  React.useEffect(() => {
+    if (statusMessage) {
+      const timer = setTimeout(() => setStatusMessage(''), 3000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [statusMessage]);
 
   const toggleDarkMode = () => {
     const newDarkMode = !darkMode;
@@ -46,8 +62,6 @@ export function Settings({
       localStorage.setItem('theme', 'light');
     }
   };
-
-  const supportSettings = [{ icon: <HelpCircle />, label: 'ศูนย์ช่วยเหลือ' }];
 
   const saveProfile = async () => {
     localStorage.setItem('display_name', displayName);
@@ -64,30 +78,17 @@ export function Settings({
     setStatusMessage('บันทึกโปรไฟล์แล้ว');
   };
 
-  const toggleReminder = async () => {
-    try {
-      if (notificationsEnabled) {
-        await cancelDailyReminder();
-        localStorage.setItem('daily_reminder', 'false');
-        setNotificationsEnabled(false);
-        setStatusMessage('ปิดการแจ้งเตือนรายวันแล้ว');
-      } else {
-        await scheduleDailyReminder();
-        localStorage.setItem('daily_reminder', 'true');
-        setNotificationsEnabled(true);
-        setStatusMessage('ตั้งแจ้งเตือนรายวันเวลา 20:00 แล้ว');
-      }
-    } catch (error: any) {
-      setStatusMessage(error?.message || 'ตั้งค่าการแจ้งเตือนไม่สำเร็จ');
-    }
-  };
-
   const syncNow = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    setStatusMessage('กำลังซิงก์ข้อมูล...');
     try {
       await syncAllOfflineData();
       setStatusMessage('ซิงก์ข้อมูลเรียบร้อย');
     } catch (error: any) {
       setStatusMessage(error?.message || 'ซิงก์ข้อมูลไม่สำเร็จ');
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -129,7 +130,7 @@ export function Settings({
         <section className="space-y-3">
           <h3 className="text-sm font-extrabold text-secondary pl-2">การใช้งาน</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
-            <SettingRow icon={<Moon />} label="โหมดมืด">
+            <SettingRow icon={<Moon />} label={t.dark_mode}>
               <button
                 onClick={toggleDarkMode}
                 className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${darkMode ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
@@ -140,38 +141,59 @@ export function Settings({
               </button>
             </SettingRow>
 
-            <SettingRow icon={<Globe />} label="สกุลเงิน" value="อัตโนมัติ" />
-            <SettingRow icon={<Bell />} label="แจ้งเตือนรายวัน">
-              <button
-                onClick={toggleReminder}
-                className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${notificationsEnabled ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
+            <SettingRow icon={<Globe size={18} />} label={t.language}>
+              <select
+                value={currentLang}
+                onChange={(e) => onLanguageChange?.(e.target.value as 'th' | 'en')}
+                className="bg-transparent text-sm font-bold text-primary outline-none appearance-none cursor-pointer"
               >
-                <div
-                  className={`size-5 bg-white rounded-full shadow-sm absolute transition-transform duration-300 ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`}
-                ></div>
-              </button>
+                <option value="th">ไทย (TH)</option>
+                <option value="en">English (EN)</option>
+              </select>
+            </SettingRow>
+
+            <SettingRow icon={<Banknote size={18} />} label={t.currency}>
+              <select
+                value={currency}
+                onChange={(e) => onCurrencyChange?.(e.target.value)}
+                className="bg-transparent text-sm font-bold text-primary outline-none appearance-none cursor-pointer text-right"
+              >
+                <option value="THB">฿ THB</option>
+                <option value="USD">$ USD</option>
+                <option value="EUR">€ EUR</option>
+                <option value="JPY">¥ JPY</option>
+                <option value="GBP">£ GBP</option>
+              </select>
             </SettingRow>
           </div>
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-sm font-extrabold text-secondary pl-2">บัญชี</h3>
+          <h3 className="text-sm font-extrabold text-secondary pl-2">{t.account}</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
-            <button onClick={syncNow} className="w-full text-left">
-              <SettingRow icon={<RefreshCw />} label="ซิงก์ตอนนี้" value={isAuthenticated ? 'คลาวด์' : 'ในเครื่อง'} />
+            <button onClick={syncNow} disabled={syncing} className="w-full text-left disabled:opacity-50">
+              {(() => {
+                let syncValue = isAuthenticated ? 'Cloud' : 'Local';
+                if (syncing) syncValue = '...';
+                return (
+                  <SettingRow
+                    icon={syncing ? <RefreshCw className="animate-spin" /> : <RefreshCw />}
+                    label={t.sync_now}
+                    value={syncValue}
+                  />
+                );
+              })()}
             </button>
             <button onClick={onClearLocalData} className="w-full text-left">
-              <SettingRow icon={<Trash2 />} label="ล้างข้อมูลในเครื่อง" />
+              <SettingRow icon={<Trash2 />} label={t.clear_data} />
             </button>
           </div>
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-sm font-extrabold text-secondary pl-2">ช่วยเหลือ</h3>
+          <h3 className="text-sm font-extrabold text-secondary pl-2">{t.help}</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-[2rem] p-2 shadow-sm border border-border dark:border-slate-800">
-            {supportSettings.map((item, index) => (
-              <SettingRow key={index} icon={item.icon} label={item.label} />
-            ))}
+            <SettingRow icon={<HelpCircle />} label="ศูนย์ช่วยเหลือ" />
 
             {isAuthenticated ? (
               <button
@@ -181,17 +203,17 @@ export function Settings({
                 <div className="size-10 rounded-[1.2rem] bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center group-hover:bg-rose-100 transition-colors">
                   <LogOut size={20} />
                 </div>
-                <div className="flex-1 font-bold">ออกจากระบบ</div>
+                <div className="flex-1 font-bold">{t.sign_out}</div>
               </button>
             ) : (
               <button
                 onClick={onRequestSignIn}
                 className="w-full flex items-center gap-4 p-4 hover:bg-input-bg dark:hover:bg-slate-800/50 rounded-2xl transition-colors text-left text-primary group"
               >
-                <div className="size-10 rounded-[1.2rem] bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                <div className="size-10 rounded-[1.2rem] bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
                   <LogIn size={20} />
                 </div>
-                <div className="flex-1 font-bold">เข้าสู่ระบบเพื่อซิงก์</div>
+                <div className="flex-1 font-bold">{t.sign_in}</div>
               </button>
             )}
           </div>
@@ -212,7 +234,7 @@ function SettingRow({ icon, label, value, children }: any) {
       </div>
       <div className="flex items-center gap-2">
         {value && <span className="text-sm font-bold text-secondary">{value}</span>}
-        {children ? children : <ChevronRight className="text-secondary" size={20} />}
+        {children ?? <ChevronRight className="text-secondary" size={20} />}
       </div>
     </div>
   );
