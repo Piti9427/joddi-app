@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
@@ -21,30 +21,35 @@
 }
 
 :root {
-  --primary: #10b981; 
-  --primary-dark: #059669;
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
   --secondary: #64748b;
-  --background-light: #fdfcf9; 
+  --background-light: #f8fafc;
   --background-dark: #0f172a;
   --surface: #ffffff;
   --surface-dark: #1e293b;
-  --text-dark: #0f172a;
+  --text-dark: #1e293b;
   --text-secondary: #64748b;
-  --income: #10b981;
-  --income-bg: #ecfdf5;
-  --expense: #f43f5e; 
-  --expense-bg: #fff1f2;
-  --highlight: #f0fdf4;
+  --income: #16a34a;
+  --income-bg: #f0fdf4;
+  --expense: #dc2626;
+  --expense-bg: #fef2f2;
+  --highlight: #eff6ff;
   --input-bg: #f1f5f9;
   --border: #e2e8f0;
+  --ai-ink: #1e293b;
+  --ai-accent-a: #2563eb;
+  --ai-accent-b: #6366f1;
+  --ai-accent-c: #dc2626;
 
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
+  --app-max-width: 28rem;
 }
 
 .dark {
-  --primary: #10b981;
-  --primary-dark: #059669;
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
   --secondary: #94a3b8;
   --background-light: #0f172a;
   --background-dark: #080d1a;
@@ -52,39 +57,76 @@
   --surface-dark: #1e293b;
   --text-dark: #f8fafc;
   --text-secondary: #94a3b8;
-  --income: #10b981;
-  --income-bg: rgba(16, 185, 129, 0.1);
-  --expense: #f43f5e;
-  --expense-bg: rgba(244, 63, 94, 0.1);
-  --highlight: #064e3b;
+  --income: #22c55e;
+  --income-bg: rgba(34, 197, 94, 0.1);
+  --expense: #ef4444;
+  --expense-bg: rgba(239, 68, 68, 0.1);
+  --highlight: #1e3a5f;
   --input-bg: #334155;
   --border: #334155;
+  --ai-ink: #f8fafc;
+  --ai-accent-a: #60a5fa;
+  --ai-accent-b: #818cf8;
+  --ai-accent-c: #f87171;
 }
 
 /* ── Base ── */
 html {
   height: 100%;
+  width: 100%;
   overflow: hidden;
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 body {
   height: 100%;
+  width: 100%;
   overflow: hidden;
   margin: 0;
   padding: 0;
   background-color: var(--background-light);
   color: var(--text-dark);
-  transition: background-color 0.3s, color 0.3s;
-  font-family: 'Outfit', sans-serif;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
+  font-family:
+    'Noto Sans Thai',
+    'Outfit',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   height: 100%;
+  width: 100%;
   overflow: hidden;
+}
+
+button,
+a,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+input,
+textarea,
+select,
+[contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
 
 /* ── iOS-specific scroll fix ── */
@@ -93,6 +135,7 @@ body {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
+  touch-action: pan-y;
 }
 
 /* ── Safe Area Utilities ── */
@@ -104,12 +147,62 @@ body {
   padding-bottom: var(--safe-bottom);
 }
 
+.app-safe-shell {
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+
+.app-scroll-shell {
+  scroll-padding-top: var(--safe-top);
+}
+
 /* ── Components ── */
 @layer components {
   .glass {
     backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.7);
+  }
+
+  .ai-command-surface {
+    background:
+      linear-gradient(135deg, rgba(37, 99, 235, 0.92), rgba(30, 41, 59, 0.98) 46%, rgba(99, 102, 241, 0.94)),
+      var(--ai-ink);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .ai-surface {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .ai-surface::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0)),
+      repeating-linear-gradient(
+        135deg,
+        rgba(15, 23, 42, 0.035) 0,
+        rgba(15, 23, 42, 0.035) 1px,
+        transparent 1px,
+        transparent 11px
+      );
+  }
+
+  .dark .ai-surface::before {
+    background:
+      linear-gradient(90deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0)),
+      repeating-linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.045) 0,
+        rgba(255, 255, 255, 0.045) 1px,
+        transparent 1px,
+        transparent 11px
+      );
   }
 
   .dark .glass {
@@ -139,24 +232,33 @@ body {
       filter: brightness(1.1);
     }
   }
-  
+
   .slide-up {
     animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   @keyframes slideUp {
-    from { transform: translateY(100%); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 }
 
 /* ── Typography ── */
-h1, h2, h3, h4 {
-  letter-spacing: -0.025em;
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: 0;
 }
 
-input[type="date"]::-webkit-inner-spin-button,
-input[type="date"]::-webkit-calendar-picker-indicator {
+input[type='date']::-webkit-inner-spin-button,
+input[type='date']::-webkit-calendar-picker-indicator {
   display: none;
   -webkit-appearance: none;
 }
@@ -167,17 +269,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* ── Buttons ── */
 .btn-primary {
-  background: linear-gradient(to right, #10b981, var(--primary));
+  background: linear-gradient(to right, #2563eb, var(--primary));
   color: #fff;
   font-weight: 900;
   padding: 1rem 2rem;
   border-radius: 1rem;
-  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .btn-primary:hover {
-  box-shadow: 0 14px 28px rgba(16, 185, 129, 0.28);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.28);
   transform: scale(1.02);
 }
 

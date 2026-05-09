@@ -1,0 +1,7 @@
+dist
+node_modules
+ios/App/App/public
+ios/App/App.xcodeproj
+ios/App/App.xcworkspace
+ios/App/CapApp-SPM/.build
+package-lock.json

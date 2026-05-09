@@ -2,7 +2,7 @@ import React from 'react';
 import { Leaf } from 'lucide-react';
 import { ViewState } from '../App';
 
-export function Onboarding({ onNavigate }: { onNavigate: (v: ViewState) => void }) {
+export function Onboarding({ onNavigate }: Readonly<{ onNavigate: (v: ViewState, payload?: any) => void }>) {
   return (
     <div className="flex flex-col min-h-full p-6 bg-background-light dark:bg-background-dark">
       <div className="flex items-center justify-between mb-4">
@@ -10,21 +10,31 @@ export function Onboarding({ onNavigate }: { onNavigate: (v: ViewState) => void 
           <div className="text-primary flex size-10 items-center justify-center rounded-xl bg-highlight dark:bg-primary/20">
             <Leaf size={24} />
           </div>
-          <h2 className="text-text-dark dark:text-white text-xl font-extrabold tracking-tight">Financely</h2>
+          <h2 className="text-text-dark dark:text-white text-xl font-extrabold">จดดี</h2>
         </div>
-        <button onClick={() => onNavigate('dashboard')} className="text-secondary font-semibold text-sm hover:text-primary transition-colors">Skip</button>
+        <button
+          onClick={() => onNavigate('dashboard')}
+          className="text-secondary font-semibold text-sm hover:text-primary transition-colors"
+        >
+          ข้าม
+        </button>
       </div>
 
       <div className="flex-1 flex flex-col justify-center">
-        <div className="w-full aspect-[4/5] bg-center bg-no-repeat bg-cover rounded-3xl bg-input-bg dark:bg-surface-dark border border-border dark:border-primary/10 mb-8" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDDEsD155JG9_oHBGboTTLSyssfFn1d322EM6h1UEwasTTqhMa0zp5cwo_RfD8igWwNIZmfZUUJUN7ugvAroXlbt7jzEGJYP54Y5tRl9-aItN5N9uR5-zzUEx_wSX2WkDY-tKyGg2qU_gNVCkBpCqPXdwkHgX7STvg0za8MN2vEhRKjfjXZMKDknkqeKSBVoq1Zp3-D2yANgz7pwUGSMoyQWmBk_lVUX4H4U-Fn-2-DMAPYNVvABtlzKXHofWfnc_57C-W1Z0oCXw")' }}>
-        </div>
+        <div
+          className="w-full aspect-[4/5] bg-center bg-no-repeat bg-cover rounded-3xl bg-input-bg dark:bg-surface-dark border border-border dark:border-primary/10 mb-8"
+          style={{
+            backgroundImage:
+              'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDDEsD155JG9_oHBGboTTLSyssfFn1d322EM6h1UEwasTTqhMa0zp5cwo_RfD8igWwNIZmfZUUJUN7ugvAroXlbt7jzEGJYP54Y5tRl9-aItN5N9uR5-zzUEx_wSX2WkDY-tKyGg2qU_gNVCkBpCqPXdwkHgX7STvg0za8MN2vEhRKjfjXZMKDknkqeKSBVoq1Zp3-D2yANgz7pwUGSMoyQWmBk_lVUX4H4U-Fn-2-DMAPYNVvABtlzKXHofWfnc_57C-W1Z0oCXw")',
+          }}
+        ></div>
 
         <div className="space-y-4">
           <h1 className="text-text-dark dark:text-white tracking-tight text-4xl font-extrabold leading-[1.1]">
-            Track your finances daily <span className="text-primary">with ease</span>
+            จดรายรับรายจ่ายทุกวัน <span className="text-primary">ให้เร็วขึ้น</span>
           </h1>
           <p className="text-text-secondary dark:text-slate-400 text-lg font-medium leading-relaxed max-w-[90%]">
-            Take control of your spending and reach your savings goals with our premium tools.
+            เพิ่มรายการไว ดูงบชัด และให้ AI ช่วยสรุปพฤติกรรมการใช้เงินจากข้อมูลของคุณ
           </p>
         </div>
 
@@ -36,12 +46,17 @@ export function Onboarding({ onNavigate }: { onNavigate: (v: ViewState) => void 
       </div>
 
       <div className="pb-6 space-y-4 mt-auto">
-        <button onClick={() => onNavigate('dashboard')} className="w-full bg-primary text-white font-bold py-4 rounded-2xl shadow-lg shadow-primary/20 active:scale-[0.98] transition-all text-lg">
-          Get Started
+        <button
+          onClick={() => onNavigate('dashboard')}
+          className="w-full bg-primary text-white font-bold py-4 rounded-2xl shadow-lg shadow-primary/20 active:scale-[0.98] transition-all text-lg"
+        >
+          เริ่มใช้งาน
         </button>
         <div className="flex items-center justify-center gap-1">
-          <span className="text-text-secondary text-sm">Already have an account?</span>
-          <button onClick={() => onNavigate('dashboard')} className="text-primary font-bold text-sm">Sign In</button>
+          <span className="text-text-secondary text-sm">มีบัญชีอยู่แล้ว?</span>
+          <button onClick={() => onNavigate('dashboard')} className="text-primary font-bold text-sm">
+            เข้าสู่ระบบ
+          </button>
         </div>
       </div>
     </div>
