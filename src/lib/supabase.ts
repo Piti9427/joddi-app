@@ -8,7 +8,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type AuthAccessMode = 'strict' | 'guest_readonly';
 export type SyncStatus = 'synced' | 'pending' | 'failed';
-export type TransactionSyncStatus = SyncStatus;
 export type BudgetPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 export type TransactionType = 'Income' | 'Expense';
 
@@ -24,7 +23,7 @@ export const requireEmailVerification =
 export function getAuthRedirectUrl() {
   const configuredRedirect = String(import.meta.env.VITE_AUTH_REDIRECT_URL || '').trim();
   if (configuredRedirect.length > 0) return configuredRedirect;
-  if (typeof window !== 'undefined') return window.location.origin;
+  if (globalThis.window !== undefined) return globalThis.window.location.origin;
   return 'http://localhost:3000';
 }
 
@@ -247,8 +246,8 @@ function isIndexedDbAvailable() {
 }
 
 function dispatchLocalEvent(name: string) {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event(name));
+  if (globalThis.window !== undefined) {
+    globalThis.window.dispatchEvent(new Event(name));
   }
 }
 
@@ -261,7 +260,7 @@ function newClientId() {
     return crypto.randomUUID();
   }
 
-  return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (char) =>
+  return '10000000-1000-4000-8000-100000000000'.replaceAll(/[018]/g, (char) =>
     (Number(char) ^ ((Math.random() * 16) >> (Number(char) / 4))).toString(16),
   );
 }
@@ -734,7 +733,7 @@ async function replaceSyncedBudgets(remoteBudgets: any[]): Promise<LocalBudget[]
 }
 
 export async function syncPendingTransactions(): Promise<SyncResult> {
-  if (syncInFlight) return syncInFlight;
+  if (syncInFlight !== null) return syncInFlight;
 
   syncInFlight = syncPendingDataInternal().finally(() => {
     syncInFlight = null;
@@ -748,7 +747,7 @@ export async function syncAllOfflineData(): Promise<SyncResult> {
 }
 
 async function syncPendingDataInternal(): Promise<SyncResult> {
-  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+  if (globalThis.navigator !== undefined && !globalThis.navigator.onLine) {
     return { synced: [], failed: [], skipped: true };
   }
 
@@ -917,6 +916,75 @@ async function syncProfile(): Promise<SyncBucket<LocalProfile>> {
   return { synced: [syncedProfile], failed: [] };
 }
 
+async function syncIndividualReceipt(receipt: LocalReceiptDraft) {
+  if (receipt.deletedAt) {
+    const { error } = await supabase.from('receipts').delete().eq('id', receipt.id);
+    if (error) {
+      const failedReceipt = {
+        ...receipt,
+        syncStatus: 'failed' as const,
+        syncError: error.message,
+        updatedAt: nowIso(),
+      };
+      await saveLocalReceiptDraft(failedReceipt);
+      return { status: 'failed', receipt: failedReceipt };
+    }
+    await runStore(RECEIPT_STORE, 'readwrite', (store) => store.delete(receipt.localId));
+    return { status: 'deleted' };
+  }
+
+  let storagePath = receipt.storagePath ?? null;
+  if (!storagePath && receipt.imageDataUrl) {
+    storagePath = await uploadReceiptImage(receipt.imageDataUrl);
+  }
+
+  const { data, error } = await supabase
+    .from('receipts')
+    .upsert(
+      {
+        id: receipt.id,
+        transaction_id: receipt.transactionId,
+        storage_path: storagePath,
+        ocr_text: receipt.ocrText,
+        parsed_merchant: receipt.parsedMerchant,
+        parsed_amount: receipt.parsedAmount,
+        parsed_date: receipt.parsedDate,
+        created_at: receipt.createdAt,
+      },
+      { onConflict: 'id' },
+    )
+    .select()
+    .single();
+
+  if (error) {
+    const failedReceipt = {
+      ...receipt,
+      syncStatus: 'failed' as const,
+      syncError: error.message,
+      updatedAt: nowIso(),
+    };
+    await saveLocalReceiptDraft(failedReceipt);
+    return { status: 'failed', receipt: failedReceipt };
+  }
+
+  const syncedReceipt: LocalReceiptDraft = {
+    id: data.id,
+    localId: receipt.localId,
+    imageDataUrl: undefined,
+    storagePath: data.storage_path ?? storagePath,
+    transactionId: data.transaction_id,
+    parsedMerchant: data.parsed_merchant,
+    parsedAmount: data.parsed_amount == null ? null : Number(data.parsed_amount),
+    parsedDate: data.parsed_date,
+    ocrText: data.ocr_text,
+    syncStatus: 'synced',
+    createdAt: data.created_at ?? receipt.createdAt,
+    updatedAt: nowIso(),
+  };
+  await saveLocalReceiptDraft(syncedReceipt);
+  return { status: 'synced', receipt: syncedReceipt };
+}
+
 async function syncReceipts(): Promise<SyncBucket<LocalReceiptDraft>> {
   const localReceipts = await getRawStore<LocalReceiptDraft>(RECEIPT_STORE);
   const pending = localReceipts.filter(
@@ -926,76 +994,11 @@ async function syncReceipts(): Promise<SyncBucket<LocalReceiptDraft>> {
   const failed: LocalReceiptDraft[] = [];
 
   for (const receipt of pending) {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) break;
+    if (globalThis.navigator !== undefined && !globalThis.navigator.onLine) break;
 
-    if (receipt.deletedAt) {
-      const { error } = await supabase.from('receipts').delete().eq('id', receipt.id);
-      if (error) {
-        const failedReceipt = {
-          ...receipt,
-          syncStatus: 'failed' as const,
-          syncError: error.message,
-          updatedAt: nowIso(),
-        };
-        await saveLocalReceiptDraft(failedReceipt);
-        failed.push(failedReceipt);
-      } else {
-        await runStore(RECEIPT_STORE, 'readwrite', (store) => store.delete(receipt.localId));
-      }
-      continue;
-    }
-
-    let storagePath = receipt.storagePath ?? null;
-    if (!storagePath && receipt.imageDataUrl) {
-      storagePath = await uploadReceiptImage(receipt.imageDataUrl);
-    }
-
-    const { data, error } = await supabase
-      .from('receipts')
-      .upsert(
-        {
-          id: receipt.id,
-          transaction_id: receipt.transactionId,
-          storage_path: storagePath,
-          ocr_text: receipt.ocrText,
-          parsed_merchant: receipt.parsedMerchant,
-          parsed_amount: receipt.parsedAmount,
-          parsed_date: receipt.parsedDate,
-          created_at: receipt.createdAt,
-        },
-        { onConflict: 'id' },
-      )
-      .select()
-      .single();
-
-    if (error) {
-      const failedReceipt = {
-        ...receipt,
-        syncStatus: 'failed' as const,
-        syncError: error.message,
-        updatedAt: nowIso(),
-      };
-      await saveLocalReceiptDraft(failedReceipt);
-      failed.push(failedReceipt);
-      continue;
-    }
-
-    const syncedReceipt: LocalReceiptDraft = {
-      id: data.id,
-      localId: receipt.localId,
-      imageDataUrl: undefined,
-      storagePath: data.storage_path ?? storagePath,
-      transactionId: data.transaction_id,
-      parsedMerchant: data.parsed_merchant,
-      parsedAmount: data.parsed_amount == null ? null : Number(data.parsed_amount),
-      parsedDate: data.parsed_date,
-      ocrText: data.ocr_text,
-      syncStatus: 'synced',
-      createdAt: data.created_at ?? receipt.createdAt,
-      updatedAt: nowIso(),
-    };
-    await saveLocalReceiptDraft(syncedReceipt);
-    synced.push(syncedReceipt);
+    const result = await syncIndividualReceipt(receipt);
+    if (result.status === 'synced') synced.push(result.receipt);
+    else if (result.status === 'failed') failed.push(result.receipt);
   }
 
   return { synced, failed };
