@@ -12,7 +12,7 @@ export function getUserLocale() {
   const storedLang = globalThis.localStorage.getItem('language');
   if (storedLang === 'th') return 'th-TH';
   if (storedLang === 'en') return 'en-US';
-  
+
   if (globalThis.navigator === undefined) return FALLBACK_LOCALE;
   return globalThis.navigator.language || FALLBACK_LOCALE;
 }

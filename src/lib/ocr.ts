@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
@@ -22,6 +22,29 @@ Return only a JSON object with these fields:
 IMPORTANT: Return ONLY valid JSON. No markdown formatting.
 `;
 
+async function compressImage(base64Str: string, maxWidth = 1024): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = (maxWidth / width) * height;
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.7)); // Compress to 70% quality JPEG
+    };
+  });
+}
+
 export async function parseReceiptImage(base64Image: string): Promise<ParsedReceipt | null> {
   if (!API_KEY) {
     console.warn('VITE_GEMINI_API_KEY is missing. OCR skipped.');
@@ -29,29 +52,49 @@ export async function parseReceiptImage(base64Image: string): Promise<ParsedRece
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // บีบอัดรูปภาพก่อนส่งขึ้น API เพื่อลดปริมาณการใช้ Data และความไวในการประมวลผล
+    const compressedBase64 = await compressImage(base64Image);
 
-    // Remove the data:image/xxx;base64, prefix if present
-    const base64Data = base64Image.split(',')[1] || base64Image;
+    // เริ่มการใช้งาน Google Gemini AI
+    const ai = new GoogleGenAI({ apiKey: API_KEY, apiVersion: 'v1' });
 
-    const result = await model.generateContent([
-      OCR_PROMPT,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: 'image/jpeg',
+    // ตรวจสอบและจัดการ Mime Type ของรูปภาพ
+    const mimeRegex = /^data:([^;]+);base64,/;
+    const mimeMatch = mimeRegex.exec(compressedBase64);
+    let mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    let base64Data = compressedBase64.replace(mimeRegex, '');
+
+    if (base64Data.startsWith('UklG') && mimeType === 'image/jpeg') {
+      mimeType = 'image/webp';
+    }
+
+    // ส่ง Prompt และรูปภาพให้ Gemini วิเคราะห์
+    const result = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: OCR_PROMPT },
+            {
+              inlineData: {
+                data: base64Data,
+                mimeType: mimeType,
+              },
+            },
+          ],
         },
-      },
-    ]);
+      ],
+    });
 
-    const response = await result.response;
-    const text = response.text();
-    
-    // Clean up potential markdown blocks
-    const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const text = result.text;
+    if (!text) return null;
+
+    // แปลงข้อความที่ได้รับจาก AI (ซึ่งเป็น JSON String) ให้เป็น Object
+    const jsonStr = text.replaceAll('```json', '').replaceAll('```', '').trim();
     const parsed = JSON.parse(jsonStr) as ParsedReceipt;
 
+    // ส่งคืนข้อมูลที่สกัดออกมา พร้อมค่า Default เผื่อกรณีข้อมูลไม่ครบ
     return {
       merchant: parsed.merchant || 'สลิป',
       amount: Number(parsed.amount) || 0,
