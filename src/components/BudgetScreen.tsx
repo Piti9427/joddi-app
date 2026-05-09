@@ -38,10 +38,10 @@ const DEFAULT_ICONS: Record<string, string> = {
 export function BudgetScreen({
   onNavigate,
   transactions,
-}: {
+}: Readonly<{
   onNavigate: (v: ViewState) => void;
   transactions: Transaction[];
-}) {
+}>) {
   const [budgets, setBudgets] = useState<LocalBudget[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewPeriod, setViewPeriod] = useState<BudgetPeriod>('monthly');
@@ -55,8 +55,8 @@ export function BudgetScreen({
       }
     };
     load();
-    window.addEventListener('joddi:budgets-changed', load);
-    return () => window.removeEventListener('joddi:budgets-changed', load);
+    globalThis.addEventListener('joddi:budgets-changed', load);
+    return () => globalThis.removeEventListener('joddi:budgets-changed', load);
   }, []);
 
   const persist = async (next: LocalBudget[]) => {
@@ -277,7 +277,7 @@ function BudgetCard({
   over,
   percent,
   onDelete,
-}: {
+}: Readonly<{
   label: string;
   spent: number;
   limit: number;
@@ -289,7 +289,7 @@ function BudgetCard({
   over: boolean;
   percent: number;
   onDelete: () => void;
-}) {
+}>) {
   const fmt = (v: number) => formatMoney(v, { maximumFractionDigits: 0 });
 
   let barColor = 'bg-primary';
@@ -324,7 +324,7 @@ function BudgetCard({
               </span>
               <span className="text-[9px] text-secondary font-bold opacity-60">
                 ({fmt(originalLimit)}/{PERIOD_LABELS[originalPeriod].toLowerCase()})
-                {syncStatus !== 'synced' ? ` · ${syncStatus}` : ''}
+                {syncStatus === 'synced' ? '' : ` · ${syncStatus}`}
               </span>
             </div>
           </div>
@@ -358,11 +358,11 @@ function AddBudgetModal({
   onClose,
   onAdd,
   existingCategories,
-}: {
+}: Readonly<{
   onClose: () => void;
   onAdd: (item: Omit<LocalBudget, 'id' | 'localId' | 'syncStatus' | 'updatedAt'>) => void;
   existingCategories: string[];
-}) {
+}>) {
   const [category, setCategory] = useState('');
   const [limit, setLimit] = useState('');
   const [period, setPeriod] = useState<BudgetPeriod>('monthly');
@@ -373,11 +373,11 @@ function AddBudgetModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimCat = category.trim();
-    if (!trimCat || !limit || parseFloat(limit) <= 0) return;
+    if (!trimCat || !limit || Number.parseFloat(limit) <= 0) return;
 
     onAdd({
       category: trimCat,
-      limit: parseFloat(limit),
+      limit: Number.parseFloat(limit),
       period,
       icon: DEFAULT_ICONS[trimCat] || '🏷️',
     });
@@ -409,10 +409,14 @@ function AddBudgetModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Category Input */}
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2">
+            <label
+              htmlFor="budget-category"
+              className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2"
+            >
               หมวดหมู่
             </label>
             <input
+              id="budget-category"
               type="text"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -437,10 +441,14 @@ function AddBudgetModal({
 
           {/* Budget Limit */}
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2">
+            <label
+              htmlFor="budget-limit"
+              className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2"
+            >
               วงเงินงบประมาณ (฿)
             </label>
             <input
+              id="budget-limit"
               type="number"
               inputMode="decimal"
               value={limit}
@@ -454,11 +462,15 @@ function AddBudgetModal({
 
           {/* Period Selector */}
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2">
+            <label
+              htmlFor="budget-period"
+              className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2"
+            >
               รอบงบประมาณ
             </label>
             <div className="relative">
               <button
+                id="budget-period"
                 type="button"
                 onClick={() => setShowPeriodMenu(!showPeriodMenu)}
                 className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-3 px-4 text-sm font-bold text-text-dark dark:text-white flex justify-between items-center"
@@ -505,7 +517,7 @@ function AddBudgetModal({
           {/* Submit */}
           <button
             type="submit"
-            disabled={!category.trim() || !limit || parseFloat(limit) <= 0}
+            disabled={!category.trim() || !limit || Number.parseFloat(limit) <= 0}
             className="w-full bg-text-dark dark:bg-white text-white dark:text-slate-900 font-black py-4 rounded-2xl mt-2 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
           >
             <Plus size={18} />

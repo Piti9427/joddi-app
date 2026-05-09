@@ -12,10 +12,10 @@ type VirtualRow =
 export function TransactionHistory({
   onNavigate,
   transactions,
-}: {
+}: Readonly<{
   onNavigate: (v: ViewState) => void;
   transactions: Transaction[];
-}) {
+}>) {
   const [search, setSearch] = useState('');
   const scrollParentRef = useRef<HTMLDivElement | null>(null);
 
@@ -144,7 +144,7 @@ export function TransactionHistory({
   );
 }
 
-function DateHeader({ label }: { label: string }) {
+function DateHeader({ label }: Readonly<{ label: string }>) {
   return (
     <div className="flex items-center gap-3 px-2 py-3">
       <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
@@ -157,13 +157,17 @@ function DateHeader({ label }: { label: string }) {
 function TransactionRow({
   transaction,
   formatCurrency,
-}: {
+}: Readonly<{
   transaction: Transaction;
   formatCurrency: (value: number) => string;
-}) {
+}>) {
   const isExpense = transaction.type === 'Expense';
-  const syncLabel =
-    transaction.syncStatus === 'pending' ? 'รอซิงก์' : transaction.syncStatus === 'failed' ? 'ซิงก์ไม่สำเร็จ' : '';
+  const getSyncLabel = (status: string) => {
+    if (status === 'pending') return 'รอซิงก์';
+    if (status === 'failed') return 'ซิงก์ไม่สำเร็จ';
+    return '';
+  };
+  const syncLabel = getSyncLabel(transaction.syncStatus);
 
   return (
     <motion.div

@@ -2,7 +2,7 @@ import React from 'react';
 import { Leaf } from 'lucide-react';
 import { ViewState } from '../App';
 
-export function Onboarding({ onNavigate }: { onNavigate: (v: ViewState) => void }) {
+export function Onboarding({ onNavigate }: Readonly<{ onNavigate: (v: ViewState) => void }>) {
   return (
     <div className="flex flex-col min-h-full p-6 bg-background-light dark:bg-background-dark">
       <div className="flex items-center justify-between mb-4">

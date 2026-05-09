@@ -27,7 +27,11 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, onContinueAsGuest }: AuthScreenProps) {
+export default function AuthScreen({
+  onAuthSuccess,
+  allowGuestReadOnly = false,
+  onContinueAsGuest,
+}: Readonly<AuthScreenProps>) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -92,7 +96,7 @@ export default function AuthScreen({ onAuthSuccess, allowGuestReadOnly = false, 
 
       if (error) throw error;
 
-      if (data.user?.identities && data.user.identities.length === 0) {
+      if (data.user?.identities?.length === 0) {
         setErrorMsg('อีเมลนี้ถูกใช้งานแล้ว');
         return;
       }

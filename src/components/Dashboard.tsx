@@ -14,7 +14,6 @@ import {
   CreditCard,
   ArrowUpRight,
   ArrowDownRight,
-  Plus,
   PieChart,
   Sparkles,
 } from 'lucide-react';
@@ -33,13 +32,13 @@ export function Dashboard({
   transactions,
   canCreateTransactions = true,
   readOnlyMode = false,
-}: {
+}: Readonly<{
   onNavigate: (v: ViewState) => void;
   onAddTransaction: (t: Omit<Transaction, 'id'>) => void | Promise<void>;
   transactions: Transaction[];
   canCreateTransactions?: boolean;
   readOnlyMode?: boolean;
-}) {
+}>) {
   const {
     todayIncome,
     todayExpense,
@@ -118,7 +117,7 @@ export function Dashboard({
   const openQuickAdd = (type: TransactionType) => {
     if (!canCreateTransactions) return;
     try {
-      window.sessionStorage.setItem(QUICK_ADD_TYPE_KEY, type);
+      globalThis.sessionStorage.setItem(QUICK_ADD_TYPE_KEY, type);
     } catch {
       // Ignore storage errors and continue navigation.
     }
@@ -369,12 +368,12 @@ function QuickActionCard({
   label,
   onClick,
   disabled = false,
-}: {
+}: Readonly<{
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   disabled?: boolean;
-}) {
+}>) {
   return (
     <motion.button
       whileTap={disabled ? undefined : { scale: 0.97 }}
@@ -395,17 +394,18 @@ function MetricRow({
   value,
   positive,
   warning,
-}: {
+}: Readonly<{
   label: string;
   value: string;
   positive?: boolean;
   warning?: boolean;
-}) {
-  const textStyle = warning
-    ? 'text-amber-600 dark:text-amber-400'
-    : positive
-      ? 'text-emerald-600 dark:text-emerald-400'
-      : 'text-text-dark dark:text-white';
+}>) {
+  const getTextStyle = () => {
+    if (warning) return 'text-amber-600 dark:text-amber-400';
+    if (positive) return 'text-emerald-600 dark:text-emerald-400';
+    return 'text-text-dark dark:text-white';
+  };
+  const textStyle = getTextStyle();
 
   return (
     <div className="flex items-center justify-between text-xs gap-3">
@@ -422,15 +422,14 @@ function TransactionItem({
   date,
   amount,
   index,
-}: {
-  key?: React.Key;
+}: Readonly<{
   type: TransactionType;
   category: string;
   merchant?: string;
   date: string;
   amount: number;
   index: number;
-}) {
+}>) {
   const isExpense = type === 'Expense';
 
   const getIcon = () => {

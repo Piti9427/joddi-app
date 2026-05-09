@@ -10,11 +10,11 @@ export function SmartInput({
   onNavigate,
   onAddTransaction,
   disabled = false,
-}: {
+}: Readonly<{
   onNavigate: (v: ViewState) => void;
   onAddTransaction: (t: Omit<Transaction, 'id'>) => void | Promise<void>;
   disabled?: boolean;
-}) {
+}>) {
   const [value, setValue] = useState('');
   const [parsing, setParsing] = useState(false);
   const [hint, setHint] = useState('เช่น กาแฟ 120 วันนี้ บัตรเครดิต');
@@ -43,7 +43,7 @@ export function SmartInput({
         return;
       }
 
-      window.sessionStorage.setItem(
+      globalThis.sessionStorage.setItem(
         SMART_INPUT_PREFILL_KEY,
         JSON.stringify({
           ...parsed,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Bell, Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn, RefreshCw, Trash2 } from 'lucide-react';
+import { Bell, Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn, RefreshCw, Trash2 } from 'lucide-react';
 import { ViewState } from '../App';
 import { cancelDailyReminder, scheduleDailyReminder } from '../lib/device';
 import { saveLocalProfile, syncAllOfflineData } from '../lib/supabase';
@@ -12,7 +12,7 @@ export function Settings({
   onClearLocalData,
   userEmail,
   userId,
-}: {
+}: Readonly<{
   onNavigate: (v: ViewState) => void;
   isAuthenticated?: boolean;
   onSignOut?: () => void | Promise<void>;
@@ -20,9 +20,9 @@ export function Settings({
   onClearLocalData?: () => void | Promise<void>;
   userEmail?: string;
   userId?: string;
-}) {
+}>) {
   const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof globalThis.window !== 'undefined') {
       return localStorage.getItem('theme') === 'dark';
     }
     return false;
@@ -169,8 +169,8 @@ export function Settings({
         <section className="space-y-3">
           <h3 className="text-sm font-extrabold text-secondary pl-2">ช่วยเหลือ</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-[2rem] p-2 shadow-sm border border-border dark:border-slate-800">
-            {supportSettings.map((item, index) => (
-              <SettingRow key={index} icon={item.icon} label={item.label} />
+            {supportSettings.map((item) => (
+              <SettingRow key={item.label} icon={item.icon} label={item.label} />
             ))}
 
             {isAuthenticated ? (
@@ -212,7 +212,7 @@ function SettingRow({ icon, label, value, children }: any) {
       </div>
       <div className="flex items-center gap-2">
         {value && <span className="text-sm font-bold text-secondary">{value}</span>}
-        {children ? children : <ChevronRight className="text-secondary" size={20} />}
+        {children ?? <ChevronRight className="text-secondary" size={20} />}
       </div>
     </div>
   );

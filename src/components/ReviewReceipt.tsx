@@ -12,10 +12,10 @@ import {
 export function ReviewReceipt({
   onNavigate,
   onAddTransaction,
-}: {
+}: Readonly<{
   onNavigate: (v: ViewState) => void;
   onAddTransaction: (t: any) => void | Promise<void>;
-}) {
+}>) {
   const [receiptImage, setReceiptImage] = useState('');
   const [merchant, setMerchant] = useState('');
   const [amount, setAmount] = useState('');
@@ -163,7 +163,7 @@ function EditableRow({
   placeholder,
   type = 'text',
   inputMode,
-}: {
+}: Readonly<{
   icon: React.ReactElement;
   label: string;
   value: string;
@@ -171,7 +171,7 @@ function EditableRow({
   placeholder?: string;
   type?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
-}) {
+}>) {
   return (
     <label className="flex items-center gap-4">
       <div className="size-12 bg-input-bg dark:bg-slate-800 rounded-2xl flex items-center justify-center text-secondary shrink-0">
