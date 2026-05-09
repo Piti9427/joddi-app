@@ -11,6 +11,7 @@ export type SyncStatus = 'synced' | 'pending' | 'failed';
 export type BudgetPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 export type TransactionType = 'Income' | 'Expense';
 
+// กำหนดโหมดการเข้าถึง (Strict คือต้อง Login, Guest คือดูได้อย่างเดียว)
 const configuredMode = String(import.meta.env.VITE_AUTH_ACCESS_MODE || 'strict').toLowerCase();
 
 export const authAccessMode: AuthAccessMode = configuredMode === 'guest_readonly' ? 'guest_readonly' : 'strict';
@@ -20,9 +21,13 @@ export const allowGuestReadOnly = authAccessMode === 'guest_readonly';
 export const requireEmailVerification =
   String(import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION ?? 'true').toLowerCase() !== 'false';
 
+export function slugify(str: string) {
+  return str.trim().toLowerCase().replaceAll(/\s+/g, '-');
+}
+
 export function getAuthRedirectUrl() {
-  if (typeof window !== 'undefined' && window.location) {
-    return window.location.origin;
+  if (globalThis.window?.location) {
+    return globalThis.window.location.origin;
   }
   const configuredRedirect = String(import.meta.env.VITE_AUTH_REDIRECT_URL || '').trim();
   if (configuredRedirect.length > 0) return configuredRedirect;
@@ -130,7 +135,9 @@ const PROFILE_STORE: StoreName = 'profile';
 const RECEIPT_STORE: StoreName = 'receipts';
 const CATEGORY_CHANGE_EVENT = 'joddi:categories-changed';
 const BUDGET_CHANGE_EVENT = 'joddi:budgets-changed';
+const TRANSACTION_CHANGE_EVENT = 'joddi:transactions-changed';
 const RECEIPT_CHANGE_EVENT = 'joddi:receipts-changed';
+const SYNC_STATUS_EVENT = 'joddi:sync-status-changed';
 
 export const DEFAULT_CATEGORIES: LocalCategory[] = [
   buildLocalCategory(
@@ -257,14 +264,18 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+// ฟังก์ชันสร้าง ID ฝั่ง Client เพื่อใช้ในการทำ Optimistic UI (บันทึกลงเครื่องทันทีไม่ต้องรอ Server)
 function newClientId() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID();
   }
 
-  return '10000000-1000-4000-8000-100000000000'.replaceAll(/[018]/g, (char) =>
-    (Number(char) ^ ((Math.random() * 16) >> (Number(char) / 4))).toString(16),
-  );
+  // Fallback สำหรับสภาพแวดล้อมที่ไม่มี randomUUID (ใช้ crypto.getRandomValues แทน Math.random เพื่อความปลอดภัย)
+  return '10000000-1000-4000-8000-100000000000'.replaceAll(/[018]/g, (char) => {
+    const c = Number(char);
+    const randomByte = globalThis.crypto.getRandomValues(new Uint8Array(1))[0];
+    return (c ^ (randomByte & (15 >> (c / 4)))).toString(16);
+  });
 }
 
 function isUuid(value: unknown): value is string {
@@ -280,6 +291,7 @@ function ensureStore(db: IDBDatabase, storeName: StoreName, indexNames: string[]
   indexNames.forEach((indexName) => store.createIndex(indexName, indexName, { unique: false }));
 }
 
+// เปิดการเชื่อมต่อ IndexedDB สำหรับเก็บข้อมูล Offline
 function openOfflineDb(): Promise<IDBDatabase> {
   if (!isIndexedDbAvailable()) {
     return Promise.reject(new Error('IndexedDB is not available in this WebView'));
@@ -289,6 +301,7 @@ function openOfflineDb(): Promise<IDBDatabase> {
     dbPromise = new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
+      // จัดการ Schema ของ Database เมื่อมีการอัปเกรดเวอร์ชัน
       request.onupgradeneeded = () => {
         const db = request.result;
         ensureStore(db, TRANSACTION_STORE, ['syncStatus', 'date']);
@@ -542,6 +555,7 @@ function migrateLegacyBudgets(): LocalBudget[] {
   }
 }
 
+// สร้าง Transaction ใหม่ในสถานะ 'pending' เพื่อแสดงผลทันทีแบบ Optimistic UI
 export function createOptimisticTransaction(transaction: Omit<Transaction, 'id'>): LocalTransaction {
   const id = newClientId();
   const timestamp = nowIso();
@@ -595,9 +609,25 @@ export async function getLocalTransactions(): Promise<LocalTransaction[]> {
   return sortTransactions(await getRawStore<LocalTransaction>(TRANSACTION_STORE));
 }
 
-export async function saveLocalTransaction(transaction: LocalTransaction): Promise<LocalTransaction> {
-  await runStore(TRANSACTION_STORE, 'readwrite', (store) => store.put({ ...transaction, updatedAt: nowIso() }));
-  return transaction;
+export async function saveLocalTransaction(
+  transaction: Omit<LocalTransaction, 'updatedAt'> & { updatedAt?: string },
+): Promise<LocalTransaction> {
+  const updatedTx = { ...transaction, updatedAt: nowIso() } as LocalTransaction;
+  await runStore(TRANSACTION_STORE, 'readwrite', (store) => store.put(updatedTx));
+  dispatchLocalEvent(TRANSACTION_CHANGE_EVENT);
+  return updatedTx;
+}
+
+export async function deleteLocalTransaction(id: string) {
+  const transactions = await getRawStore<LocalTransaction>(TRANSACTION_STORE);
+  const transaction = transactions.find((t) => t.id === id || t.localId === id);
+  if (transaction) {
+    await saveLocalTransaction({
+      ...transaction,
+      deletedAt: nowIso(),
+      syncStatus: 'pending' as const,
+    });
+  }
 }
 
 export async function getLocalCategories(): Promise<LocalCategory[]> {
@@ -748,7 +778,9 @@ export async function syncAllOfflineData(): Promise<SyncResult> {
   return syncPendingTransactions();
 }
 
+// ฟังก์ชันหลักในการ Sync ข้อมูลทั้งหมดที่ค้างอยู่ในเครื่องขึ้น Supabase
 async function syncPendingDataInternal(): Promise<SyncResult> {
+  // ตรวจสอบว่าออนไลน์อยู่หรือไม่
   if (globalThis.navigator !== undefined && !globalThis.navigator.onLine) {
     return { synced: [], failed: [], skipped: true };
   }
@@ -757,16 +789,19 @@ async function syncPendingDataInternal(): Promise<SyncResult> {
     data: { session },
   } = await supabase.auth.getSession();
 
+  // ต้องมี Session ก่อนถึงจะ Sync ได้
   if (!session) {
     return { synced: [], failed: [], skipped: true };
   }
 
+  // ลำดับการ Sync: หมวดหมู่ -> งบประมาณ -> รายการธุรกรรม -> โปรไฟล์ -> สลิป
   const categories = await syncCategories();
   const budgets = await syncBudgets();
   const transactions = await syncTransactions();
   const profile = await syncProfile();
   const receipts = await syncReceipts();
 
+  // ดึงข้อมูลล่าสุดจาก Server มาทับเพื่อความถูกต้อง
   await refreshRemoteSnapshots();
 
   return {
@@ -788,7 +823,7 @@ async function syncTransactions(): Promise<SyncBucket<LocalTransaction>> {
   const failed: LocalTransaction[] = [];
 
   for (const transaction of pendingTransactions) {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) break;
+    if (globalThis.navigator !== undefined && !globalThis.navigator.onLine) break;
 
     const { data, error } = transaction.deletedAt
       ? await supabase.from('transactions').delete().eq('id', transaction.id).select().maybeSingle()
