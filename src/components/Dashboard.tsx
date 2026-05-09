@@ -32,7 +32,7 @@ export function Dashboard({
   canCreateTransactions = true,
   readOnlyMode = false,
 }: Readonly<{
-  onNavigate: (v: ViewState) => void;
+  onNavigate: (v: ViewState, payload?: any) => void;
   onAddTransaction: (t: Omit<Transaction, 'id'>) => void | Promise<void>;
   transactions: Transaction[];
   userName?: string;
@@ -138,13 +138,15 @@ export function Dashboard({
       >
         <div className="flex items-center gap-3">
           <div className="size-10 shrink-0 overflow-hidden rounded-full ring-2 ring-primary/15 bg-primary/8 flex items-center justify-center">
-            <User className="text-primary" size={20} />
+            <User className="text-primary" size={20} strokeWidth={1.5} />
           </div>
           <div>
             <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em]">
               {new Date().toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}
             </p>
-            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">{userName || (currentLang === 'th' ? 'จดดี' : 'Joddi')}</h2>
+            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">
+              {userName || (currentLang === 'th' ? 'จดดี' : 'Joddi')}
+            </h2>
           </div>
         </div>
         <motion.button
@@ -153,7 +155,7 @@ export function Dashboard({
           onClick={() => onNavigate('settings')}
           className="flex items-center justify-center rounded-full h-10 w-10 bg-input-bg dark:bg-slate-800 text-secondary hover:text-primary transition-colors"
         >
-          <Settings size={20} />
+          <Settings size={20} strokeWidth={1.5} />
         </motion.button>
       </header>
 
@@ -186,14 +188,14 @@ export function Dashboard({
               </motion.h1>
             </div>
             <div className="size-11 rounded-2xl bg-primary/8 dark:bg-primary/15 flex items-center justify-center text-primary">
-              <Wallet size={22} />
+              <Wallet size={22} strokeWidth={1.5} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border/50 dark:border-slate-700/50">
             <div className="flex items-center gap-2.5">
               <div className="size-8 rounded-xl bg-income-bg dark:bg-income/10 flex items-center justify-center text-income">
-                <ArrowUpRight size={16} />
+                <ArrowUpRight size={16} strokeWidth={2} />
               </div>
               <div>
                 <p className="text-secondary text-[10px] font-semibold">{t.income}</p>
@@ -204,7 +206,7 @@ export function Dashboard({
             </div>
             <div className="flex items-center gap-2.5">
               <div className="size-8 rounded-xl bg-expense-bg dark:bg-expense/10 flex items-center justify-center text-expense">
-                <ArrowDownRight size={16} />
+                <ArrowDownRight size={16} strokeWidth={2} />
               </div>
               <div>
                 <p className="text-secondary text-[10px] font-semibold">{t.expense}</p>
@@ -226,7 +228,7 @@ export function Dashboard({
           className="bg-white dark:bg-surface-dark border border-border/60 dark:border-slate-800 p-3.5 rounded-2xl shadow-sm flex items-center gap-3"
         >
           <div className="size-9 rounded-xl bg-income-bg/60 dark:bg-income/10 flex items-center justify-center text-income">
-            <TrendingUp size={16} />
+            <TrendingUp size={16} strokeWidth={1.5} />
           </div>
           <div>
             <p className="text-secondary text-[10px] font-semibold mb-0.5">รับวันนี้</p>
@@ -242,7 +244,7 @@ export function Dashboard({
           className="bg-white dark:bg-surface-dark border border-border/60 dark:border-slate-800 p-3.5 rounded-2xl shadow-sm flex items-center gap-3"
         >
           <div className="size-9 rounded-xl bg-expense-bg/60 dark:bg-expense/10 flex items-center justify-center text-expense">
-            <TrendingDown size={16} />
+            <TrendingDown size={16} strokeWidth={1.5} />
           </div>
           <div>
             <p className="text-secondary text-[10px] font-semibold mb-0.5">จ่ายวันนี้</p>
@@ -276,10 +278,10 @@ export function Dashboard({
           disabled={!canCreateTransactions}
           colorClass="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-border/60"
         />
-        <QuickActionCard 
-          icon={<Landmark size={20} />} 
-          label="งบประมาณ" 
-          onClick={() => onNavigate('budget')} 
+        <QuickActionCard
+          icon={<Landmark size={20} />}
+          label="งบประมาณ"
+          onClick={() => onNavigate('budget')}
           colorClass="bg-primary/10 text-primary border-primary/20"
         />
       </section>
@@ -296,7 +298,7 @@ export function Dashboard({
             </div>
             <button
               onClick={() => onNavigate('budget')}
-              className="rounded-xl bg-primary/10 dark:bg-primary/20 text-primary px-3 py-2 text-[11px] font-bold hover:bg-primary/15 transition-colors"
+              className="rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-2 text-[11px] font-bold hover:bg-slate-200 transition-colors"
             >
               จัดการ
             </button>
@@ -355,12 +357,14 @@ export function Dashboard({
             recentTransactions.map((transaction, index) => (
               <TransactionItem
                 key={transaction.id}
+                id={transaction.id}
                 index={index}
                 type={transaction.type}
                 category={transaction.category}
                 merchant={transaction.merchant}
                 date={transaction.date}
                 amount={transaction.amount}
+                onClick={(id) => onNavigate('transaction_detail', id)}
               />
             ))
           )}
@@ -386,7 +390,7 @@ function QuickActionCard({
   colorClass?: string;
   key?: React.Key;
 }>) {
-  const baseClasses = colorClass 
+  const baseClasses = colorClass
     ? `${colorClass} border`
     : 'bg-white dark:bg-surface-dark border border-border/60 dark:border-slate-800 text-text-dark dark:text-white shadow-sm';
 
@@ -433,19 +437,23 @@ function MetricRow({
 }
 
 function TransactionItem({
+  id,
   type,
   category,
   merchant,
   date,
   amount,
   index,
+  onClick,
 }: Readonly<{
+  id: string;
   type: TransactionType;
   category: string;
   merchant?: string;
   date: string;
   amount: number;
   index: number;
+  onClick?: (id: string) => void;
   key?: React.Key;
 }>) {
   const isExpense = type === 'Expense';
@@ -466,28 +474,25 @@ function TransactionItem({
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.04 + index * 0.03 }}
       whileTap={{ scale: 0.98 }}
+      onClick={() => onClick?.(id)}
       className="flex items-center gap-3.5 bg-white dark:bg-surface-dark p-3.5 rounded-2xl border border-border/40 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer shadow-sm"
     >
-      <div
-        className={`size-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${isExpense ? 'bg-expense-bg/60 text-expense' : 'bg-income-bg/60 text-income'}`}
-      >
-        {getIcon()}
+      <div className="size-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
+        {React.cloneElement(getIcon() as React.ReactElement, { strokeWidth: 1.5 })}
       </div>
       <div className="flex-1 flex justify-between items-center overflow-hidden">
         <div className="overflow-hidden">
-          <p className="text-text-dark dark:text-slate-100 font-bold text-[14px] truncate">
-            {merchant || category}
-          </p>
+          <p className="text-text-dark dark:text-slate-100 font-bold text-[14px] truncate">{merchant || category}</p>
           <div className="flex items-center gap-1 mt-0.5">
             <span className="text-[10px] font-semibold text-secondary">{category}</span>
             <span className="size-1 bg-slate-200 dark:bg-slate-700 rounded-full"></span>
-            <span className="text-[10px] font-semibold text-secondary opacity-60">{formatDateShort(date, 'th-TH')}</span>
+            <span className="text-[10px] font-semibold text-secondary opacity-60">
+              {formatDateShort(date, 'th-TH')}
+            </span>
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p
-            className={`${isExpense ? 'text-expense' : 'text-income'} font-bold text-[15px] tabular-nums`}
-          >
+          <p className={`${isExpense ? 'text-expense' : 'text-income'} font-bold text-[15px] tabular-nums`}>
             {isExpense ? '-' : '+'}
             {formatMoney(amount, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
           </p>

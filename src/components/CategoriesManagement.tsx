@@ -87,7 +87,7 @@ export function CategoriesManagement({
   onNavigate,
   transactions,
 }: Readonly<{
-  onNavigate: (v: ViewState) => void;
+  onNavigate: (v: ViewState, payload?: any) => void;
   transactions: Transaction[];
 }>) {
   const [categories, setCategories] = useState<LocalCategory[]>([]);
@@ -451,16 +451,9 @@ function CategoryRow({
   }
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <button
       onClick={onEdit}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          onEdit();
-        }
-      }}
-      className="flex items-center gap-4 group cursor-pointer p-4 rounded-2xl hover:bg-highlight/50 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/50"
+      className="w-full text-left flex items-center gap-4 group cursor-pointer p-4 rounded-2xl hover:bg-highlight/50 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/50"
     >
       <div
         className={`size-12 rounded-2xl bg-input-bg dark:bg-slate-800 flex items-center justify-center shrink-0 ${category.color} transition-transform group-hover:scale-105`}
@@ -478,6 +471,6 @@ function CategoryRow({
           <MoreHorizontal size={20} />
         </div>
       </div>
-    </div>
+    </button>
   );
 }

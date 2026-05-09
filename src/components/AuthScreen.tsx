@@ -40,7 +40,6 @@ export default function AuthScreen({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-
   const normalizedEmail = useMemo(() => email.trim().toLowerCase(), [email]);
 
   const ensureAuthInputIsValid = () => {
@@ -60,7 +59,6 @@ export default function AuthScreen({
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-
 
     if (!ensureAuthInputIsValid()) return;
 
@@ -116,7 +114,6 @@ export default function AuthScreen({
   const handleResetPassword = async () => {
     setErrorMsg('');
 
-
     if (!isValidEmail(normalizedEmail)) {
       setErrorMsg('กรุณากรอกอีเมลก่อนส่งลิงก์รีเซ็ตรหัสผ่าน');
       return;
@@ -128,7 +125,6 @@ export default function AuthScreen({
         redirectTo: getAuthRedirectUrl(),
       });
       if (error) throw error;
-
     } catch (err: any) {
       setErrorMsg(mapAuthError(err?.message || 'Unable to send reset email'));
     } finally {
@@ -251,7 +247,7 @@ export default function AuthScreen({
             let statusColor = 'bg-primary text-white';
             if (authPhase === 'success_pending') statusColor = 'bg-emerald-500 text-white';
             if (authPhase === 'error') statusColor = 'bg-rose-500 text-white';
-            
+
             return (
               <motion.div
                 animate={authPhase === 'submitting' ? { scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] } : {}}
@@ -316,9 +312,7 @@ export default function AuthScreen({
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400/8 rounded-full blur-[80px] -ml-32 -mb-32"></div>
 
       <div className="w-full max-w-sm mx-auto z-10">
-        <AnimatePresence mode="wait">
-          {renderContent()}
-        </AnimatePresence>
+        <AnimatePresence mode="wait">{renderContent()}</AnimatePresence>
       </div>
     </div>
   );

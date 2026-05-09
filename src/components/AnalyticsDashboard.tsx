@@ -1,10 +1,37 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import Chart from 'react-apexcharts';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  ArcElement,
+} from 'chart.js';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { ViewState, Transaction } from '../App';
 import { ArrowUpRight, ArrowDownRight, BarChart3, BrainCircuit, LineChart, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { getLocalAiInsight } from '../lib/aiInsights';
 import { formatMoney } from '../lib/formatters';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  ArcElement,
+);
 
 type ChartType = 'Bar' | 'Line';
 const RANGE_LABELS = {
@@ -14,9 +41,9 @@ const RANGE_LABELS = {
 } as const;
 
 const CATEGORY_COLORS = [
+  '#10b981', // Emerald 500
   '#3b82f6', // Blue 500
   '#ef4444', // Red 500
-  '#10b981', // Emerald 500
   '#f59e0b', // Amber 500
   '#8b5cf6', // Violet 500
   '#ec4899', // Pink 500
@@ -30,11 +57,11 @@ export function AnalyticsDashboard({
   onNavigate,
   transactions,
 }: Readonly<{
-  onNavigate: (v: ViewState) => void;
+  onNavigate: (v: ViewState, payload?: any) => void;
   transactions: Transaction[];
 }>) {
   const [timeRange, setTimeRange] = useState<'Week' | 'Month' | 'Year'>('Month');
-  const [chartType, setChartType] = useState<ChartType>('Bar');
+  const [chartType, setChartType] = useState<ChartType>('Line');
   const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
 
   // Sync theme
@@ -46,95 +73,105 @@ export function AnalyticsDashboard({
     return () => observer.disconnect();
   }, []);
 
-  const { totalIncome, totalExpense, chartEntries, netBalance, savingsRate, expenseByCategory, aiInsight } =
-    useMemo(() => {
-      const now = new Date();
-      let income = 0;
-      let expense = 0;
+  const { totalIncome, totalExpense, chartEntries, expenseByCategory, aiInsight } = useMemo(() => {
+    const now = new Date();
+    let income = 0;
+    let expense = 0;
 
-      const chartMap: { [key: string]: { income: number; expense: number } } = {};
-      const orderedKeys: string[] = [];
-      const catMap: { [key: string]: number } = {};
+    const chartMap: { [key: string]: { income: number; expense: number } } = {};
+    const orderedKeys: string[] = [];
+    const catMap: { [key: string]: number } = {};
 
+    if (timeRange === 'Week') {
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = d.toLocaleDateString('th-TH', { weekday: 'short' });
+        orderedKeys.push(key);
+        chartMap[key] = { income: 0, expense: 0 };
+      }
+    } else if (timeRange === 'Month') {
+      ['สัปดาห์ 1', 'สัปดาห์ 2', 'สัปดาห์ 3', 'สัปดาห์ 4', 'สัปดาห์ 5'].forEach((w) => {
+        orderedKeys.push(w);
+        chartMap[w] = { income: 0, expense: 0 };
+      });
+    } else if (timeRange === 'Year') {
+      const months = [
+        'ม.ค.',
+        'ก.พ.',
+        'มี.ค.',
+        'เม.ย.',
+        'พ.ค.',
+        'มิ.ย.',
+        'ก.ค.',
+        'ส.ค.',
+        'ก.ย.',
+        'ต.ค.',
+        'พ.ย.',
+        'ธ.ค.',
+      ];
+      months.forEach((m) => {
+        orderedKeys.push(m);
+        chartMap[m] = { income: 0, expense: 0 };
+      });
+    }
+
+    const filtered = transactions.filter((t) => {
+      const tDate = new Date(t.date);
       if (timeRange === 'Week') {
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date();
-          d.setDate(d.getDate() - i);
-          const key = d.toLocaleDateString('th-TH', { weekday: 'short' });
-          orderedKeys.push(key);
-          chartMap[key] = { income: 0, expense: 0 };
-        }
-      } else if (timeRange === 'Month') {
-        ['สัปดาห์ 1', 'สัปดาห์ 2', 'สัปดาห์ 3', 'สัปดาห์ 4', 'สัปดาห์ 5'].forEach((w) => {
-          orderedKeys.push(w);
-          chartMap[w] = { income: 0, expense: 0 };
-        });
-      } else if (timeRange === 'Year') {
-        const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-        months.forEach((m) => {
-          orderedKeys.push(m);
-          chartMap[m] = { income: 0, expense: 0 };
-        });
+        const weekAgo = new Date();
+        weekAgo.setHours(0, 0, 0, 0);
+        weekAgo.setDate(now.getDate() - 6);
+        return tDate >= weekAgo;
+      }
+      if (timeRange === 'Month') {
+        return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+      }
+      if (timeRange === 'Year') {
+        return tDate.getFullYear() === now.getFullYear();
+      }
+      return true;
+    });
+
+    filtered.forEach((t) => {
+      if (t.type === 'Income') income += t.amount;
+      else {
+        expense += t.amount;
+        catMap[t.category] = (catMap[t.category] || 0) + t.amount;
       }
 
-      const filtered = transactions.filter((t) => {
-        const tDate = new Date(t.date);
-        if (timeRange === 'Week') {
-          const weekAgo = new Date();
-          weekAgo.setHours(0, 0, 0, 0);
-          weekAgo.setDate(now.getDate() - 6);
-          return tDate >= weekAgo;
-        }
-        if (timeRange === 'Month') {
-          return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
-        }
-        if (timeRange === 'Year') {
-          return tDate.getFullYear() === now.getFullYear();
-        }
-        return true;
-      });
+      let key = '';
+      const d = new Date(t.date);
 
-      filtered.forEach((t) => {
-        if (t.type === 'Income') income += t.amount;
-        else {
-          expense += t.amount;
-          catMap[t.category] = (catMap[t.category] || 0) + t.amount;
-        }
+      if (timeRange === 'Week') {
+        key = d.toLocaleDateString('th-TH', { weekday: 'short' });
+      } else if (timeRange === 'Month') {
+        const dayOfMonth = d.getDate();
+        const weekNum = Math.ceil(dayOfMonth / 7);
+        key = `สัปดาห์ ${Math.min(weekNum, 5)}`;
+      } else if (timeRange === 'Year') {
+        key = d.toLocaleDateString('th-TH', { month: 'short' });
+      }
 
-        let key = '';
-        const d = new Date(t.date);
+      if (chartMap[key]) {
+        if (t.type === 'Income') chartMap[key].income += t.amount;
+        else chartMap[key].expense += t.amount;
+      }
+    });
 
-        if (timeRange === 'Week') {
-          key = d.toLocaleDateString('th-TH', { weekday: 'short' });
-        } else if (timeRange === 'Month') {
-          const dayOfMonth = d.getDate();
-          const weekNum = Math.ceil(dayOfMonth / 7);
-          key = `สัปดาห์ ${Math.min(weekNum, 5)}`;
-        } else if (timeRange === 'Year') {
-          key = d.toLocaleDateString('th-TH', { month: 'short' });
-        }
+    const entries = orderedKeys.map((k) => [k, chartMap[k]] as [string, { income: number; expense: number }]);
+    const expByCat = Object.entries(catMap)
+      .map(([name, amount], i) => ({ name, amount, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
+      .sort((a, b) => b.amount - a.amount);
 
-        if (chartMap[key]) {
-          if (t.type === 'Income') chartMap[key].income += t.amount;
-          else chartMap[key].expense += t.amount;
-        }
-      });
-
-      const entries = orderedKeys.map((k) => [k, chartMap[k]] as [string, { income: number; expense: number }]);
-      const expByCat = Object.entries(catMap)
-        .map(([name, amount], i) => ({ name, amount, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
-        .sort((a, b) => b.amount - a.amount);
-
-      return {
-        totalIncome: income,
-        totalExpense: expense,
-        chartEntries: entries,
-        netBalance: income - expense,
-        savingsRate: income > 0 ? ((income - expense) / income) * 100 : 0,
-        expenseByCategory: expByCat,
-        aiInsight: getLocalAiInsight(filtered),
-      };
-    }, [transactions, timeRange]);
+    return {
+      totalIncome: income,
+      totalExpense: expense,
+      chartEntries: entries,
+      expenseByCategory: expByCat,
+      aiInsight: getLocalAiInsight(filtered),
+    };
+  }, [transactions, timeRange]);
 
   const fmt = (val: number, maximumFractionDigits = 0) =>
     formatMoney(val, {
@@ -148,309 +185,265 @@ export function AnalyticsDashboard({
         className="bg-white dark:bg-surface-dark px-4 pb-4 sticky top-0 z-20 shadow-sm border-b border-border dark:border-slate-800"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
-        <div className="flex items-end justify-between mb-4">
-          <h1 className="text-2xl font-black text-text-dark dark:text-white">วิเคราะห์เงินสด</h1>
-          <p className="text-[11px] font-semibold text-secondary opacity-80">มุมมอง{RANGE_LABELS[timeRange]}</p>
+        <div className="flex items-center justify-between h-12 mb-4">
+          <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Analytics</h1>
+          <button
+            onClick={() => onNavigate('dashboard')}
+            className="text-xs font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full text-slate-600 dark:text-slate-400"
+          >
+            Done
+          </button>
         </div>
 
-        <div className="grid grid-cols-3 bg-slate-100 dark:bg-slate-900 rounded-xl p-1">
-          {(['Week', 'Month', 'Year'] as const).map((range) => {
-            const active = timeRange === range;
-            return (
-              <button
-                key={range}
-                onClick={() => setTimeRange(range)}
-                className={`relative py-1.5 text-xs font-extrabold transition-all ${active ? 'text-text-dark dark:text-slate-900' : 'text-secondary opacity-70'}`}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="time-range-pill"
-                    className="absolute inset-0 rounded-lg bg-white dark:bg-white shadow-sm"
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.45 }}
-                  />
-                )}
-                <span className="relative z-10">{RANGE_LABELS[range]}</span>
-              </button>
-            );
-          })}
+        <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
+          {(['Week', 'Month', 'Year'] as const).map((r) => (
+            <button
+              key={r}
+              onClick={() => setTimeRange(r)}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all relative ${
+                timeRange === r ? 'text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              {timeRange === r && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute inset-0 bg-white dark:bg-slate-800 rounded-lg shadow-sm"
+                  transition={{ type: 'spring', duration: 0.5 }}
+                />
+              )}
+              <span className="relative z-10">{RANGE_LABELS[r]}</span>
+            </button>
+          ))}
         </div>
       </header>
 
-      <main className="p-4 space-y-4 mt-1">
-        <section className="ai-surface bg-white dark:bg-surface-dark rounded-[1.5rem] p-4 shadow-sm border border-border dark:border-slate-800">
-          <div className="flex items-start gap-3">
-            <div className="size-11 rounded-2xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center shrink-0">
-              <BrainCircuit size={21} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-1 text-[10px] font-extrabold">
-                  <Sparkles size={11} />
-                  ผู้ช่วย AI
-                </span>
-                <span className="text-[10px] font-bold text-secondary">
-                  สัญญาณ {Math.round(aiInsight.confidence * 100)}%
-                </span>
-              </div>
-              <h2 className="text-base font-extrabold text-text-dark dark:text-white leading-snug">
-                {aiInsight.title}
-              </h2>
-              <p className="text-xs font-medium text-secondary leading-relaxed mt-1">{aiInsight.summary}</p>
-            </div>
-          </div>
+      <main className="p-4 space-y-6">
+        {/* Main Stats */}
+        <section className="grid grid-cols-2 gap-3">
+          <StatCard label="รายรับ" value={fmt(totalIncome)} type="income" icon={<ArrowUpRight size={18} />} />
+          <StatCard label="รายจ่าย" value={fmt(totalExpense)} type="expense" icon={<ArrowDownRight size={18} />} />
         </section>
 
-        {/* Net Balance & Chart Section */}
-        <section className="bg-white dark:bg-surface-dark rounded-[1.5rem] p-5 shadow-sm border border-border dark:border-slate-800">
-          <div className="flex justify-between items-start mb-5">
-            <div>
-              <p className="text-[11px] font-semibold text-secondary mb-1">เงินสุทธิ</p>
-              <h2 className="text-3xl font-black text-text-dark dark:text-white">{fmt(netBalance)}</h2>
+        {/* AI Insight */}
+        {aiInsight && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-primary/10 to-violet-500/10 dark:from-primary/20 dark:to-violet-500/20 rounded-3xl p-5 border border-primary/20 relative overflow-hidden"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-2 bg-primary/20 rounded-xl text-primary">
+                <BrainCircuit size={18} strokeWidth={1.5} />
+              </div>
+              <span className="text-xs font-black uppercase tracking-wider text-primary">AI Insight</span>
             </div>
-            <div className="flex bg-slate-100 dark:bg-slate-900 rounded-xl p-0.5">
+            <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200">{aiInsight}</p>
+            <Sparkles className="absolute -right-2 -bottom-2 text-primary/10" size={80} />
+          </motion.section>
+        )}
+
+        {/* Trends Chart */}
+        <section className="bg-white dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Trends</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Income vs Expense</p>
+            </div>
+            <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg">
               <button
                 onClick={() => setChartType('Bar')}
-                className={`p-1.5 rounded-lg transition-all ${chartType === 'Bar' ? 'bg-white dark:bg-slate-800 shadow-sm text-text-dark dark:text-white' : 'text-secondary/60'}`}
+                className={`p-1.5 rounded-md transition-all ${
+                  chartType === 'Bar'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-400'
+                }`}
               >
-                <BarChart3 size={16} />
+                <BarChart3 size={16} strokeWidth={1.5} />
               </button>
               <button
                 onClick={() => setChartType('Line')}
-                className={`p-1.5 rounded-lg transition-all ${chartType === 'Line' ? 'bg-white dark:bg-slate-800 shadow-sm text-text-dark dark:text-white' : 'text-secondary/60'}`}
+                className={`p-1.5 rounded-md transition-all ${
+                  chartType === 'Line'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-400'
+                }`}
               >
-                <LineChart size={16} />
+                <LineChart size={16} strokeWidth={1.5} />
               </button>
             </div>
           </div>
 
-          <div className="h-[250px] w-full">
-            <MainApexChart entries={chartEntries} type={chartType} isDark={isDark} />
+          <div className="h-64 -mx-2">
+            <MainChart data={chartEntries} type={chartType} isDark={isDark} />
           </div>
         </section>
 
-        {/* Breakdown Cards */}
-        <div className="grid grid-cols-2 gap-4">
-          <motion.div
-            whileTap={{ scale: 0.98 }}
-            className="bg-white dark:bg-surface-dark rounded-[1.35rem] p-4 shadow-sm border border-border dark:border-slate-800"
-          >
-            <div className="size-10 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-primary flex items-center justify-center mb-4">
-              <ArrowUpRight size={20} />
-            </div>
-            <p className="text-[11px] font-semibold text-secondary mb-1">รายรับรวม</p>
-            <p className="text-xl font-black text-text-dark dark:text-white">{fmt(totalIncome)}</p>
-          </motion.div>
+        {/* Categories Breakdown */}
+        <section className="bg-white dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800">
+          <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight mb-6">
+            Category Breakdown
+          </h3>
 
-          <motion.div
-            whileTap={{ scale: 0.98 }}
-            className="bg-white dark:bg-surface-dark rounded-[1.35rem] p-4 shadow-sm border border-border dark:border-slate-800"
-          >
-            <div className="size-10 rounded-2xl bg-rose-50 dark:bg-rose-900/30 text-expense flex items-center justify-center mb-4">
-              <ArrowDownRight size={20} />
+          <div className="flex flex-col items-center gap-8">
+            <div className="relative size-56">
+              <DoughnutChart data={expenseByCategory} isDark={isDark} />
             </div>
-            <p className="text-[11px] font-semibold text-secondary mb-1">รายจ่ายรวม</p>
-            <p className="text-xl font-black text-text-dark dark:text-white">{fmt(totalExpense)}</p>
-          </motion.div>
-        </div>
 
-        {/* ── Donut Chart: Expense Breakdown ── */}
-        <section className="bg-white dark:bg-surface-dark rounded-[1.5rem] p-5 shadow-sm border border-border dark:border-slate-800">
-          <p className="text-[11px] font-semibold text-secondary mb-5">สัดส่วนรายจ่าย</p>
-          {expenseByCategory.length === 0 ? (
-            <div className="text-center py-10 text-secondary text-sm font-bold opacity-60">
-              ยังไม่มีข้อมูลรายจ่ายในช่วงนี้
-            </div>
-          ) : (
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="w-full sm:w-1/2 flex justify-center">
-                <DonutApexChart data={expenseByCategory} isDark={isDark} />
-              </div>
-              <div className="flex-1 w-full space-y-2.5 min-w-0">
-                {expenseByCategory.slice(0, 5).map((cat) => {
-                  const pct = totalExpense > 0 ? ((cat.amount / totalExpense) * 100).toFixed(1) : '0';
-                  return (
-                    <div key={cat.name} className="flex items-center gap-2.5">
-                      <span className="size-3 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                      <span className="text-xs font-bold text-text-dark dark:text-white truncate flex-1">
-                        {cat.name}
-                      </span>
-                      <span className="text-[11px] font-black text-secondary tabular-nums">{pct}%</span>
+            <div className="w-full space-y-3">
+              {expenseByCategory.length > 0 ? (
+                expenseByCategory.slice(0, 5).map((cat) => (
+                  <div key={cat.name} className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="size-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{cat.name}</span>
                     </div>
-                  );
-                })}
-                {expenseByCategory.length > 5 && (
-                  <p className="text-[10px] text-secondary font-bold opacity-60">
-                    เพิ่มอีก {expenseByCategory.length - 5} หมวด
-                  </p>
-                )}
-              </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-slate-900 dark:text-white">{fmt(cat.amount)}</span>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {((cat.amount / totalExpense) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm font-bold text-slate-400 italic">ไม่มีข้อมูลรายจ่ายในส่วนนี้</p>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </section>
       </main>
     </div>
   );
 }
 
-/* ── Main Chart Component ── */
-function MainApexChart({ entries, type, isDark }: any) {
-  const categories = entries.map(([k]: any) => k);
-  const incomeData = entries.map(([, v]: any) => v.income);
-  const expenseData = entries.map(([, v]: any) => v.expense);
-
-  const options: ApexCharts.ApexOptions = {
-    chart: {
-      type: type === 'Bar' ? 'bar' : 'area',
-      toolbar: { show: false },
-      zoom: { enabled: false },
-      fontFamily: 'Inter, system-ui, sans-serif',
-      background: 'transparent',
-    },
-    theme: {
-      mode: isDark ? 'dark' : 'light',
-    },
-    stroke: {
-      show: true,
-      width: type === 'Bar' ? 0 : 3.5,
-      curve: 'smooth',
-      lineCap: 'round',
-    },
-    colors: ['#10b981', '#ef4444'],
-    fill: {
-      type: type === 'Bar' ? 'solid' : 'gradient',
-      gradient: {
-        shadeIntensity: 1,
-        opacityFrom: 0.3,
-        opacityTo: 0,
-        stops: [0, 95],
-      },
-    },
-    grid: {
-      borderColor: isDark ? '#1e293b' : '#f1f5f9',
-      strokeDashArray: 6,
-      xaxis: { lines: { show: false } },
-      yaxis: { lines: { show: true } },
-      padding: { top: 0, right: 0, bottom: 0, left: 10 },
-    },
-    markers: {
-      size: 0,
-      hover: { size: 6, sizeOffset: 3 },
-    },
-    dataLabels: { enabled: false },
-    legend: { show: false },
-    xaxis: {
-      categories,
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-      labels: {
-        style: {
-          colors: '#94a3b8',
-          fontSize: '10px',
-          fontWeight: 600,
-        },
-      },
-    },
-    yaxis: {
-      labels: {
-        style: {
-          colors: '#94a3b8',
-          fontSize: '10px',
-          fontWeight: 600,
-        },
-        formatter: (val) => formatMoney(val, { compact: true, maximumFractionDigits: 1 }),
-      },
-    },
-    tooltip: {
-      theme: isDark ? 'dark' : 'light',
-      y: {
-        formatter: (val) => formatMoney(val),
-      },
-    },
-    plotOptions: {
-      bar: {
-        borderRadius: 8,
-        borderRadiusApplication: 'end',
-        columnWidth: '55%',
-        dataLabels: { position: 'top' },
-      },
-    },
-  };
-
-  const series = [
-    { name: 'รายรับ', data: incomeData },
-    { name: 'รายจ่าย', data: expenseData },
-  ];
-
+function StatCard({ label, value, type, icon }: any) {
   return (
-    <Chart
-      options={options}
-      series={series}
-      type={type === 'Bar' ? 'bar' : 'area'}
-      height="100%"
-      width="100%"
-    />
+    <div className="bg-white dark:bg-surface-dark p-4 rounded-3xl shadow-sm border border-border dark:border-slate-800">
+      <div
+        className={`size-8 rounded-xl flex items-center justify-center mb-3 ${
+          type === 'income'
+            ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20'
+            : 'bg-red-100 text-red-600 dark:bg-red-500/20'
+        }`}
+      >
+        {React.cloneElement(icon, { strokeWidth: 1.5 })}
+      </div>
+      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">{label}</p>
+      <p className="text-lg font-black text-slate-900 dark:text-white">{value}</p>
+    </div>
   );
 }
 
-/* ── Donut Chart Component ── */
-function DonutApexChart({ data, isDark }: any) {
-  const labels = data.map((d: any) => d.name);
-  const series = data.map((d: any) => d.amount);
-  const colors = data.map((d: any) => d.color);
+function MainChart({ data, type, isDark }: any) {
+  const labels = data.map((d: any) => d[0]);
+  const incomeData = data.map((d: any) => d[1].income);
+  const expenseData = data.map((d: any) => d[1].expense);
 
-  const options: ApexCharts.ApexOptions = {
-    chart: {
-      type: 'donut',
-      fontFamily: 'Inter, system-ui, sans-serif',
-      background: 'transparent',
+  const chartData = {
+    labels,
+    datasets: [
+      {
+        label: 'รายรับ',
+        data: incomeData,
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        fill: type === 'Line',
+        tension: 0.4,
+        borderWidth: type === 'Bar' ? 0 : 3,
+        pointRadius: 0,
+        borderRadius: type === 'Bar' ? 6 : 0,
+      },
+      {
+        label: 'รายจ่าย',
+        data: expenseData,
+        borderColor: '#ef4444',
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        fill: type === 'Line',
+        tension: 0.4,
+        borderWidth: type === 'Bar' ? 0 : 3,
+        pointRadius: 0,
+        borderRadius: type === 'Bar' ? 6 : 0,
+      },
+    ],
+  };
+
+  const options: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        backgroundColor: isDark ? '#1e293b' : '#fff',
+        titleColor: isDark ? '#fff' : '#0f172a',
+        bodyColor: isDark ? '#cbd5e1' : '#64748b',
+        borderColor: isDark ? '#334155' : '#e2e8f0',
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 12,
+      },
     },
-    theme: {
-      mode: isDark ? 'dark' : 'light',
-    },
-    colors,
-    stroke: { show: false },
-    dataLabels: { enabled: false },
-    legend: { show: false },
-    plotOptions: {
-      pie: {
-        donut: {
-          size: '75%',
-          labels: {
-            show: true,
-            total: {
-              show: true,
-              label: 'รวม',
-              fontSize: '12px',
-              fontWeight: 600,
-              color: '#94a3b8',
-              formatter: (w) => {
-                const total = w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
-                return formatMoney(total, { compact: true, maximumFractionDigits: 1 });
-              },
-            },
-            value: {
-              fontSize: '16px',
-              fontWeight: 900,
-              color: isDark ? '#fff' : '#0f172a',
-            },
-          },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: '#94a3b8', font: { size: 10, weight: '600' } },
+      },
+      y: {
+        grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', drawBorder: false },
+        ticks: {
+          color: '#94a3b8',
+          font: { size: 10, weight: '600' },
+          callback: (val: any) => formatMoney(val, { compact: true }),
         },
       },
     },
-    tooltip: {
-      theme: isDark ? 'dark' : 'light',
-      y: {
-        formatter: (val) => formatMoney(val),
+  };
+
+  return type === 'Bar' ? <Bar data={chartData} options={options} /> : <Line data={chartData} options={options} />;
+}
+
+function DoughnutChart({ data, isDark }: any) {
+  const chartData = {
+    labels: data.map((d: any) => d.name),
+    datasets: [
+      {
+        data: data.map((d: any) => d.amount),
+        backgroundColor: data.map((d: any) => d.color),
+        borderWidth: 0,
+      },
+    ],
+  };
+
+  const options: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '75%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: isDark ? '#1e293b' : '#fff',
+        titleColor: isDark ? '#fff' : '#0f172a',
+        padding: 12,
+        cornerRadius: 12,
       },
     },
   };
 
   return (
-    <Chart
-      options={options}
-      series={series}
-      type="donut"
-      width={240}
-    />
+    <div className="relative w-full h-full">
+      <Doughnut data={chartData} options={options} />
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        <span className="text-[10px] font-black text-slate-400 uppercase">รวม</span>
+        <span className="text-lg font-black text-slate-900 dark:text-white">
+          {formatMoney(
+            data.reduce((a: any, b: any) => a + b.amount, 0),
+            { compact: true },
+          )}
+        </span>
+      </div>
+    </div>
   );
 }

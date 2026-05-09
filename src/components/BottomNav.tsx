@@ -17,6 +17,7 @@ export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomN
     'settings',
     'categories',
     'add_transaction',
+    'transaction_detail',
   ];
   if (!navVisibleViews.includes(currentView)) return null;
 
@@ -89,14 +90,10 @@ function TabItem({
       }`}
     >
       <div className={`relative flex items-center justify-center ${active ? '' : ''}`}>
-        {active && (
-          <div className="absolute -inset-x-3 -inset-y-1 bg-primary/8 dark:bg-primary/15 rounded-lg" />
-        )}
+        {active && <div className="absolute -inset-x-3 -inset-y-1 bg-primary/8 dark:bg-primary/15 rounded-lg" />}
         <span className="relative">{icon}</span>
       </div>
-      <span
-        className={`text-[11px] leading-none tracking-[0.02em] ${active ? 'font-extrabold' : 'font-semibold'}`}
-      >
+      <span className={`text-[11px] leading-none tracking-[0.02em] ${active ? 'font-extrabold' : 'font-semibold'}`}>
         {label}
       </span>
     </button>

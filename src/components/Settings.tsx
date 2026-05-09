@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Bell, Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn, RefreshCw, Trash2, Banknote } from 'lucide-react';
+import { Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn, RefreshCw, Trash2, Banknote } from 'lucide-react';
 import { ViewState } from '../App';
-import { cancelDailyReminder, scheduleDailyReminder } from '../lib/device';
 import { saveLocalProfile, syncAllOfflineData } from '../lib/supabase';
 import { getTranslation } from '../lib/i18n';
 
@@ -18,7 +17,7 @@ export function Settings({
   currency,
   onCurrencyChange,
 }: Readonly<{
-  onNavigate: (v: ViewState) => void;
+  onNavigate: (v: ViewState, payload?: any) => void;
   isAuthenticated?: boolean;
   onSignOut?: () => void | Promise<void>;
   onRequestSignIn?: () => void;
@@ -33,16 +32,13 @@ export function Settings({
   const currentLang = lang || 'th';
   const t = getTranslation(currentLang);
   const [darkMode, setDarkMode] = useState(() => {
-    if (typeof globalThis.window !== 'undefined') {
+    if (globalThis.window !== undefined) {
       return localStorage.getItem('theme') === 'dark';
     }
     return false;
   });
   const [displayName, setDisplayName] = useState(
     () => localStorage.getItem('display_name') || userEmail?.split('@')[0] || 'บัญชีทดลอง',
-  );
-  const [notificationsEnabled, setNotificationsEnabled] = useState(
-    () => localStorage.getItem('daily_reminder') === 'true',
   );
   const [statusMessage, setStatusMessage] = useState('');
   const [syncing, setSyncing] = useState(false);
@@ -67,8 +63,6 @@ export function Settings({
     }
   };
 
-  const supportSettings = [{ icon: <HelpCircle />, label: 'ศูนย์ช่วยเหลือ' }];
-
   const saveProfile = async () => {
     localStorage.setItem('display_name', displayName);
     if (userId) {
@@ -82,24 +76,6 @@ export function Settings({
       syncAllOfflineData().catch((error) => console.error('Profile sync error:', error));
     }
     setStatusMessage('บันทึกโปรไฟล์แล้ว');
-  };
-
-  const toggleReminder = async () => {
-    try {
-      if (notificationsEnabled) {
-        await cancelDailyReminder();
-        localStorage.setItem('daily_reminder', 'false');
-        setNotificationsEnabled(false);
-        setStatusMessage('ปิดการแจ้งเตือนรายวันแล้ว');
-      } else {
-        await scheduleDailyReminder();
-        localStorage.setItem('daily_reminder', 'true');
-        setNotificationsEnabled(true);
-        setStatusMessage('ตั้งแจ้งเตือนรายวันเวลา 20:00 แล้ว');
-      }
-    } catch (error: any) {
-      setStatusMessage(error?.message || 'ตั้งค่าการแจ้งเตือนไม่สำเร็จ');
-    }
   };
 
   const syncNow = async () => {
@@ -196,11 +172,17 @@ export function Settings({
           <h3 className="text-sm font-extrabold text-secondary pl-2">{t.account}</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
             <button onClick={syncNow} disabled={syncing} className="w-full text-left disabled:opacity-50">
-              <SettingRow 
-                icon={syncing ? <RefreshCw className="animate-spin" /> : <RefreshCw />} 
-                label={t.sync_now} 
-                value={syncing ? '...' : (isAuthenticated ? 'Cloud' : 'Local')} 
-              />
+              {(() => {
+                let syncValue = isAuthenticated ? 'Cloud' : 'Local';
+                if (syncing) syncValue = '...';
+                return (
+                  <SettingRow
+                    icon={syncing ? <RefreshCw className="animate-spin" /> : <RefreshCw />}
+                    label={t.sync_now}
+                    value={syncValue}
+                  />
+                );
+              })()}
             </button>
             <button onClick={onClearLocalData} className="w-full text-left">
               <SettingRow icon={<Trash2 />} label={t.clear_data} />

@@ -14,7 +14,7 @@ export function ReviewReceipt({
   onNavigate,
   onAddTransaction,
 }: Readonly<{
-  onNavigate: (v: ViewState) => void;
+  onNavigate: (v: ViewState, payload?: any) => void;
   onAddTransaction: (t: any) => void | Promise<void>;
 }>) {
   const [receiptImage, setReceiptImage] = useState('');
@@ -68,6 +68,21 @@ export function ReviewReceipt({
       .catch(() => setStatusMessage('บันทึกในเครื่องแล้ว รูปจะซิงก์ภายหลัง'));
   };
 
+  const handleAiScan = async () => {
+    if (!receiptImage) return;
+    setStatusMessage('กำลังวิเคราะห์ใหม่ด้วย AI...');
+    const parsed = await parseReceiptImage(receiptImage);
+    if (parsed) {
+      setMerchant(parsed.merchant);
+      setAmount(parsed.amount.toString());
+      setDate(parsed.date);
+      setCategory(parsed.category);
+      setStatusMessage(`AI วิเคราะห์ใหม่เรียบร้อย (${Math.round(parsed.confidence * 100)}%)`);
+    } else {
+      setStatusMessage('AI ไม่สามารถอ่านข้อมูลได้ โปรดลองอีกครั้ง');
+    }
+  };
+
   const handleSave = async () => {
     const parsedAmount = Number(amount);
     if (!parsedAmount || parsedAmount <= 0) return;
@@ -119,9 +134,19 @@ export function ReviewReceipt({
               </div>
             )}
           </button>
-          <div className="flex items-center gap-2 text-secondary text-sm italic font-medium">
-            <BadgeCheck size={16} className="text-primary" />
-            {statusMessage}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-secondary text-sm italic font-medium">
+              <BadgeCheck size={16} className="text-primary" />
+              {statusMessage}
+            </div>
+            {receiptImage && (
+              <button
+                onClick={handleAiScan}
+                className="text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md text-secondary hover:text-primary transition-colors"
+              >
+                Scan with AI
+              </button>
+            )}
           </div>
           {receiptDraft && (
             <button
@@ -190,7 +215,7 @@ function EditableRow({
   return (
     <label className="flex items-center gap-4">
       <div className="size-12 bg-input-bg dark:bg-slate-800 rounded-2xl flex items-center justify-center text-secondary shrink-0">
-        {React.cloneElement(icon, { size: 22 })}
+        {React.cloneElement(icon, { size: 22, strokeWidth: 1.5 })}
       </div>
       <div className="flex-1">
         <p className="text-[11px] text-secondary font-semibold">{label}</p>

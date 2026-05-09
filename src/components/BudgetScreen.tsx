@@ -39,7 +39,7 @@ export function BudgetScreen({
   onNavigate,
   transactions,
 }: Readonly<{
-  onNavigate: (v: ViewState) => void;
+  onNavigate: (v: ViewState, payload?: any) => void;
   transactions: Transaction[];
 }>) {
   const [budgets, setBudgets] = useState<LocalBudget[]>([]);
