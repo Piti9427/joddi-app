@@ -170,8 +170,8 @@ export default function AuthScreen({
       className="min-h-full flex flex-col justify-center px-6 py-12 bg-background-light dark:bg-background-dark relative overflow-hidden"
       style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 48px)' }}
     >
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -mr-32 -mt-32"></div>
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -ml-32 -mb-32"></div>
+      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/8 rounded-full blur-[80px] -mr-32 -mt-32"></div>
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400/8 rounded-full blur-[80px] -ml-32 -mb-32"></div>
 
       <motion.div
         initial={{ y: 20, opacity: 0 }}
@@ -179,7 +179,7 @@ export default function AuthScreen({
         className="w-full max-w-sm mx-auto z-10"
       >
         <div className="flex justify-center mb-8">
-          <div className="size-16 bg-primary rounded-[1.5rem] flex items-center justify-center text-white shadow-xl shadow-primary/30 rotate-12">
+          <div className="size-16 bg-primary rounded-[1.5rem] flex items-center justify-center text-white shadow-xl shadow-primary/25">
             <Wallet size={32} />
           </div>
         </div>
@@ -300,7 +300,7 @@ export default function AuthScreen({
             <button
               type="button"
               onClick={onContinueAsGuest}
-              className="w-full rounded-2xl py-3 text-xs font-black bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 flex items-center justify-center gap-2"
+              className="w-full rounded-2xl py-3 text-xs font-black bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 text-blue-700 dark:text-blue-300 flex items-center justify-center gap-2"
             >
               <ShieldCheck size={16} />
               เข้าใช้งานโหมดอ่านอย่างเดียว

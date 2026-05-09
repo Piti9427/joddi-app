@@ -188,7 +188,7 @@ export function Settings({
                 onClick={onRequestSignIn}
                 className="w-full flex items-center gap-4 p-4 hover:bg-input-bg dark:hover:bg-slate-800/50 rounded-2xl transition-colors text-left text-primary group"
               >
-                <div className="size-10 rounded-[1.2rem] bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                <div className="size-10 rounded-[1.2rem] bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
                   <LogIn size={20} />
                 </div>
                 <div className="flex-1 font-bold">เข้าสู่ระบบเพื่อซิงก์</div>

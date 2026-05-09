@@ -13,9 +13,9 @@ const RANGE_LABELS = {
 } as const;
 
 const CATEGORY_COLORS = [
-  '#10b981',
-  '#f43f5e',
-  '#3b82f6',
+  '#2563eb',
+  '#dc2626',
+  '#16a34a',
   '#f59e0b',
   '#8b5cf6',
   '#ec4899',
@@ -259,7 +259,7 @@ export function AnalyticsDashboard({
             whileTap={{ scale: 0.98 }}
             className="bg-white dark:bg-surface-dark rounded-[1.35rem] p-4 shadow-sm border border-border dark:border-slate-800"
           >
-            <div className="size-10 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 text-primary flex items-center justify-center mb-4">
+            <div className="size-10 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-primary flex items-center justify-center mb-4">
               <ArrowUpRight size={20} />
             </div>
             <p className="text-[11px] font-semibold text-secondary mb-1">รายรับรวม</p>

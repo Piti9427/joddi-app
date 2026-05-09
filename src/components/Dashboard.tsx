@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import {
   User,
-  Bell,
   Wallet,
   TrendingUp,
   TrendingDown,
@@ -11,18 +10,14 @@ import {
   Receipt,
   Settings,
   ChevronRight,
-  CreditCard,
   ArrowUpRight,
   ArrowDownRight,
   PieChart,
-  Sparkles,
+  Plus,
 } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
 import { motion } from 'motion/react';
-import { getLocalAiInsight } from '../lib/aiInsights';
 import { formatDateShort, formatMoney } from '../lib/formatters';
-import { AiInsightCard } from './AiInsightCard';
-import { SmartInput } from './SmartInput';
 
 const QUICK_ADD_TYPE_KEY = 'quick_add_type';
 
@@ -51,7 +46,6 @@ export function Dashboard({
     monthSpendRate,
     topExpenseCategory,
     recentTransactions,
-    aiInsight,
   } = useMemo(() => {
     const now = new Date();
     const today = now.toDateString();
@@ -103,8 +97,7 @@ export function Dashboard({
       monthNet: monthNetValue,
       monthSpendRate: spendRate,
       topExpenseCategory: bestCategory,
-      recentTransactions: transactions.slice(0, 3),
-      aiInsight: getLocalAiInsight(transactions),
+      recentTransactions: transactions.slice(0, 5),
     };
   }, [transactions]);
 
@@ -126,42 +119,30 @@ export function Dashboard({
 
   return (
     <div className="flex flex-col min-h-full pb-5 relative bg-slate-50 dark:bg-background-dark">
+      {/* Header */}
       <header
-        className="flex items-center bg-white dark:bg-surface-dark px-4 pb-3 justify-between sticky top-0 z-20 border-b border-border/70 dark:border-slate-800/80"
+        className="flex items-center bg-white dark:bg-surface-dark px-5 pb-3 justify-between sticky top-0 z-20 border-b border-border/50 dark:border-slate-800/60"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
         <div className="flex items-center gap-3">
-          <motion.div
-            whileTap={{ scale: 0.95 }}
-            className="size-10 shrink-0 overflow-hidden rounded-full ring-2 ring-primary/20 bg-primary/10 flex items-center justify-center cursor-pointer"
-          >
+          <div className="size-10 shrink-0 overflow-hidden rounded-full ring-2 ring-primary/15 bg-primary/8 flex items-center justify-center">
             <User className="text-primary" size={20} />
-          </motion.div>
+          </div>
           <div>
             <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em]">
               {new Date().toLocaleDateString('th-TH', { weekday: 'short', month: 'short', day: 'numeric' })}
             </p>
-            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">จดดี AI</h2>
+            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">จดดี</h2>
           </div>
         </div>
-        <div className="flex gap-1">
-          <motion.button
-            aria-label="Notifications"
-            whileTap={{ scale: 0.9 }}
-            className="flex items-center justify-center rounded-full h-10 w-10 bg-input-bg dark:bg-slate-800 text-secondary hover:text-primary transition-colors relative"
-          >
-            <Bell size={20} />
-            <span className="absolute top-2 right-2 size-2 bg-rose-500 rounded-full ring-2 ring-white dark:ring-slate-800"></span>
-          </motion.button>
-          <motion.button
-            aria-label="Settings"
-            whileTap={{ scale: 0.9 }}
-            onClick={() => onNavigate('settings')}
-            className="flex items-center justify-center rounded-full h-10 w-10 bg-input-bg dark:bg-slate-800 text-secondary hover:text-primary transition-colors"
-          >
-            <Settings size={20} />
-          </motion.button>
-        </div>
+        <motion.button
+          aria-label="Settings"
+          whileTap={{ scale: 0.9 }}
+          onClick={() => onNavigate('settings')}
+          className="flex items-center justify-center rounded-full h-10 w-10 bg-input-bg dark:bg-slate-800 text-secondary hover:text-primary transition-colors"
+        >
+          <Settings size={20} />
+        </motion.button>
       </header>
 
       {readOnlyMode && (
@@ -172,50 +153,137 @@ export function Dashboard({
         </section>
       )}
 
-      <SmartInput onNavigate={onNavigate} onAddTransaction={onAddTransaction} disabled={!canCreateTransactions} />
+      {/* Balance Card — primary focus */}
+      <section className="px-4 pt-4">
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+          className="bg-white dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border/60 dark:border-slate-800"
+        >
+          <div className="flex justify-between items-start mb-1">
+            <div>
+              <p className="text-secondary text-xs font-semibold mb-1">ยอดคงเหลือทั้งหมด</p>
+              <motion.h1
+                key={balance}
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="text-[2rem] leading-none font-black text-text-dark dark:text-white tabular-nums"
+              >
+                {formatCurrency(balance)}
+              </motion.h1>
+            </div>
+            <div className="size-11 rounded-2xl bg-primary/8 dark:bg-primary/15 flex items-center justify-center text-primary">
+              <Wallet size={22} />
+            </div>
+          </div>
 
-      <AiInsightCard insight={aiInsight} onNavigate={onNavigate} />
+          <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border/50 dark:border-slate-700/50">
+            <div className="flex items-center gap-2.5">
+              <div className="size-8 rounded-xl bg-income-bg dark:bg-income/10 flex items-center justify-center text-income">
+                <ArrowUpRight size={16} />
+              </div>
+              <div>
+                <p className="text-secondary text-[10px] font-semibold">รายรับรวม</p>
+                <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
+                  {formatCurrency(totalIncome)}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div className="size-8 rounded-xl bg-expense-bg dark:bg-expense/10 flex items-center justify-center text-expense">
+                <ArrowDownRight size={16} />
+              </div>
+              <div>
+                <p className="text-secondary text-[10px] font-semibold">รายจ่ายรวม</p>
+                <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
+                  {formatCurrency(totalExpense)}
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </section>
 
-      <section className="px-4 py-3 grid grid-cols-4 gap-2">
+      {/* Today Summary */}
+      <section className="px-4 pt-3 grid grid-cols-2 gap-3">
+        <motion.div
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.05 }}
+          className="bg-white dark:bg-surface-dark border border-border/60 dark:border-slate-800 p-3.5 rounded-2xl shadow-sm flex items-center gap-3"
+        >
+          <div className="size-9 rounded-xl bg-income-bg/60 dark:bg-income/10 flex items-center justify-center text-income">
+            <TrendingUp size={16} />
+          </div>
+          <div>
+            <p className="text-secondary text-[10px] font-semibold mb-0.5">รับวันนี้</p>
+            <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
+              {formatCurrency(todayIncome, 2)}
+            </p>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.05 }}
+          className="bg-white dark:bg-surface-dark border border-border/60 dark:border-slate-800 p-3.5 rounded-2xl shadow-sm flex items-center gap-3"
+        >
+          <div className="size-9 rounded-xl bg-expense-bg/60 dark:bg-expense/10 flex items-center justify-center text-expense">
+            <TrendingDown size={16} />
+          </div>
+          <div>
+            <p className="text-secondary text-[10px] font-semibold mb-0.5">จ่ายวันนี้</p>
+            <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
+              {formatCurrency(todayExpense, 2)}
+            </p>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Quick Actions — enlarged, touch-friendly */}
+      <section className="px-4 pt-4 grid grid-cols-4 gap-2.5">
         <QuickActionCard
-          icon={<Sparkles size={18} />}
+          icon={<Plus size={20} />}
           label="เพิ่ม"
           onClick={() => openQuickAdd('Expense')}
           disabled={!canCreateTransactions}
+          accent
         />
         <QuickActionCard
-          icon={<TrendingUp size={18} />}
+          icon={<TrendingUp size={20} />}
           label="รายรับ"
           onClick={() => openQuickAdd('Income')}
           disabled={!canCreateTransactions}
         />
         <QuickActionCard
-          icon={<Receipt size={18} />}
+          icon={<Receipt size={20} />}
           label="สลิป"
           onClick={() => onNavigate('review_receipt')}
           disabled={!canCreateTransactions}
         />
-        <QuickActionCard icon={<PieChart size={18} />} label="วิเคราะห์" onClick={() => onNavigate('analytics')} />
+        <QuickActionCard icon={<PieChart size={20} />} label="วิเคราะห์" onClick={() => onNavigate('analytics')} />
       </section>
 
-      <section className="px-4">
-        <div className="bg-white dark:bg-surface-dark border border-border/70 dark:border-slate-800 rounded-3xl p-4 shadow-sm">
+      {/* Monthly Budget Summary — compact */}
+      <section className="px-4 pt-4">
+        <div className="bg-white dark:bg-surface-dark border border-border/60 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-[11px] text-secondary font-extrabold">สถานะงบเดือนนี้</p>
+              <p className="text-[11px] text-secondary font-semibold">สถานะงบเดือนนี้</p>
               <h3 className="text-lg font-black text-text-dark dark:text-white tabular-nums">
                 {formatCurrency(monthNet)}
               </h3>
             </div>
             <button
               onClick={() => onNavigate('budget')}
-              className="rounded-xl bg-slate-950 dark:bg-slate-100 text-white dark:text-slate-950 px-3 py-2 text-[11px] font-extrabold"
+              className="rounded-xl bg-primary/10 dark:bg-primary/20 text-primary px-3 py-2 text-[11px] font-bold hover:bg-primary/15 transition-colors"
             >
               จัดการ
             </button>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <MetricRow label="รายรับ" value={formatCurrency(monthIncome)} positive />
             <MetricRow label="รายจ่าย" value={formatCurrency(monthExpense)} />
             <MetricRow label="ใช้เทียบรายรับ" value={`${monthSpendRate.toFixed(0)}%`} warning={monthSpendRate > 80} />
@@ -231,88 +299,10 @@ export function Dashboard({
         </div>
       </section>
 
-      <section className="px-4 py-3">
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-          className="bg-gradient-to-br from-emerald-500 via-primary to-emerald-700 rounded-[1.6rem] p-5 shadow-xl shadow-primary/18 text-white relative overflow-hidden"
-        >
-          <div className="absolute -right-4 -top-4 p-4 opacity-10">
-            <Wallet size={140} />
-          </div>
-          <div className="relative z-10">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-white/75 text-xs font-semibold">ยอดคงเหลือทั้งหมด</span>
-              <CreditCard size={18} className="text-white/45" />
-            </div>
-            <motion.h1
-              key={balance}
-              initial={{ scale: 0.92, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="text-[2rem] leading-none font-black mb-5 tabular-nums"
-            >
-              {formatCurrency(balance)}
-            </motion.h1>
-
-            <div className="grid grid-cols-2 gap-4 border-t border-white/15 pt-4">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-1.5 text-white/65">
-                  <ArrowUpRight size={14} className="text-emerald-200" />
-                  <span className="text-[11px] font-semibold">รายรับรวม</span>
-                </div>
-                <p className="text-lg font-bold tabular-nums">{formatCurrency(totalIncome)}</p>
-              </div>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-1.5 text-white/65">
-                  <ArrowDownRight size={14} className="text-rose-200" />
-                  <span className="text-[11px] font-semibold">รายจ่ายรวม</span>
-                </div>
-                <p className="text-lg font-bold tabular-nums">{formatCurrency(totalExpense)}</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      <section className="px-4 py-3 grid grid-cols-2 gap-3">
-        <motion.div
-          initial={{ x: -20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-surface-dark border border-border dark:border-slate-800 p-4 rounded-3xl shadow-sm flex items-center gap-3"
-        >
-          <div className="size-10 rounded-2xl bg-income-bg/60 dark:bg-income/10 flex items-center justify-center text-income">
-            <TrendingUp size={18} />
-          </div>
-          <div>
-            <p className="text-secondary text-[11px] font-semibold mb-0.5">รับวันนี้</p>
-            <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
-              {formatCurrency(todayIncome, 2)}
-            </p>
-          </div>
-        </motion.div>
-        <motion.div
-          initial={{ x: 20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-surface-dark border border-border dark:border-slate-800 p-4 rounded-3xl shadow-sm flex items-center gap-3"
-        >
-          <div className="size-10 rounded-2xl bg-expense-bg/60 dark:bg-expense/10 flex items-center justify-center text-expense">
-            <TrendingDown size={18} />
-          </div>
-          <div>
-            <p className="text-secondary text-[11px] font-semibold mb-0.5">จ่ายวันนี้</p>
-            <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
-              {formatCurrency(todayExpense, 2)}
-            </p>
-          </div>
-        </motion.div>
-      </section>
-
-      <section className="flex flex-col px-4 mt-5">
-        <div className="flex items-center justify-between mb-4 px-2">
-          <h3 className="text-text-dark dark:text-slate-100 text-lg font-extrabold">รายการล่าสุด</h3>
+      {/* Recent Transactions */}
+      <section className="flex flex-col px-4 mt-4">
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h3 className="text-text-dark dark:text-slate-100 text-base font-extrabold">รายการล่าสุด</h3>
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={() => onNavigate('transactions')}
@@ -328,16 +318,16 @@ export function Dashboard({
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="flex flex-col items-center justify-center py-10 bg-white dark:bg-input-bg/10 rounded-[2rem] border-2 border-dashed border-border dark:border-slate-800"
+              className="flex flex-col items-center justify-center py-10 bg-white dark:bg-input-bg/10 rounded-2xl border-2 border-dashed border-border dark:border-slate-800"
             >
-              <div className="size-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
-                <Receipt size={32} />
+              <div className="size-14 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3 text-slate-400">
+                <Receipt size={28} />
               </div>
               <p className="text-secondary font-bold text-sm">ยังไม่มีรายการ</p>
               <button
                 disabled={!canCreateTransactions}
                 onClick={() => onNavigate('add_transaction')}
-                className={`mt-4 text-xs font-bold underline underline-offset-4 ${canCreateTransactions ? 'text-primary' : 'text-secondary opacity-60 cursor-not-allowed'}`}
+                className={`mt-3 text-xs font-bold underline underline-offset-4 ${canCreateTransactions ? 'text-primary' : 'text-secondary opacity-60 cursor-not-allowed'}`}
               >
                 {canCreateTransactions ? 'เพิ่มรายการแรก' : 'เข้าสู่ระบบเพื่อเพิ่มรายการ'}
               </button>
@@ -368,22 +358,28 @@ function QuickActionCard({
   label,
   onClick,
   disabled = false,
+  accent = false,
 }: Readonly<{
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  accent?: boolean;
 }>) {
+  const baseClasses = accent
+    ? 'bg-primary text-white shadow-md shadow-primary/15'
+    : 'bg-white dark:bg-surface-dark border border-border/60 dark:border-slate-800 text-text-dark dark:text-white shadow-sm';
+
   return (
     <motion.button
-      whileTap={disabled ? undefined : { scale: 0.97 }}
+      whileTap={disabled ? undefined : { scale: 0.95 }}
       onClick={onClick}
       disabled={disabled}
-      className={`bg-white dark:bg-surface-dark border border-border dark:border-slate-800 rounded-2xl py-3 px-2 shadow-sm flex flex-col items-center justify-center gap-1 min-h-[72px] ${
-        disabled ? 'text-secondary opacity-60 cursor-not-allowed' : 'text-text-dark dark:text-white'
+      className={`rounded-2xl py-4 px-2 flex flex-col items-center justify-center gap-1.5 min-h-[80px] transition-all ${baseClasses} ${
+        disabled ? 'opacity-50 cursor-not-allowed' : ''
       }`}
     >
-      <span className="text-primary">{icon}</span>
+      <span className={accent ? 'text-white' : 'text-primary'}>{icon}</span>
       <span className="text-[11px] font-extrabold leading-none">{label}</span>
     </motion.button>
   );
@@ -402,15 +398,15 @@ function MetricRow({
 }>) {
   const getTextStyle = () => {
     if (warning) return 'text-amber-600 dark:text-amber-400';
-    if (positive) return 'text-emerald-600 dark:text-emerald-400';
+    if (positive) return 'text-income dark:text-income';
     return 'text-text-dark dark:text-white';
   };
   const textStyle = getTextStyle();
 
   return (
-    <div className="flex items-center justify-between text-xs gap-3">
+    <div className="flex items-center justify-between text-xs gap-3 py-0.5">
       <span className="text-secondary font-semibold">{label}</span>
-      <span className={`font-black tabular-nums ${textStyle}`}>{value}</span>
+      <span className={`font-bold tabular-nums ${textStyle}`}>{value}</span>
     </div>
   );
 }
@@ -435,40 +431,40 @@ function TransactionItem({
   const getIcon = () => {
     const normalized = category.toLowerCase();
 
-    if (normalized.includes('food')) return <ShoppingBasket size={22} />;
-    if (normalized.includes('coffee')) return <Coffee size={22} />;
-    if (normalized.includes('income') || normalized.includes('salary')) return <Banknote size={22} />;
-    if (normalized.includes('transport')) return <TrendingUp size={22} />;
-    return <Receipt size={22} />;
+    if (normalized.includes('food')) return <ShoppingBasket size={20} />;
+    if (normalized.includes('coffee')) return <Coffee size={20} />;
+    if (normalized.includes('income') || normalized.includes('salary')) return <Banknote size={20} />;
+    if (normalized.includes('transport')) return <TrendingUp size={20} />;
+    return <Receipt size={20} />;
   };
 
   return (
     <motion.div
-      initial={{ y: 20, opacity: 0 }}
+      initial={{ y: 16, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.08 + index * 0.05 }}
+      transition={{ delay: 0.04 + index * 0.03 }}
       whileTap={{ scale: 0.98 }}
-      className="flex items-center gap-4 bg-white dark:bg-surface-dark p-4 rounded-3xl border border-border/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer shadow-sm"
+      className="flex items-center gap-3.5 bg-white dark:bg-surface-dark p-3.5 rounded-2xl border border-border/40 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer shadow-sm"
     >
       <div
-        className={`size-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${isExpense ? 'bg-expense-bg/60 text-expense' : 'bg-income-bg/60 text-income'}`}
+        className={`size-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${isExpense ? 'bg-expense-bg/60 text-expense' : 'bg-income-bg/60 text-income'}`}
       >
         {getIcon()}
       </div>
       <div className="flex-1 flex justify-between items-center overflow-hidden">
         <div className="overflow-hidden">
-          <p className="text-text-dark dark:text-slate-100 font-extrabold text-[15px] truncate">
+          <p className="text-text-dark dark:text-slate-100 font-bold text-[14px] truncate">
             {merchant || category}
           </p>
           <div className="flex items-center gap-1 mt-0.5">
-            <span className="text-[10px] font-bold text-secondary">{category}</span>
+            <span className="text-[10px] font-semibold text-secondary">{category}</span>
             <span className="size-1 bg-slate-200 dark:bg-slate-700 rounded-full"></span>
-            <span className="text-[10px] font-bold text-secondary opacity-60">{formatDateShort(date, 'th-TH')}</span>
+            <span className="text-[10px] font-semibold text-secondary opacity-60">{formatDateShort(date, 'th-TH')}</span>
           </div>
         </div>
         <div className="text-right shrink-0">
           <p
-            className={`${isExpense ? 'text-text-dark dark:text-slate-100' : 'text-income dark:text-income'} font-black text-[16px] tabular-nums`}
+            className={`${isExpense ? 'text-expense' : 'text-income'} font-bold text-[15px] tabular-nums`}
           >
             {isExpense ? '-' : '+'}
             {formatMoney(amount, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
