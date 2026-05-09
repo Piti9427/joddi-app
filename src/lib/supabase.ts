@@ -21,9 +21,11 @@ export const requireEmailVerification =
   String(import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION ?? 'true').toLowerCase() !== 'false';
 
 export function getAuthRedirectUrl() {
+  if (typeof window !== 'undefined' && window.location) {
+    return window.location.origin;
+  }
   const configuredRedirect = String(import.meta.env.VITE_AUTH_REDIRECT_URL || '').trim();
   if (configuredRedirect.length > 0) return configuredRedirect;
-  if (globalThis.window !== undefined) return globalThis.window.location.origin;
   return 'http://localhost:3000';
 }
 
@@ -829,7 +831,7 @@ async function syncCategories(): Promise<SyncBucket<LocalCategory>> {
       ? await supabase.from('categories').delete().eq('id', category.id).select().maybeSingle()
       : await supabase
           .from('categories')
-          .upsert(toSupabaseCategoryPayload(category), { onConflict: 'id' })
+          .upsert(toSupabaseCategoryPayload(category), { onConflict: 'name,type' })
           .select()
           .single();
 
