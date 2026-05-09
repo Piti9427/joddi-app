@@ -28,6 +28,7 @@ import { getLocalCategories, type LocalCategory } from '../lib/supabase';
 import { SMART_INPUT_PREFILL_KEY, type SmartInputPrefill } from '../lib/smartInput';
 import { parseSmartInput, toTransactionDraft } from '../lib/smartInput';
 import { lightHaptic } from '../lib/device';
+import { getTranslation } from '../lib/i18n';
 
 const PAYMENT_METHODS = [
   { id: 'cash', label: 'เงินสด', icon: <Banknote size={16} /> },
@@ -67,11 +68,16 @@ export function AddTransaction({
   onNavigate,
   onAddTransaction,
   returnView = 'dashboard',
+  lang,
+  currency,
 }: Readonly<{
   onNavigate: (v: ViewState) => void;
   onAddTransaction: (t: Omit<Transaction, 'id'>) => void | Promise<void>;
   returnView?: ViewState;
+  lang?: 'th' | 'en';
+  currency?: string;
 }>) {
+  const t = getTranslation(lang || 'th');
   const [mode, setMode] = useState<'manual' | 'ai'>('manual');
   const [amount, setAmount] = useState('0');
   const [type, setType] = useState<TransactionType>('Expense');
@@ -80,7 +86,7 @@ export function AddTransaction({
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [userCategories, setUserCategories] = useState<LocalCategory[]>([]);
-  const currencySymbol = getCurrencySymbol();
+  const currencySymbol = getCurrencySymbol(undefined, currency);
 
   const displayAmount = React.useMemo(() => {
     if (amount === '0' || amount === '') return '0';
@@ -92,7 +98,7 @@ export function AddTransaction({
   // AI mode state
   const [aiText, setAiText] = useState('');
   const [aiParsing, setAiParsing] = useState(false);
-  const [aiHint, setAiHint] = useState('พิมพ์รายการ เช่น "กาแฟ 65 บัตรเครดิต"');
+  const [aiHint, setAiHint] = useState(lang === 'en' ? 'Type e.g. "Coffee 65 credit card"' : 'พิมพ์รายการ เช่น "กาแฟ 65 บัตรเครดิต"');
 
   useEffect(() => {
     const handleSessionPreset = () => {
@@ -346,7 +352,7 @@ export function AddTransaction({
           {/* Amount Display */}
           <div className={`px-4 py-6 transition-colors duration-300 ${type === 'Expense' ? 'bg-expense/5 dark:bg-expense/10' : 'bg-income/5 dark:bg-income/10'}`}>
             <div className="text-center">
-              <p className="text-secondary text-xs font-semibold mb-2 opacity-70">จำนวนเงิน</p>
+              <p className="text-secondary text-xs font-semibold mb-2 opacity-70">{t.amount_placeholder}</p>
               <div className="flex items-center justify-center gap-2">
                 <span className={`text-3xl font-black ${type === 'Expense' ? 'text-expense' : 'text-income'}`}>
                   {currencySymbol}
@@ -361,7 +367,7 @@ export function AddTransaction({
           <div className="flex-1 overflow-y-auto px-5 space-y-6 bg-white dark:bg-background-dark pt-5">
             <section>
               <div className="flex justify-between items-center mb-3 px-1">
-                <p className="text-[11px] text-secondary font-semibold">หมวดหมู่</p>
+                <p className="text-[11px] text-secondary font-semibold">{t.category}</p>
                 <button
                   onClick={() => onNavigate('categories')}
                   className="text-primary hover:text-text-dark transition-colors"
@@ -388,7 +394,7 @@ export function AddTransaction({
                 <Calendar className="text-secondary group-focus-within:text-primary transition-colors shrink-0" size={18} />
                 <div className="flex-1">
                   <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-0.5 opacity-50">
-                    วันที่
+                    {t.date}
                   </p>
                   <input
                     type="date"
@@ -403,7 +409,7 @@ export function AddTransaction({
                 <Tag className="text-secondary group-focus-within:text-primary transition-colors shrink-0" size={18} />
                 <div className="flex-1">
                   <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-0.5 opacity-50">
-                    หมายเหตุ / ร้านค้า
+                    {t.note}
                   </p>
                   <input
                     type="text"

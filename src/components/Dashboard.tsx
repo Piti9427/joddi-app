@@ -17,7 +17,8 @@ import {
 } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
 import { motion } from 'motion/react';
-import { formatDateShort, formatMoney } from '../lib/formatters';
+import { formatDateShort, formatMoney, getUserLocale } from '../lib/formatters';
+import { getTranslation } from '../lib/i18n';
 
 const QUICK_ADD_TYPE_KEY = 'quick_add_type';
 
@@ -26,6 +27,8 @@ export function Dashboard({
   onAddTransaction,
   transactions,
   userName,
+  lang,
+  currency,
   canCreateTransactions = true,
   readOnlyMode = false,
 }: Readonly<{
@@ -33,9 +36,14 @@ export function Dashboard({
   onAddTransaction: (t: Omit<Transaction, 'id'>) => void | Promise<void>;
   transactions: Transaction[];
   userName?: string;
+  lang?: 'th' | 'en';
+  currency?: string;
   canCreateTransactions?: boolean;
   readOnlyMode?: boolean;
 }>) {
+  const currentLang = lang || 'th';
+  const t = getTranslation(currentLang);
+  const locale = getUserLocale();
   const {
     todayIncome,
     todayExpense,
@@ -107,6 +115,8 @@ export function Dashboard({
     formatMoney(value, {
       maximumFractionDigits,
       minimumFractionDigits: maximumFractionDigits > 0 ? 2 : 0,
+      currency,
+      locale,
     });
 
   const openQuickAdd = (type: TransactionType) => {
@@ -132,9 +142,9 @@ export function Dashboard({
           </div>
           <div>
             <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em]">
-              {new Date().toLocaleDateString('th-TH', { weekday: 'short', month: 'short', day: 'numeric' })}
+              {new Date().toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}
             </p>
-            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">{userName || 'จดดี'}</h2>
+            <h2 className="text-text-dark dark:text-slate-100 text-base font-extrabold leading-tight">{userName || (currentLang === 'th' ? 'จดดี' : 'Joddi')}</h2>
           </div>
         </div>
         <motion.button
@@ -165,7 +175,7 @@ export function Dashboard({
         >
           <div className="flex justify-between items-start mb-1">
             <div>
-              <p className="text-secondary text-xs font-semibold mb-1">ยอดคงเหลือทั้งหมด</p>
+              <p className="text-secondary text-xs font-semibold mb-1">{t.balance}</p>
               <motion.h1
                 key={balance}
                 initial={{ scale: 0.95, opacity: 0 }}
@@ -186,7 +196,7 @@ export function Dashboard({
                 <ArrowUpRight size={16} />
               </div>
               <div>
-                <p className="text-secondary text-[10px] font-semibold">รายรับรวม</p>
+                <p className="text-secondary text-[10px] font-semibold">{t.income}</p>
                 <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
                   {formatCurrency(totalIncome)}
                 </p>
@@ -197,7 +207,7 @@ export function Dashboard({
                 <ArrowDownRight size={16} />
               </div>
               <div>
-                <p className="text-secondary text-[10px] font-semibold">รายจ่ายรวม</p>
+                <p className="text-secondary text-[10px] font-semibold">{t.expense}</p>
                 <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
                   {formatCurrency(totalExpense)}
                 </p>

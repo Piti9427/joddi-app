@@ -10,8 +10,9 @@ import {
   saveLocalTransaction,
   supabase,
   syncPendingTransactions,
-  type TransactionSyncStatus,
+  type SyncStatus,
 } from './lib/supabase';
+
 
 export type ViewState =
   | 'onboarding'
@@ -35,7 +36,7 @@ export interface Transaction {
   merchant?: string;
   paymentMethod?: string;
   localId?: string;
-  syncStatus?: TransactionSyncStatus;
+  syncStatus?: SyncStatus;
   syncError?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -121,6 +122,15 @@ export default function App() {
   const [accessMessage, setAccessMessage] = useState('');
   const accessMessageTimeout = useRef<number | null>(null);
 
+  const [lang, setLang] = useState<'th' | 'en'>(
+    () => (localStorage.getItem('language') as 'th' | 'en') || 'th',
+  );
+  const [currency, setCurrency] = useState(
+    () => localStorage.getItem('currency') || 'THB',
+  );
+
+
+
   const isAuthenticated = Boolean(session);
   const canWrite = isAuthenticated || isGuestMode;
 
@@ -140,7 +150,12 @@ export default function App() {
     accessMessageTimeout.current = globalThis.setTimeout(() => setAccessMessage(''), 3000);
   };
 
+  const initialized = useRef(false);
+
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     document.documentElement.classList.remove('dark');
 
     if (localStorage.getItem('theme_v2_migrated') !== 'true') {
@@ -151,35 +166,50 @@ export default function App() {
     }
 
     const initAuth = async () => {
-      setSessionChecked(false);
+      console.log('JoddiApp: Initializing auth and local data...');
+      
+      // Load local cache independently
+      getLocalTransactions()
+        .then((local) => {
+          if (local.length > 0) {
+            console.log('JoddiApp: Local transactions loaded:', local.length);
+            setTransactions(local);
+          }
+        })
+        .catch((err) => console.error('JoddiApp: Offline cache read error:', err));
 
       try {
-        const localTransactions = await getLocalTransactions();
-        if (localTransactions.length > 0) {
-          setTransactions(localTransactions);
+        console.log('JoddiApp: Getting Supabase session (with 5s timeout)...');
+        
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<{data: {session: null}}>((_, reject) => 
+          globalThis.setTimeout(() => reject(new Error('Session timeout')), 5000)
+        );
+
+        const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        const existingSession = result?.data?.session || null;
+        
+        console.log('JoddiApp: Session check complete. Authenticated:', !!existingSession);
+        
+        setSession(existingSession);
+        setSessionChecked(true);
+
+        if (existingSession) {
+          setIsGuestMode(false);
+          setCurrentView('dashboard');
+          setBaseView('dashboard');
+          fetchTransactions();
+        } else {
+          setIsGuestMode(false);
+          setCurrentView('onboarding');
+          setBaseView('dashboard');
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Offline cache read error:', error);
-      }
-
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error('Auth getSession error:', error);
-      }
-
-      const existingSession = data.session;
-      setSession(existingSession);
-      setSessionChecked(true);
-
-      if (existingSession) {
-        setIsGuestMode(false);
-        setCurrentView('dashboard');
-        setBaseView('dashboard');
-        await fetchTransactions();
-      } else {
-        setIsGuestMode(false);
+      } catch (err) {
+        console.error('JoddiApp: Session check failed or timed out:', err);
+        setSession(null);
+        setSessionChecked(true); 
         setCurrentView('onboarding');
-        setBaseView('dashboard');
         setLoading(false);
       }
     };
@@ -188,7 +218,8 @@ export default function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      console.log('JoddiApp: Auth state changed. Session exists:', !!nextSession);
       setSession(nextSession);
       setSessionChecked(true);
 
@@ -196,12 +227,7 @@ export default function App() {
         setIsGuestMode(false);
         setCurrentView('dashboard');
         setBaseView('dashboard');
-        await fetchTransactions();
-      } else {
-        setIsGuestMode(false);
-        setCurrentView('onboarding');
-        setBaseView('dashboard');
-        setLoading(false);
+        fetchTransactions();
       }
     });
 
@@ -355,15 +381,15 @@ export default function App() {
       case 'onboarding':
         return <Onboarding onNavigate={navigate} />;
       case 'review_receipt':
-        return <ReviewReceipt onNavigate={navigate} onAddTransaction={handleAddTransaction} />;
+        return <ReviewReceipt onNavigate={navigate} onAddTransaction={handleAddTransaction} lang={lang} currency={currency} />;
       case 'transactions':
-        return <TransactionHistory onNavigate={navigate} transactions={transactions} />;
+        return <TransactionHistory onNavigate={navigate} transactions={transactions} lang={lang} currency={currency} />;
       case 'analytics':
-        return <AnalyticsDashboard onNavigate={navigate} transactions={transactions} />;
+        return <AnalyticsDashboard onNavigate={navigate} transactions={transactions} lang={lang} currency={currency} />;
       case 'budget':
-        return <BudgetScreen onNavigate={navigate} transactions={transactions} />;
+        return <BudgetScreen onNavigate={navigate} transactions={transactions} lang={lang} currency={currency} />;
       case 'categories':
-        return <CategoriesManagement onNavigate={navigate} transactions={transactions} />;
+        return <CategoriesManagement onNavigate={navigate} transactions={transactions} lang={lang} currency={currency} />;
       case 'settings':
         return (
           <Settings
@@ -374,6 +400,16 @@ export default function App() {
             onClearLocalData={handleClearLocalData}
             userEmail={session?.user?.email}
             userId={session?.user?.id}
+            lang={lang}
+            onLanguageChange={(newLang) => {
+              setLang(newLang);
+              globalThis.localStorage.setItem('language', newLang);
+            }}
+            currency={currency}
+            onCurrencyChange={(newCurr) => {
+              setCurrency(newCurr);
+              globalThis.localStorage.setItem('currency', newCurr);
+            }}
           />
         );
       case 'dashboard':
@@ -389,6 +425,7 @@ export default function App() {
             userName={userName}
             canCreateTransactions={canWrite}
             readOnlyMode={false}
+            currency={currency}
           />
         );
       }
@@ -446,7 +483,7 @@ export default function App() {
                 className="w-full max-h-[95%]"
               >
                 <Suspense fallback={<ScreenFallback />}>
-                  <AddTransaction onNavigate={navigate} onAddTransaction={handleAddTransaction} returnView={baseView} />
+                  <AddTransaction onNavigate={navigate} onAddTransaction={handleAddTransaction} returnView={baseView} lang={lang} currency={currency} />
                 </Suspense>
               </motion.div>
             </motion.div>

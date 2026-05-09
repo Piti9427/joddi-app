@@ -3,6 +3,7 @@ import { Bell, Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn, RefreshCw, 
 import { ViewState } from '../App';
 import { cancelDailyReminder, scheduleDailyReminder } from '../lib/device';
 import { saveLocalProfile, syncAllOfflineData } from '../lib/supabase';
+import { getTranslation } from '../lib/i18n';
 
 export function Settings({
   onNavigate,
@@ -20,7 +21,13 @@ export function Settings({
   onClearLocalData?: () => void | Promise<void>;
   userEmail?: string;
   userId?: string;
+  lang?: 'th' | 'en';
+  onLanguageChange?: (lang: 'th' | 'en') => void;
+  currency?: string;
+  onCurrencyChange?: (curr: string) => void;
 }>) {
+  const currentLang = lang || 'th';
+  const t = getTranslation(currentLang);
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof globalThis.window !== 'undefined') {
       return localStorage.getItem('theme') === 'dark';
@@ -143,7 +150,7 @@ export function Settings({
         <section className="space-y-3">
           <h3 className="text-sm font-extrabold text-secondary pl-2">การใช้งาน</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
-            <SettingRow icon={<Moon />} label="โหมดมืด">
+            <SettingRow icon={<Moon />} label={t.dark_mode}>
               <button
                 onClick={toggleDarkMode}
                 className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${darkMode ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
@@ -154,42 +161,53 @@ export function Settings({
               </button>
             </SettingRow>
 
-            <SettingRow icon={<Globe />} label="สกุลเงิน" value="อัตโนมัติ" />
-            <SettingRow icon={<Bell />} label="แจ้งเตือนรายวัน">
-              <button
-                onClick={toggleReminder}
-                className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${notificationsEnabled ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
+            <SettingRow icon={<Globe size={18} />} label={t.language}>
+              <select
+                value={currentLang}
+                onChange={(e) => onLanguageChange?.(e.target.value as 'th' | 'en')}
+                className="bg-transparent text-sm font-bold text-primary outline-none appearance-none cursor-pointer"
               >
-                <div
-                  className={`size-5 bg-white rounded-full shadow-sm absolute transition-transform duration-300 ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`}
-                ></div>
-              </button>
+                <option value="th">ไทย (TH)</option>
+                <option value="en">English (EN)</option>
+              </select>
+            </SettingRow>
+
+            <SettingRow icon={<Banknote size={18} />} label={t.currency}>
+              <select
+                value={currency}
+                onChange={(e) => onCurrencyChange?.(e.target.value)}
+                className="bg-transparent text-sm font-bold text-primary outline-none appearance-none cursor-pointer text-right"
+              >
+                <option value="THB">฿ THB</option>
+                <option value="USD">$ USD</option>
+                <option value="EUR">€ EUR</option>
+                <option value="JPY">¥ JPY</option>
+                <option value="GBP">£ GBP</option>
+              </select>
             </SettingRow>
           </div>
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-sm font-extrabold text-secondary pl-2">บัญชี</h3>
+          <h3 className="text-sm font-extrabold text-secondary pl-2">{t.account}</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
             <button onClick={syncNow} disabled={syncing} className="w-full text-left disabled:opacity-50">
               <SettingRow 
                 icon={syncing ? <RefreshCw className="animate-spin" /> : <RefreshCw />} 
-                label="ซิงก์ตอนนี้" 
-                value={syncing ? 'กำลังซิงก์...' : (isAuthenticated ? 'คลาวด์' : 'ในเครื่อง')} 
+                label={t.sync_now} 
+                value={syncing ? '...' : (isAuthenticated ? 'Cloud' : 'Local')} 
               />
             </button>
             <button onClick={onClearLocalData} className="w-full text-left">
-              <SettingRow icon={<Trash2 />} label="ล้างข้อมูลในเครื่อง" />
+              <SettingRow icon={<Trash2 />} label={t.clear_data} />
             </button>
           </div>
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-sm font-extrabold text-secondary pl-2">ช่วยเหลือ</h3>
+          <h3 className="text-sm font-extrabold text-secondary pl-2">{t.help}</h3>
           <div className="bg-surface dark:bg-surface-dark rounded-[2rem] p-2 shadow-sm border border-border dark:border-slate-800">
-            {supportSettings.map((item) => (
-              <SettingRow key={item.label} icon={item.icon} label={item.label} />
-            ))}
+            <SettingRow icon={<HelpCircle />} label="ศูนย์ช่วยเหลือ" />
 
             {isAuthenticated ? (
               <button
@@ -199,7 +217,7 @@ export function Settings({
                 <div className="size-10 rounded-[1.2rem] bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center group-hover:bg-rose-100 transition-colors">
                   <LogOut size={20} />
                 </div>
-                <div className="flex-1 font-bold">ออกจากระบบ</div>
+                <div className="flex-1 font-bold">{t.sign_out}</div>
               </button>
             ) : (
               <button
@@ -209,7 +227,7 @@ export function Settings({
                 <div className="size-10 rounded-[1.2rem] bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
                   <LogIn size={20} />
                 </div>
-                <div className="flex-1 font-bold">เข้าสู่ระบบเพื่อซิงก์</div>
+                <div className="flex-1 font-bold">{t.sign_in}</div>
               </button>
             )}
           </div>

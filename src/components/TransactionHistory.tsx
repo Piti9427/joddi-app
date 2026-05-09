@@ -3,7 +3,8 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Search, Filter, TrendingDown, TrendingUp } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import { motion } from 'motion/react';
-import { formatMoney } from '../lib/formatters';
+import { formatMoney, getUserLocale } from '../lib/formatters';
+import { getTranslation } from '../lib/i18n';
 
 type VirtualRow =
   | { type: 'dateHeader'; id: string; date: string }
@@ -12,14 +13,27 @@ type VirtualRow =
 export function TransactionHistory({
   onNavigate,
   transactions,
+  lang,
+  currency,
 }: Readonly<{
   onNavigate: (v: ViewState) => void;
   transactions: Transaction[];
+  lang?: 'th' | 'en';
+  currency?: string;
 }>) {
+  const currentLang = lang || 'th';
+  const t = getTranslation(currentLang);
+  const locale = getUserLocale();
   const [search, setSearch] = useState('');
   const scrollParentRef = useRef<HTMLDivElement | null>(null);
 
-  const formatCurrency = (val: number) => formatMoney(val, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+  const formatCurrency = (val: number) => 
+    formatMoney(val, { 
+      maximumFractionDigits: 2, 
+      minimumFractionDigits: 2,
+      currency,
+      locale
+    });
 
   const virtualRows = useMemo<VirtualRow[]>(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -89,7 +103,7 @@ export function TransactionHistory({
           <Search size={18} className="text-secondary" />
           <input
             type="text"
-            placeholder="ค้นหาจากร้านค้า หมวดหมู่ หรือหมายเหตุ"
+            placeholder={currentLang === 'en' ? 'Search merchant, category, or note' : 'ค้นหาจากร้านค้า หมวดหมู่ หรือหมายเหตุ'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="bg-transparent border-none focus:ring-0 text-[13px] font-bold w-full placeholder:text-secondary/60 outline-none text-text-dark dark:text-white"
@@ -107,7 +121,9 @@ export function TransactionHistory({
             <div className="size-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 text-slate-300">
               <Search size={48} />
             </div>
-            <h3 className="text-lg font-black text-text-dark dark:text-white mb-2">ไม่พบรายการที่ตรงกัน</h3>
+            <h3 className="text-lg font-black text-text-dark dark:text-white mb-2">
+              {currentLang === 'en' ? 'No matching transactions' : 'ไม่พบรายการที่ตรงกัน'}
+            </h3>
           </motion.div>
         ) : (
           <div

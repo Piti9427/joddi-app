@@ -39,7 +39,7 @@ export default function AuthScreen({
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+
 
   const normalizedEmail = useMemo(() => email.trim().toLowerCase(), [email]);
 
@@ -60,7 +60,7 @@ export default function AuthScreen({
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-    setSuccessMsg('');
+
 
     if (!ensureAuthInputIsValid()) return;
 
@@ -99,7 +99,7 @@ export default function AuthScreen({
       // Email confirmation required case
       if (requireEmailVerification && signUpData.user && !signUpData.session) {
         setAuthPhase('success_pending');
-        setSuccessMsg('กรุณาตรวจสอบอีเมลและยืนยันเพื่อเริ่มต้นใช้งาน');
+
         return;
       }
 
@@ -115,7 +115,7 @@ export default function AuthScreen({
 
   const handleResetPassword = async () => {
     setErrorMsg('');
-    setSuccessMsg('');
+
 
     if (!isValidEmail(normalizedEmail)) {
       setErrorMsg('กรุณากรอกอีเมลก่อนส่งลิงก์รีเซ็ตรหัสผ่าน');
@@ -128,7 +128,7 @@ export default function AuthScreen({
         redirectTo: getAuthRedirectUrl(),
       });
       if (error) throw error;
-      setSuccessMsg('ส่งลิงก์รีเซ็ตรหัสผ่านแล้ว กรุณาตรวจสอบอีเมล');
+
     } catch (err: any) {
       setErrorMsg(mapAuthError(err?.message || 'Unable to send reset email'));
     } finally {
@@ -247,21 +247,23 @@ export default function AuthScreen({
         className="text-center py-8"
       >
         <div className="flex justify-center mb-8">
-          <motion.div
-            animate={authPhase === 'submitting' ? { scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] } : {}}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className={`size-20 rounded-3xl flex items-center justify-center shadow-xl ${
-              authPhase === 'success_pending'
-                ? 'bg-emerald-500 text-white'
-                : authPhase === 'error'
-                ? 'bg-rose-500 text-white'
-                : 'bg-primary text-white'
-            }`}
-          >
-            {authPhase === 'submitting' && <Loader2 size={40} className="animate-spin" />}
-            {authPhase === 'success_pending' && <Mail size={40} />}
-            {authPhase === 'error' && <ShieldCheck size={40} className="rotate-180" />}
-          </motion.div>
+          {(() => {
+            let statusColor = 'bg-primary text-white';
+            if (authPhase === 'success_pending') statusColor = 'bg-emerald-500 text-white';
+            if (authPhase === 'error') statusColor = 'bg-rose-500 text-white';
+            
+            return (
+              <motion.div
+                animate={authPhase === 'submitting' ? { scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] } : {}}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className={`size-20 rounded-3xl flex items-center justify-center shadow-xl ${statusColor}`}
+              >
+                {authPhase === 'submitting' && <Loader2 size={40} className="animate-spin" />}
+                {authPhase === 'success_pending' && <Mail size={40} />}
+                {authPhase === 'error' && <ShieldCheck size={40} className="rotate-180" />}
+              </motion.div>
+            );
+          })()}
         </div>
 
         <h2 className="text-2xl font-black text-text-dark dark:text-white mb-4">
