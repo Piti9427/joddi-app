@@ -2,14 +2,19 @@ const FALLBACK_LOCALE = 'en-US';
 const FALLBACK_CURRENCY = 'USD';
 
 function getStoredCurrency() {
-  if (typeof window === 'undefined') return null;
-  const stored = window.localStorage.getItem('currency');
-  return stored && stored.length === 3 ? stored.toUpperCase() : null;
+  if (globalThis.window === undefined) return null;
+  const stored = globalThis.localStorage.getItem('currency');
+  return stored?.length === 3 ? stored.toUpperCase() : null;
 }
 
 export function getUserLocale() {
-  if (typeof navigator === 'undefined') return FALLBACK_LOCALE;
-  return navigator.language || FALLBACK_LOCALE;
+  if (globalThis.window === undefined) return FALLBACK_LOCALE;
+  const storedLang = globalThis.localStorage.getItem('language');
+  if (storedLang === 'th') return 'th-TH';
+  if (storedLang === 'en') return 'en-US';
+  
+  if (globalThis.navigator === undefined) return FALLBACK_LOCALE;
+  return globalThis.navigator.language || FALLBACK_LOCALE;
 }
 
 export function getUserCurrency(locale = getUserLocale()) {
