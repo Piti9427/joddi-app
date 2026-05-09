@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import Chart from 'react-apexcharts';
 import { ViewState, Transaction } from '../App';
 import { ArrowUpRight, ArrowDownRight, BarChart3, BrainCircuit, LineChart, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -13,16 +14,16 @@ const RANGE_LABELS = {
 } as const;
 
 const CATEGORY_COLORS = [
-  '#2563eb',
-  '#dc2626',
-  '#16a34a',
-  '#f59e0b',
-  '#8b5cf6',
-  '#ec4899',
-  '#06b6d4',
-  '#84cc16',
-  '#ef4444',
-  '#6366f1',
+  '#3b82f6', // Blue 500
+  '#ef4444', // Red 500
+  '#10b981', // Emerald 500
+  '#f59e0b', // Amber 500
+  '#8b5cf6', // Violet 500
+  '#ec4899', // Pink 500
+  '#06b6d4', // Cyan 500
+  '#84cc16', // Lime 500
+  '#f97316', // Orange 500
+  '#6366f1', // Indigo 500
 ];
 
 export function AnalyticsDashboard({
@@ -34,6 +35,16 @@ export function AnalyticsDashboard({
 }>) {
   const [timeRange, setTimeRange] = useState<'Week' | 'Month' | 'Year'>('Month');
   const [chartType, setChartType] = useState<ChartType>('Bar');
+  const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
+
+  // Sync theme
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const { totalIncome, totalExpense, chartEntries, netBalance, savingsRate, expenseByCategory, aiInsight } =
     useMemo(() => {
@@ -59,20 +70,7 @@ export function AnalyticsDashboard({
           chartMap[w] = { income: 0, expense: 0 };
         });
       } else if (timeRange === 'Year') {
-        const months = [
-          'ม.ค.',
-          'ก.พ.',
-          'มี.ค.',
-          'เม.ย.',
-          'พ.ค.',
-          'มิ.ย.',
-          'ก.ค.',
-          'ส.ค.',
-          'ก.ย.',
-          'ต.ค.',
-          'พ.ย.',
-          'ธ.ค.',
-        ];
+        const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
         months.forEach((m) => {
           orderedKeys.push(m);
           chartMap[m] = { income: 0, expense: 0 };
@@ -123,7 +121,6 @@ export function AnalyticsDashboard({
       });
 
       const entries = orderedKeys.map((k) => [k, chartMap[k]] as [string, { income: number; expense: number }]);
-
       const expByCat = Object.entries(catMap)
         .map(([name, amount], i) => ({ name, amount, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
         .sort((a, b) => b.amount - a.amount);
@@ -226,30 +223,8 @@ export function AnalyticsDashboard({
             </div>
           </div>
 
-          <div className="h-[220px] w-full">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={chartType + timeRange}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="h-full"
-              >
-                {chartType === 'Bar' ? <BarChart entries={chartEntries} /> : <TrendChart entries={chartEntries} />}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          <div className="flex justify-center gap-6 mt-6 border-t border-slate-100 dark:border-slate-800 pt-4">
-            <div className="flex items-center gap-2">
-              <span className="size-2.5 bg-primary rounded-full"></span>
-              <span className="text-[11px] font-semibold text-secondary">รายรับ</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="size-2.5 bg-expense rounded-full"></span>
-              <span className="text-[11px] font-semibold text-secondary">รายจ่าย</span>
-            </div>
+          <div className="h-[250px] w-full">
+            <MainApexChart entries={chartEntries} type={chartType} isDark={isDark} />
           </div>
         </section>
 
@@ -278,21 +253,6 @@ export function AnalyticsDashboard({
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white dark:bg-surface-dark rounded-3xl p-4 border border-border dark:border-slate-800 shadow-sm">
-            <p className="text-[11px] font-semibold text-secondary mb-1">อัตราออม</p>
-            <p className={`text-lg font-black ${savingsRate >= 0 ? 'text-primary' : 'text-expense'}`}>
-              {savingsRate.toFixed(0)}%
-            </p>
-          </div>
-          <div className="bg-white dark:bg-surface-dark rounded-3xl p-4 border border-border dark:border-slate-800 shadow-sm">
-            <p className="text-[11px] font-semibold text-secondary mb-1">เฉลี่ยรายจ่าย</p>
-            <p className="text-lg font-black text-text-dark dark:text-white">
-              {fmt(totalExpense / Math.max(chartEntries.length, 1), 2)}
-            </p>
-          </div>
-        </div>
-
         {/* ── Donut Chart: Expense Breakdown ── */}
         <section className="bg-white dark:bg-surface-dark rounded-[1.5rem] p-5 shadow-sm border border-border dark:border-slate-800">
           <p className="text-[11px] font-semibold text-secondary mb-5">สัดส่วนรายจ่าย</p>
@@ -301,13 +261,11 @@ export function AnalyticsDashboard({
               ยังไม่มีข้อมูลรายจ่ายในช่วงนี้
             </div>
           ) : (
-            <div className="flex items-center gap-6">
-              {/* Donut SVG */}
-              <div className="shrink-0">
-                <DonutChart data={expenseByCategory} total={totalExpense} />
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="w-full sm:w-1/2 flex justify-center">
+                <DonutApexChart data={expenseByCategory} isDark={isDark} />
               </div>
-              {/* Legend */}
-              <div className="flex-1 space-y-2.5 min-w-0">
+              <div className="flex-1 w-full space-y-2.5 min-w-0">
                 {expenseByCategory.slice(0, 5).map((cat) => {
                   const pct = totalExpense > 0 ? ((cat.amount / totalExpense) * 100).toFixed(1) : '0';
                   return (
@@ -334,243 +292,165 @@ export function AnalyticsDashboard({
   );
 }
 
+/* ── Main Chart Component ── */
+function MainApexChart({ entries, type, isDark }: any) {
+  const categories = entries.map(([k]: any) => k);
+  const incomeData = entries.map(([, v]: any) => v.income);
+  const expenseData = entries.map(([, v]: any) => v.expense);
+
+  const options: ApexCharts.ApexOptions = {
+    chart: {
+      type: type === 'Bar' ? 'bar' : 'area',
+      toolbar: { show: false },
+      zoom: { enabled: false },
+      fontFamily: 'Inter, system-ui, sans-serif',
+      background: 'transparent',
+    },
+    theme: {
+      mode: isDark ? 'dark' : 'light',
+    },
+    stroke: {
+      show: true,
+      width: type === 'Bar' ? 0 : 3.5,
+      curve: 'smooth',
+      lineCap: 'round',
+    },
+    colors: ['#10b981', '#ef4444'],
+    fill: {
+      type: type === 'Bar' ? 'solid' : 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.3,
+        opacityTo: 0,
+        stops: [0, 95],
+      },
+    },
+    grid: {
+      borderColor: isDark ? '#1e293b' : '#f1f5f9',
+      strokeDashArray: 6,
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true } },
+      padding: { top: 0, right: 0, bottom: 0, left: 10 },
+    },
+    markers: {
+      size: 0,
+      hover: { size: 6, sizeOffset: 3 },
+    },
+    dataLabels: { enabled: false },
+    legend: { show: false },
+    xaxis: {
+      categories,
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      labels: {
+        style: {
+          colors: '#94a3b8',
+          fontSize: '10px',
+          fontWeight: 600,
+        },
+      },
+    },
+    yaxis: {
+      labels: {
+        style: {
+          colors: '#94a3b8',
+          fontSize: '10px',
+          fontWeight: 600,
+        },
+        formatter: (val) => formatMoney(val, { compact: true, maximumFractionDigits: 1 }),
+      },
+    },
+    tooltip: {
+      theme: isDark ? 'dark' : 'light',
+      y: {
+        formatter: (val) => formatMoney(val),
+      },
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 8,
+        borderRadiusApplication: 'end',
+        columnWidth: '55%',
+        dataLabels: { position: 'top' },
+      },
+    },
+  };
+
+  const series = [
+    { name: 'รายรับ', data: incomeData },
+    { name: 'รายจ่าย', data: expenseData },
+  ];
+
+  return (
+    <Chart
+      options={options}
+      series={series}
+      type={type === 'Bar' ? 'bar' : 'area'}
+      height="100%"
+      width="100%"
+    />
+  );
+}
+
 /* ── Donut Chart Component ── */
+function DonutApexChart({ data, isDark }: any) {
+  const labels = data.map((d: any) => d.name);
+  const series = data.map((d: any) => d.amount);
+  const colors = data.map((d: any) => d.color);
 
-function DonutChart({
-  data,
-  total,
-}: Readonly<{ data: { name: string; amount: number; color: string }[]; total: number }>) {
-  const size = 120;
-  const strokeWidth = 18;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const center = size / 2;
-
-  let accumulated = 0;
-  const segments = data.map((item) => {
-    const pct = total > 0 ? item.amount / total : 0;
-    const dashLength = pct * circumference;
-    const dashGap = circumference - dashLength;
-    const offset = -(accumulated * circumference) + circumference * 0.25; // start from top
-    accumulated += pct;
-    return { ...item, dashLength, dashGap, offset };
-  });
-
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {/* Background ring */}
-      <circle
-        cx={center}
-        cy={center}
-        r={radius}
-        fill="none"
-        stroke="var(--border)"
-        strokeWidth={strokeWidth}
-        opacity={0.4}
-      />
-      {/* Segments */}
-      {segments.map((seg, i) => (
-        <motion.circle
-          key={seg.name}
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke={seg.color}
-          strokeWidth={strokeWidth}
-          strokeDasharray={`${seg.dashLength} ${seg.dashGap}`}
-          strokeDashoffset={seg.offset}
-          strokeLinecap="round"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: i * 0.08, duration: 0.4 }}
-        />
-      ))}
-      {/* Center label */}
-      <text
-        x={center}
-        y={center - 6}
-        textAnchor="middle"
-        className="fill-text-dark dark:fill-white"
-        style={{ fontSize: '14px', fontWeight: 900 }}
-      >
-        {formatMoney(total, { compact: true, maximumFractionDigits: 1 })}
-      </text>
-      <text
-        x={center}
-        y={center + 12}
-        textAnchor="middle"
-        className="fill-secondary"
-        style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}
-      >
-        รวม
-      </text>
-    </svg>
-  );
-}
-
-/* ── Pro-Level Standardized Charts ── */
-
-const formatYAxis = (val: number) => formatMoney(val, { compact: true, maximumFractionDigits: 1 });
-
-function BarChart({ entries }: any) {
-  const maxVal = Math.max(...entries.map(([, v]: any) => Math.max(v.income, v.expense)), 100);
-  const ticks = [maxVal, maxVal * 0.5, 0];
-
-  return (
-    <div className="relative h-full flex flex-col pt-2">
-      <div className="absolute inset-0 flex flex-col justify-between pb-6 pointer-events-none z-0">
-        {ticks.map((tick) => (
-          <div
-            key={tick}
-            className={`flex-1 border-t border-slate-100 dark:border-slate-800 flex items-start ${tick === 0 ? 'border-none' : ''}`}
-          >
-            <span className="text-[9px] text-secondary opacity-40 font-bold -mt-3 bg-white dark:bg-surface-dark px-1">
-              {formatYAxis(tick)}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex-1 flex justify-between items-end pb-6 z-10 px-2 sm:px-4">
-        {entries.map(([key, val]: any) => (
-          <div key={key} className="flex flex-col items-center h-full w-full justify-end group">
-            <div className="flex items-end justify-center w-full h-full pb-0 gap-0.5 sm:gap-1">
-              <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: `${(val.income / maxVal) * 100}%` }}
-                transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-                className="w-1.5 sm:w-2.5 bg-primary rounded-t-sm"
-                style={{ minHeight: val.income > 0 ? '4px' : '0' }}
-              />
-              <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: `${(val.expense / maxVal) * 100}%` }}
-                transition={{ type: 'spring', damping: 20, stiffness: 100, delay: 0.1 }}
-                className="w-1.5 sm:w-2.5 bg-expense rounded-t-sm"
-                style={{ minHeight: val.expense > 0 ? '4px' : '0' }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 sm:px-4">
-        {entries.map(([key]: any) => (
-          <div key={key} className="flex-1 text-center">
-            <span className="text-[9px] font-bold text-secondary uppercase opacity-60">
-              {key.length > 3 ? key.substring(0, 3) : key}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TrendChart({ entries }: any) {
-  const maxV = Math.max(...entries.map(([, v]: any) => Math.max(v.income, v.expense)), 100);
-  const width = 1000;
-  const height = 400;
-
-  const getPoints = (key: 'income' | 'expense') => {
-    return entries.map(([, v]: any, i: number) => ({
-      x: (i / (entries.length - 1 || 1)) * width,
-      y: height - (v[key] / maxV) * height,
-    }));
+  const options: ApexCharts.ApexOptions = {
+    chart: {
+      type: 'donut',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      background: 'transparent',
+    },
+    theme: {
+      mode: isDark ? 'dark' : 'light',
+    },
+    colors,
+    stroke: { show: false },
+    dataLabels: { enabled: false },
+    legend: { show: false },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '75%',
+          labels: {
+            show: true,
+            total: {
+              show: true,
+              label: 'รวม',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: '#94a3b8',
+              formatter: (w) => {
+                const total = w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
+                return formatMoney(total, { compact: true, maximumFractionDigits: 1 });
+              },
+            },
+            value: {
+              fontSize: '16px',
+              fontWeight: 900,
+              color: isDark ? '#fff' : '#0f172a',
+            },
+          },
+        },
+      },
+    },
+    tooltip: {
+      theme: isDark ? 'dark' : 'light',
+      y: {
+        formatter: (val) => formatMoney(val),
+      },
+    },
   };
 
-  const incPoints = getPoints('income');
-  const expPoints = getPoints('expense');
-
-  const spline = (points: { x: number; y: number }[]) => {
-    if (points.length === 0) return '';
-    if (points.length === 1) return `M ${points[0].x},${points[0].y}`;
-    let path = `M ${points[0].x},${points[0].y}`;
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = i > 0 ? points[i - 1] : points[0];
-      const p1 = points[i];
-      const p2 = points[i + 1];
-      const p3 = i === points.length - 2 ? p2 : points[i + 2];
-
-      const cp1x = p1.x + (p2.x - p0.x) / 6;
-      const cp1y = p1.y + (p2.y - p0.y) / 6;
-      const cp2x = p2.x - (p3.x - p1.x) / 6;
-      const cp2y = p2.y - (p3.y - p1.y) / 6;
-
-      path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
-    }
-    return path;
-  };
-
-  const ticks = [maxV, maxV * 0.5, 0];
-
   return (
-    <div className="relative h-full flex flex-col pt-2">
-      <div className="absolute inset-0 flex flex-col justify-between pb-6 pointer-events-none z-0">
-        {ticks.map((tick) => (
-          <div
-            key={tick}
-            className={`flex-1 border-t border-slate-100 dark:border-slate-800 flex items-start ${tick === 0 ? 'border-none' : ''}`}
-          >
-            <span className="text-[9px] text-secondary opacity-40 font-bold -mt-3 bg-white dark:bg-surface-dark px-1">
-              {formatYAxis(tick)}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex-1 w-full relative z-10 pb-6 overflow-visible">
-        <svg
-          viewBox={`0 -10 ${width} ${height + 20}`}
-          preserveAspectRatio="none"
-          className="size-full overflow-visible"
-        >
-          <defs>
-            <filter id="glowInc" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="15" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-            <filter id="glowExp" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="15" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-          </defs>
-
-          <motion.path
-            d={spline(incPoints)}
-            fill="none"
-            stroke="var(--primary)"
-            strokeWidth="8"
-            strokeLinecap="round"
-            filter="url(#glowInc)"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 1.5, ease: 'easeInOut' }}
-          />
-          <motion.path
-            d={spline(expPoints)}
-            fill="none"
-            stroke="var(--expense)"
-            strokeWidth="8"
-            strokeLinecap="round"
-            filter="url(#glowExp)"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 1.5, ease: 'easeInOut', delay: 0.2 }}
-          />
-        </svg>
-      </div>
-
-      <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 sm:px-4">
-        {entries.map(([key]: any) => (
-          <div key={key} className="flex-1 text-center">
-            <span className="text-[9px] font-bold text-secondary uppercase opacity-60">
-              {key.length > 3 ? key.substring(0, 3) : key}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
+    <Chart
+      options={options}
+      series={series}
+      type="donut"
+      width={240}
+    />
   );
 }

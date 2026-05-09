@@ -367,9 +367,12 @@ export default function App() {
     if (!session && !isGuestMode && contentView !== 'onboarding') {
       return (
         <AuthScreen
-          onAuthSuccess={() => {
+          onAuthSuccess={(session) => {
+            if (session) setSession(session);
+            setSessionChecked(true);
             setCurrentView('dashboard');
             setBaseView('dashboard');
+            fetchTransactions();
           }}
           allowGuestReadOnly={allowGuestReadOnly}
           onContinueAsGuest={openGuestMode}

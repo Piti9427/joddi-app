@@ -4,7 +4,7 @@ import { supabase, getAuthRedirectUrl, requireEmailVerification } from '../lib/s
 import { Wallet, Mail, Lock, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 
 interface AuthScreenProps {
-  onAuthSuccess: () => void;
+  onAuthSuccess: (session?: any) => void;
   allowGuestReadOnly?: boolean;
   onContinueAsGuest?: () => void;
 }
@@ -75,7 +75,7 @@ export default function AuthScreen({
       });
 
       if (!signInError && signInData.session) {
-        onAuthSuccess();
+        onAuthSuccess(signInData.session);
         return;
       }
 
@@ -92,7 +92,7 @@ export default function AuthScreen({
 
       // Autologin after signup or immediate session
       if (signUpData.session) {
-        onAuthSuccess();
+        onAuthSuccess(signUpData.session);
         return;
       }
 
@@ -104,7 +104,7 @@ export default function AuthScreen({
       }
 
       // Final fallback
-      onAuthSuccess();
+      onAuthSuccess(signUpData.session || undefined);
     } catch (err: any) {
       setAuthPhase('error');
       setErrorMsg(mapAuthError(err?.message || 'Authentication failed'));

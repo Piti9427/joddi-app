@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn, RefreshCw, Trash2 } from 'lucide-react';
+import { Bell, Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn, RefreshCw, Trash2, Banknote } from 'lucide-react';
 import { ViewState } from '../App';
 import { cancelDailyReminder, scheduleDailyReminder } from '../lib/device';
 import { saveLocalProfile, syncAllOfflineData } from '../lib/supabase';
@@ -13,6 +13,10 @@ export function Settings({
   onClearLocalData,
   userEmail,
   userId,
+  lang,
+  onLanguageChange,
+  currency,
+  onCurrencyChange,
 }: Readonly<{
   onNavigate: (v: ViewState) => void;
   isAuthenticated?: boolean;

@@ -8,6 +8,7 @@ import {
   syncPendingTransactions,
   type LocalReceiptDraft,
 } from '../lib/supabase';
+import { parseReceiptImage } from '../lib/ocr';
 
 export function ReviewReceipt({
   onNavigate,
@@ -31,7 +32,10 @@ export function ReviewReceipt({
     if (!image) return;
 
     setReceiptImage(image);
-    setStatusMessage('กำลังบันทึกสลิปแบบร่าง...');
+    setStatusMessage('กำลังอ่านข้อมูลด้วย AI...');
+
+    // Run OCR in parallel with saving draft
+    const ocrPromise = parseReceiptImage(image);
 
     const draft = createLocalReceiptDraft({
       imageDataUrl: image,
@@ -42,7 +46,18 @@ export function ReviewReceipt({
 
     const savedDraft = await saveLocalReceiptDraft(draft);
     setReceiptDraft(savedDraft);
-    setStatusMessage('บันทึกสลิปแล้ว จะตรวจทานต่อหรือจบเลยก็ได้');
+
+    // Wait for OCR and update state
+    const parsed = await ocrPromise;
+    if (parsed) {
+      setMerchant(parsed.merchant);
+      setAmount(parsed.amount.toString());
+      setDate(parsed.date);
+      setCategory(parsed.category);
+      setStatusMessage(`AI อ่านเรียบร้อย (ความมั่นใจ ${Math.round(parsed.confidence * 100)}%)`);
+    } else {
+      setStatusMessage('บันทึกสลิปแล้ว จะตรวจทานต่อหรือจบเลยก็ได้');
+    }
 
     syncPendingTransactions()
       .then((result) => {
