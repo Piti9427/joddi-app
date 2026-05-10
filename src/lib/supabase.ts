@@ -272,7 +272,7 @@ function newClientId() {
 
   // Fallback สำหรับสภาพแวดล้อมที่ไม่มี randomUUID (ใช้ crypto.getRandomValues แทน Math.random เพื่อความปลอดภัย)
   return '10000000-1000-4000-8000-100000000000'.replaceAll(/[018]/g, (char) => {
-    const c = Number(char);
+    const c = Number.parseInt(char, 10);
     const randomByte = globalThis.crypto.getRandomValues(new Uint8Array(1))[0];
     return (c ^ (randomByte & (15 >> (c / 4)))).toString(16);
   });
@@ -368,7 +368,7 @@ async function getRawStore<T>(storeName: StoreName): Promise<T[]> {
 function sortTransactions(transactions: LocalTransaction[]) {
   return [...transactions]
     .filter((transaction) => !transaction.deletedAt)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .sort((a, b) => b.date.localeCompare(a.date));
 }
 
 function sortCategories(categories: LocalCategory[]) {
@@ -384,7 +384,7 @@ function sortBudgets(budgets: LocalBudget[]) {
 function sortReceiptDrafts(receipts: LocalReceiptDraft[]) {
   return [...receipts]
     .filter((receipt) => !receipt.deletedAt)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 function buildLocalCategory(
