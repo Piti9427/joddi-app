@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn, RefreshCw, Trash2, Banknote } from 'lucide-react';
+import { Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn, RefreshCw, Trash2, Banknote, ChevronLeft } from 'lucide-react';
 import { ViewState } from '../App';
 import { saveLocalProfile, syncAllOfflineData } from '../lib/supabase';
 import { getTranslation } from '../lib/i18n';
@@ -98,7 +98,12 @@ export function Settings({
         className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
-        <div className="size-10 shrink-0"></div>
+        <button
+          onClick={() => onNavigate('dashboard')}
+          className="size-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl text-secondary hover:text-text-dark transition-colors"
+        >
+          <ChevronLeft size={24} />
+        </button>
         <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">ตั้งค่า</h1>
         <div className="size-10 shrink-0"></div>
       </header>

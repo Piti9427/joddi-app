@@ -12,6 +12,7 @@ import {
   Wallet,
   ChevronDown,
   AlertCircle,
+  ChevronLeft,
 } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
 import { getCurrencySymbol } from '../lib/formatters';
@@ -19,6 +20,7 @@ import { getLocalCategories, type LocalCategory, saveLocalTransaction, deleteLoc
 import { parseLocalDate } from '../lib/dateUtils';
 import { lightHaptic } from '../lib/device';
 import { motion, AnimatePresence } from 'motion/react';
+import { ICONS, getCategoryColorStyles } from '../lib/categoryUtils';
 
 const PAYMENT_METHODS = [
   { id: 'cash', label: 'เงินสด', icon: <Banknote size={18} strokeWidth={1.5} /> },
@@ -135,9 +137,9 @@ export function TransactionDetail({
       <div className="pt-5 px-4 pb-3 safe-top bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center border-b border-border dark:border-slate-800">
         <button
           onClick={() => onNavigate(finalReturnView)}
-          className="size-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow-sm text-secondary hover:text-text-dark transition-colors"
+          className="size-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-xl shadow-sm text-secondary hover:text-text-dark transition-colors"
         >
-          <X size={20} />
+          <ChevronLeft size={24} />
         </button>
         <h2 className="text-sm font-black tracking-tight text-slate-900 dark:text-white uppercase">
           {isEditing ? 'แก้ไขรายการ' : 'รายละเอียด'}
@@ -186,26 +188,52 @@ export function TransactionDetail({
             <p className="text-[11px] text-secondary font-bold uppercase tracking-widest mb-3 px-1">หมวดหมู่</p>
             {isEditing ? (
               <div className="flex flex-wrap gap-2">
-                {filteredCategories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setCategory(cat.name)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-                      category === cat.name
-                        ? 'bg-primary/10 border-primary/30 text-primary'
-                        : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary'
-                    }`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
+                {filteredCategories.map((cat) => {
+                  const catColorStyles = getCategoryColorStyles(cat.color);
+                  const isSelected = category === cat.name;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setCategory(cat.name)}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-2 ${
+                        isSelected
+                          ? 'bg-primary/10 border-primary/30 text-primary shadow-sm'
+                          : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary'
+                      }`}
+                    >
+                      <div 
+                        className={`size-4 rounded-full flex items-center justify-center ${isSelected ? '' : 'opacity-60'}`}
+                        style={catColorStyles.style}
+                      >
+                        <span className={catColorStyles.className}>
+                          {React.cloneElement((ICONS[cat.iconName] || <Tag />) as React.ReactElement, { size: 10, strokeWidth: 2.5 })}
+                        </span>
+                      </div>
+                      {cat.name}
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl">
-                <div className="size-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-500 shadow-sm">
-                  <Tag size={18} strokeWidth={1.5} />
-                </div>
-                <span className="font-bold text-slate-900 dark:text-white">{category}</span>
+                {(() => {
+                  const catObj = userCategories.find(c => c.name === category);
+                  const colorStyles = catObj ? getCategoryColorStyles(catObj.color) : { style: {}, className: 'text-slate-500' };
+                  const iconNode = (catObj && ICONS[catObj.iconName]) || <Tag size={18} />;
+                  return (
+                    <>
+                      <div 
+                        className="size-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-sm"
+                        style={colorStyles.style}
+                      >
+                        <span className={colorStyles.className}>
+                          {React.cloneElement(iconNode as React.ReactElement, { size: 18, strokeWidth: 1.5 })}
+                        </span>
+                      </div>
+                      <span className="font-bold text-slate-900 dark:text-white">{category}</span>
+                    </>
+                  );
+                })()}
               </div>
             )}
           </section>

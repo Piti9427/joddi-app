@@ -22,6 +22,7 @@ import {
   Wand2,
   Camera,
   Landmark,
+  ChevronLeft,
 } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
 import { getCurrencySymbol } from '../lib/formatters';
@@ -31,6 +32,7 @@ import { parseSmartInput, toTransactionDraft } from '../lib/smartInput';
 import { parseLocalDate } from '../lib/dateUtils';
 import { lightHaptic } from '../lib/device';
 import { getTranslation } from '../lib/i18n';
+import { ICONS, getCategoryColorStyles } from '../lib/categoryUtils';
 
 const PAYMENT_METHODS = [
   { id: 'cash', label: 'เงินสด', icon: <Banknote size={18} strokeWidth={1.5} /> },
@@ -242,9 +244,9 @@ export function AddTransaction({
         <div className="flex justify-between items-center mb-4 px-1">
           <button
             onClick={closePanel}
-            className="size-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow-sm text-secondary hover:text-text-dark transition-colors"
+            className="size-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-xl shadow-sm text-secondary hover:text-text-dark transition-colors"
           >
-            <X size={20} />
+            <ChevronLeft size={24} />
           </button>
 
           {/* Mode Toggle: Manual / AI */}
@@ -474,41 +476,24 @@ function CategoryChip({
   onClick: () => void;
   key?: React.Key;
 }>) {
-  const getIcon = () => {
-    switch (icon) {
-      case 'Utensils':
-        return <Utensils size={16} />;
-      case 'Coffee':
-        return <Coffee size={16} />;
-      case 'Car':
-        return <Car size={16} />;
-      case 'Receipt':
-        return <Receipt size={16} />;
-      case 'ShoppingBag':
-        return <ShoppingBag size={16} />;
-      case 'Shield':
-        return <Shield size={16} />;
-      case 'Banknote':
-        return <Banknote size={16} />;
-      case 'Gift':
-        return <Gift size={16} />;
-      case 'Tag':
-        return <Tag size={16} />;
-      default:
-        return <Tag size={16} />;
-    }
-  };
+  const iconNode = ICONS[icon] || <Tag size={16} />;
+  const colorStyles = getCategoryColorStyles(color);
 
   return (
     <button
       onClick={onClick}
       className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all border whitespace-nowrap active:scale-95 ${
         selected
-          ? `bg-white dark:bg-slate-800 border-primary shadow-md shadow-primary/10 ${color} ring-1 ring-primary/20`
+          ? `bg-white dark:bg-slate-800 border-primary shadow-md shadow-primary/10 ring-1 ring-primary/20`
           : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary hover:border-slate-200'
       }`}
     >
-      <span className={selected ? color : 'text-inherit opacity-60'}>{getIcon()}</span>
+      <span 
+        className={selected ? '' : 'opacity-70'} 
+        style={colorStyles.style}
+      >
+        {React.cloneElement(iconNode as React.ReactElement, { size: 16 })}
+      </span>
       <span className="text-[13px] font-extrabold">{label}</span>
     </button>
   );

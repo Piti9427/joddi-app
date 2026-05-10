@@ -1,12 +1,13 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Search, Filter, TrendingDown, TrendingUp, Calendar, Check } from 'lucide-react';
+import { Search, Filter, Calendar, Check, Receipt, ChevronLeft } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatMoney, getUserLocale } from '../lib/formatters';
 import { getLocalCategories, LocalCategory } from '../lib/supabase';
 import { getDateRangeBoundaries, parseLocalDate } from '../lib/dateUtils';
 import { DateRangePicker } from './DateRangePicker';
+import { ICONS, getCategoryColorStyles } from '../lib/categoryUtils';
 
 type VirtualRow =
   | { type: 'dateHeader'; id: string; date: string }
@@ -66,11 +67,13 @@ function checkDateBoundary(tTime: number, filter: DateFilterType, b: any, start:
 export function TransactionHistory({
   onNavigate,
   transactions,
+  categories,
   lang,
   currency,
 }: Readonly<{
   onNavigate: (v: ViewState, payload?: any) => void;
   transactions: Transaction[];
+  categories?: LocalCategory[];
   lang?: 'th' | 'en';
   currency?: string;
 }>) {
@@ -83,12 +86,16 @@ export function TransactionHistory({
   const [customEndDate, setCustomEndDate] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [categories, setCategories] = useState<LocalCategory[]>([]);
+  const [localCategories, setLocalCategories] = useState<LocalCategory[]>(categories || []);
   const scrollParentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    getLocalCategories().then(setCategories);
-  }, []);
+    if (categories && categories.length > 0) {
+      setLocalCategories(categories);
+    } else {
+      getLocalCategories().then(setLocalCategories);
+    }
+  }, [categories]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -221,8 +228,14 @@ export function TransactionHistory({
         className="flex flex-col bg-white dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 shrink-0 z-20"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 16px)' }}
       >
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-black text-text-dark dark:text-white">
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => onNavigate('dashboard')}
+            className="size-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl text-secondary hover:text-text-dark transition-colors"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <h1 className="text-2xl font-black text-text-dark dark:text-white flex-1">
             {currentLang === 'en' ? 'Transactions' : 'รายการทั้งหมด'}
           </h1>
           <div className="flex items-center gap-2">
@@ -418,6 +431,7 @@ export function TransactionHistory({
                   ) : (
                     <TransactionRow
                       transaction={row.transaction}
+                      categories={localCategories}
                       formatCurrency={formatCurrency}
                       onClick={(id) => onNavigate('transaction_detail', id)}
                     />
@@ -455,20 +469,28 @@ function DateHeader({ label }: Readonly<{ label: string }>) {
 
 function TransactionRow({
   transaction,
+  categories = [],
   formatCurrency,
   onClick,
 }: Readonly<{
   transaction: Transaction;
+  categories?: LocalCategory[];
   formatCurrency: (value: number) => string;
   onClick?: (id: string) => void;
 }>) {
   const isExpense = transaction.type === 'Expense';
+  const categoryObj = categories.find((c) => c.name === transaction.category);
+  const iconNode = (categoryObj && ICONS[categoryObj.iconName]) || <Receipt size={22} />;
+  const colorStyles = categoryObj ? getCategoryColorStyles(categoryObj.color) : { style: {}, className: isExpense ? 'text-expense' : 'text-income' };
+
   const getSyncLabel = (status: string) => {
     if (status === 'pending') return 'รอซิงก์';
     if (status === 'failed') return 'ซิงก์ไม่สำเร็จ';
     return '';
   };
   const syncLabel = getSyncLabel(transaction.syncStatus);
+
+  const fallbackClass = isExpense ? 'bg-expense-bg text-expense' : 'bg-income-bg text-income';
 
   return (
     <motion.div
@@ -477,11 +499,14 @@ function TransactionRow({
       className="mb-2 bg-white dark:bg-surface-dark p-4 rounded-[1.35rem] shadow-sm border border-border/40 dark:border-slate-800/40 flex items-center gap-4 hover:shadow-md transition-all group cursor-pointer"
     >
       <div
-        className={`size-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
-          isExpense ? 'bg-expense-bg text-expense' : 'bg-income-bg text-income'
+        className={`size-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors shadow-inner ${
+          categoryObj ? '' : fallbackClass
         }`}
+        style={colorStyles.style}
       >
-        {isExpense ? <TrendingDown size={22} strokeWidth={2} /> : <TrendingUp size={22} strokeWidth={2} />}
+        <span className={colorStyles.className}>
+          {React.cloneElement(iconNode as React.ReactElement, { size: 22, strokeWidth: 2 })}
+        </span>
       </div>
       <div className="flex-1 overflow-hidden">
         <p className="font-extrabold text-[15px] text-text-dark dark:text-white truncate">

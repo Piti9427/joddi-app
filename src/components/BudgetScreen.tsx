@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Target, Plus, Trash2, X, ChevronDown } from 'lucide-react';
+import { Target, Plus, Trash2, X, ChevronDown, ChevronLeft } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import { formatMoney } from '../lib/formatters';
 import { motion, AnimatePresence } from 'motion/react';
@@ -157,7 +157,12 @@ export function BudgetScreen({
         className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
-        <div className="size-10 shrink-0"></div>
+        <button
+          onClick={() => onNavigate('dashboard')}
+          className="size-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl text-secondary hover:text-text-dark transition-colors"
+        >
+          <ChevronLeft size={24} />
+        </button>
         <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">งบประมาณ</h1>
         <button
           onClick={() => setShowAddForm(true)}

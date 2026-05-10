@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, BadgeCheck, Banknote, Calendar, Camera, CheckCircle, FileEdit, Store, Tag } from 'lucide-react';
+import { ChevronLeft, BadgeCheck, Banknote, Calendar, Camera, CheckCircle, FileEdit, Store, Tag } from 'lucide-react';
 import { ViewState } from '../App';
 import { captureReceiptPhoto, lightHaptic } from '../lib/device';
 import {
@@ -109,9 +109,9 @@ export function ReviewReceipt({
       >
         <button
           onClick={() => onNavigate('dashboard')}
-          className="text-text-dark dark:text-slate-100 flex size-10 items-center justify-center rounded-full hover:bg-input-bg dark:hover:bg-slate-800 transition-colors"
+          className="size-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl text-secondary hover:text-text-dark transition-colors"
         >
-          <ArrowLeft size={24} />
+          <ChevronLeft size={24} />
         </button>
         <h1 className="text-lg font-bold leading-tight flex-1 text-center pr-10 text-text-dark dark:text-white">
           ตรวจสลิป

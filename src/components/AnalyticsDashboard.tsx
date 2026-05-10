@@ -14,11 +14,13 @@ import {
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { ViewState, Transaction } from '../App';
-import { ArrowUpRight, ArrowDownRight, BarChart3, BrainCircuit, LineChart, Sparkles } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, BarChart3, BrainCircuit, LineChart, Sparkles, ChevronLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { getLocalAiInsight } from '../lib/aiInsights';
 import { formatMoney } from '../lib/formatters';
 import { getDateRangeBoundaries } from '../lib/dateUtils';
+import { LocalCategory } from '../lib/supabase';
+import { isHex } from '../lib/categoryUtils';
 
 // Register Chart.js components
 ChartJS.register(
@@ -57,9 +59,15 @@ const CATEGORY_COLORS = [
 export function AnalyticsDashboard({
   onNavigate,
   transactions,
+  categories = [],
+  lang = 'th',
+  currency = 'THB',
 }: Readonly<{
   onNavigate: (v: ViewState, payload?: any) => void;
   transactions: Transaction[];
+  categories?: LocalCategory[];
+  lang?: 'th' | 'en';
+  currency?: string;
 }>) {
   const [timeRange, setTimeRange] = useState<'Week' | 'Month' | 'Year'>('Month');
   const [chartType, setChartType] = useState<ChartType>('Line');
@@ -147,8 +155,36 @@ export function AnalyticsDashboard({
     });
 
     const entries = orderedKeys.map((k) => [k, chartMap[k]] as [string, { income: number; expense: number }]);
+    
+    // Logic to use category colors
+    const colorMap = new Map<string, string>();
+    categories.forEach(cat => {
+      if (isHex(cat.color)) {
+        colorMap.set(cat.name, cat.color);
+      } else {
+        const colorRegex = /text-([a-z0-9-]+)/;
+        const match = colorRegex.exec(cat.color);
+        if (match) {
+          const twColors: Record<string, string> = {
+            'rose-500': '#f43f5e', 'rose-400': '#fb7185',
+            'amber-600': '#d97706', 'amber-500': '#f59e0b',
+            'blue-500': '#3b82f6', 'blue-400': '#60a5fa',
+            'emerald-500': '#10b981', 'emerald-400': '#34d399',
+            'primary': '#3b82f6', 'secondary': '#64748b',
+            'pink-500': '#ec4899', 'purple-500': '#a855f7',
+            'indigo-500': '#6366f1', 'orange-500': '#f97316'
+          };
+          colorMap.set(cat.name, twColors[match[1]] || '#94a3b8');
+        }
+      }
+    });
+
     const expByCat = Object.entries(catMap)
-      .map(([name, amount], i) => ({ name, amount, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
+      .map(([name, amount], i) => ({ 
+        name, 
+        amount, 
+        color: colorMap.get(name) || CATEGORY_COLORS[i % CATEGORY_COLORS.length] 
+      }))
       .sort((a, b) => b.amount - a.amount);
 
     return {
@@ -158,7 +194,7 @@ export function AnalyticsDashboard({
       expenseByCategory: expByCat,
       aiInsight: getLocalAiInsight(filtered),
     };
-  }, [transactions, timeRange]);
+  }, [transactions, timeRange, categories]);
 
   const fmt = (val: number, maximumFractionDigits = 0) =>
     formatMoney(val, {
@@ -172,14 +208,14 @@ export function AnalyticsDashboard({
         className="bg-white dark:bg-surface-dark px-4 pb-4 sticky top-0 z-20 shadow-sm border-b border-border dark:border-slate-800"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
-        <div className="flex items-center justify-between h-12 mb-4">
-          <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Analytics</h1>
+        <div className="flex items-center gap-3 h-12 mb-4">
           <button
             onClick={() => onNavigate('dashboard')}
-            className="text-xs font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full text-slate-600 dark:text-slate-400"
+            className="size-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl text-secondary hover:text-text-dark transition-colors"
           >
-            Done
+            <ChevronLeft size={24} />
           </button>
+          <h1 className="text-xl font-black tracking-tight flex-1 text-center text-slate-900 dark:text-white mr-10">Analytics</h1>
         </div>
 
         <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
