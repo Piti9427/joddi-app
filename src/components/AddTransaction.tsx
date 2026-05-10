@@ -28,6 +28,7 @@ import { getCurrencySymbol } from '../lib/formatters';
 import { getLocalCategories, type LocalCategory } from '../lib/supabase';
 import { SMART_INPUT_PREFILL_KEY, type SmartInputPrefill } from '../lib/smartInput';
 import { parseSmartInput, toTransactionDraft } from '../lib/smartInput';
+import { parseLocalDate } from '../lib/dateUtils';
 import { lightHaptic } from '../lib/device';
 import { getTranslation } from '../lib/i18n';
 
@@ -68,7 +69,7 @@ export function AddTransaction({
   const displayAmount = React.useMemo(() => {
     if (amount === '0' || amount === '') return '0';
     const [integerPart, decimalPart] = amount.split('.');
-    const formattedInteger = Number(integerPart).toLocaleString('en-US');
+    const formattedInteger = Number.parseInt(integerPart || '0', 10).toLocaleString('en-US');
     return decimalPart === undefined ? formattedInteger : `${formattedInteger}.${decimalPart}`;
   }, [amount]);
 
@@ -167,12 +168,15 @@ export function AddTransaction({
     const val = Number.parseFloat(amount);
     if (val === 0) return;
 
+    // Standardize to local ISO string
+    const isoDate = parseLocalDate(date).toISOString();
+
     await onAddTransaction({
       type,
       amount: val,
       category: category || (type === 'Expense' ? 'อื่น ๆ' : 'รายรับ'),
       note,
-      date,
+      date: isoDate,
       merchant: note || category,
       paymentMethod,
     });

@@ -21,6 +21,33 @@ import {
   Landmark,
   Smartphone,
   ChartNoAxesCombined,
+  Home,
+  Bus,
+  PlugZap,
+  Shirt,
+  ShoppingCart,
+  Wallet,
+  CircleDollarSign,
+  HandCoins,
+  TrendingUp,
+  Briefcase,
+  Gamepad2,
+  Music,
+  Plane,
+  Camera,
+  Trophy,
+  Star,
+  HeartPulse,
+  Activity,
+  GraduationCap,
+  Baby,
+  Dog,
+  Users,
+  Wifi,
+  Zap,
+  Key,
+  Hammer,
+  Scissors,
 } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import {
@@ -34,53 +61,72 @@ import {
 
 export type Category = LocalCategory;
 
-const ICONS: Record<string, React.ReactNode> = {
-  Coffee: <Coffee />,
-  Utensils: <Utensils />,
-  Car: <Car />,
-  Receipt: <Receipt />,
-  ShoppingBag: <ShoppingBag />,
-  Shield: <Shield />,
-  Banknote: <Banknote />,
-  Gift: <Gift />,
-  Tag: <Tag />,
-  BrainCircuit: <BrainCircuit />,
-  Sparkles: <Sparkles />,
-  ScanLine: <ScanLine />,
-  WalletCards: <WalletCards />,
-  Landmark: <Landmark />,
-  Smartphone: <Smartphone />,
-  ChartNoAxesCombined: <ChartNoAxesCombined />,
-};
-
 const ICON_OPTIONS = [
   { name: 'Coffee', icon: <Coffee size={20} /> },
   { name: 'Utensils', icon: <Utensils size={20} /> },
   { name: 'Car', icon: <Car size={20} /> },
+  { name: 'Bus', icon: <Bus size={20} /> },
+  { name: 'Home', icon: <Home size={20} /> },
+  { name: 'PlugZap', icon: <PlugZap size={20} /> },
   { name: 'Receipt', icon: <Receipt size={20} /> },
   { name: 'ShoppingBag', icon: <ShoppingBag size={20} /> },
-  { name: 'Shield', icon: <Shield size={20} /> },
+  { name: 'ShoppingCart', icon: <ShoppingCart size={20} /> },
+  { name: 'Shirt', icon: <Shirt size={20} /> },
+  { name: 'Wallet', icon: <Wallet size={20} /> },
   { name: 'Banknote', icon: <Banknote size={20} /> },
+  { name: 'CircleDollarSign', icon: <CircleDollarSign size={20} /> },
+  { name: 'HandCoins', icon: <HandCoins size={20} /> },
+  { name: 'TrendingUp', icon: <TrendingUp size={20} /> },
+  { name: 'Briefcase', icon: <Briefcase size={20} /> },
+  { name: 'Shield', icon: <Shield size={20} /> },
   { name: 'Gift', icon: <Gift size={20} /> },
-  { name: 'Tag', icon: <Tag size={20} /> },
-  { name: 'BrainCircuit', icon: <BrainCircuit size={20} /> },
-  { name: 'Sparkles', icon: <Sparkles size={20} /> },
-  { name: 'ScanLine', icon: <ScanLine size={20} /> },
-  { name: 'WalletCards', icon: <WalletCards size={20} /> },
-  { name: 'Landmark', icon: <Landmark size={20} /> },
+  { name: 'Gamepad2', icon: <Gamepad2 size={20} /> },
+  { name: 'Music', icon: <Music size={20} /> },
+  { name: 'Plane', icon: <Plane size={20} /> },
+  { name: 'Camera', icon: <Camera size={20} /> },
+  { name: 'Trophy', icon: <Trophy size={20} /> },
+  { name: 'Star', icon: <Star size={20} /> },
+  { name: 'HeartPulse', icon: <HeartPulse size={20} /> },
+  { name: 'Activity', icon: <Activity size={20} /> },
+  { name: 'GraduationCap', icon: <GraduationCap size={20} /> },
+  { name: 'Baby', icon: <Baby size={20} /> },
+  { name: 'Dog', icon: <Dog size={20} /> },
+  { name: 'Users', icon: <Users size={20} /> },
   { name: 'Smartphone', icon: <Smartphone size={20} /> },
-  { name: 'ChartNoAxesCombined', icon: <ChartNoAxesCombined size={20} /> },
+  { name: 'Wifi', icon: <Wifi size={20} /> },
+  { name: 'Zap', icon: <Zap size={20} /> },
+  { name: 'Key', icon: <Key size={20} /> },
+  { name: 'Hammer', icon: <Hammer size={20} /> },
+  { name: 'Scissors', icon: <Scissors size={20} /> },
+  { name: 'Tag', icon: <Tag size={20} /> },
+  { name: 'Sparkles', icon: <Sparkles size={20} /> },
 ];
 
+const ICONS: Record<string, React.ReactNode> = ICON_OPTIONS.reduce(
+  (acc, opt) => ({
+    ...acc,
+    [opt.name]: opt.icon,
+  }),
+  {},
+);
+
 const COLOR_OPTIONS = [
-  { name: 'Red', value: 'text-rose-500 dark:text-rose-400' },
-  { name: 'Blue', value: 'text-blue-500 dark:text-blue-400' },
-  { name: 'Amber', value: 'text-amber-600 dark:text-amber-400' },
-  { name: 'Green', value: 'text-primary dark:text-primary' },
-  { name: 'Indigo', value: 'text-indigo-500 dark:text-indigo-400' },
+  { name: 'Rose', value: 'text-rose-500 dark:text-rose-400' },
   { name: 'Pink', value: 'text-pink-500 dark:text-pink-400' },
-  { name: 'Emerald', value: 'text-emerald-500 dark:text-emerald-400' },
   { name: 'Fuchsia', value: 'text-fuchsia-500 dark:text-fuchsia-400' },
+  { name: 'Purple', value: 'text-purple-500 dark:text-purple-400' },
+  { name: 'Violet', value: 'text-violet-500 dark:text-violet-400' },
+  { name: 'Indigo', value: 'text-indigo-500 dark:text-indigo-400' },
+  { name: 'Blue', value: 'text-blue-500 dark:text-blue-400' },
+  { name: 'Sky', value: 'text-sky-500 dark:text-sky-400' },
+  { name: 'Cyan', value: 'text-cyan-500 dark:text-cyan-400' },
+  { name: 'Teal', value: 'text-teal-500 dark:text-teal-400' },
+  { name: 'Emerald', value: 'text-emerald-500 dark:text-emerald-400' },
+  { name: 'Green', value: 'text-green-500 dark:text-green-400' },
+  { name: 'Lime', value: 'text-lime-500 dark:text-lime-400' },
+  { name: 'Yellow', value: 'text-yellow-500 dark:text-yellow-400' },
+  { name: 'Amber', value: 'text-amber-500 dark:text-amber-400' },
+  { name: 'Orange', value: 'text-orange-500 dark:text-orange-400' },
 ];
 
 export function CategoriesManagement({
@@ -278,14 +324,14 @@ export function CategoriesManagement({
 
               <div>
                 <p className="text-[11px] text-secondary font-semibold mb-2">เลือกไอคอน</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
                   {ICON_OPTIONS.map((opt) => (
                     <button
                       key={opt.name}
                       onClick={() => setNewIcon(opt.name)}
                       className={`size-10 rounded-xl flex items-center justify-center transition-all ${newIcon === opt.name ? 'bg-primary text-white scale-110 shadow-md shadow-primary/20' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}
                     >
-                      {opt.icon}
+                      {React.cloneElement(opt.icon as React.ReactElement, { size: 18 })}
                     </button>
                   ))}
                 </div>
@@ -293,7 +339,7 @@ export function CategoriesManagement({
 
               <div>
                 <p className="text-[11px] text-secondary font-semibold mb-2">เลือกสี</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-8 gap-2">
                   {COLOR_OPTIONS.map((opt) => (
                     <button
                       key={opt.name}
@@ -383,7 +429,21 @@ function CategoryRow({
   onSave,
   onDelete,
   onCancel,
-}: any) {
+}: Readonly<{
+  category: LocalCategory;
+  count: number;
+  editing: boolean;
+  editName: string;
+  editIcon: string;
+  editColor: string;
+  setEditName: (v: string) => void;
+  setEditIcon: (v: string) => void;
+  setEditColor: (v: string) => void;
+  onEdit: () => void;
+  onSave: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
+}>) {
   const iconNode = ICONS[category.iconName] || <Receipt />;
 
   if (editing) {
@@ -404,19 +464,19 @@ function CategoryRow({
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
           {ICON_OPTIONS.map((opt) => (
             <button
               key={opt.name}
               onClick={() => setEditIcon(opt.name)}
               className={`size-9 rounded-xl flex items-center justify-center transition-all ${editIcon === opt.name ? 'bg-primary text-white shadow-md' : 'bg-white dark:bg-slate-900 text-secondary'}`}
             >
-              {React.cloneElement(opt.icon as React.ReactElement, { size: 18 })}
+              {React.cloneElement(opt.icon as React.ReactElement, { size: 16 })}
             </button>
           ))}
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-8 gap-2">
           {COLOR_OPTIONS.map((opt) => (
             <button
               key={opt.name}

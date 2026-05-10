@@ -1,13 +1,67 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Search, Filter, TrendingDown, TrendingUp } from 'lucide-react';
+import { Search, Filter, TrendingDown, TrendingUp, Calendar, Check } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { formatMoney, getUserLocale } from '../lib/formatters';
+import { getLocalCategories, LocalCategory } from '../lib/supabase';
+import { getDateRangeBoundaries, parseLocalDate } from '../lib/dateUtils';
+import { DateRangePicker } from './DateRangePicker';
 
 type VirtualRow =
   | { type: 'dateHeader'; id: string; date: string }
   | { type: 'transaction'; id: string; transaction: Transaction };
+
+type DateFilterType = 'All' | 'Today' | 'Yesterday' | 'Last7Days' | 'Last30Days' | 'ThisMonth' | 'LastMonth' | 'Custom';
+
+interface FilterParams {
+  search: string;
+  filterType: 'All' | 'Income' | 'Expense';
+  selectedCategories: string[];
+  dateFilter: DateFilterType;
+  boundaries: any; // Type defined by getDateRangeBoundaries return
+  customStart: number;
+  customEnd: number;
+}
+
+function filterTransactions(transactions: Transaction[], params: FilterParams) {
+  const { search, filterType, selectedCategories, dateFilter, boundaries, customStart, customEnd } = params;
+  const normalizedSearch = search.trim().toLowerCase();
+  return transactions.filter((transaction) => {
+    // 1. Search Filter
+    if (normalizedSearch) {
+      const inMerchant = transaction.merchant?.toLowerCase().includes(normalizedSearch);
+      const inCategory = transaction.category.toLowerCase().includes(normalizedSearch);
+      const inNote = transaction.note.toLowerCase().includes(normalizedSearch);
+      if (!inMerchant && !inCategory && !inNote) return false;
+    }
+
+    // 2. Type Filter
+    if (filterType !== 'All' && transaction.type !== filterType) return false;
+
+    // 3. Category Filter
+    if (selectedCategories.length > 0 && !selectedCategories.includes(transaction.category)) return false;
+
+    // 4. Date Filter
+    if (dateFilter === 'All') return true;
+
+    const tTime = new Date(transaction.date).getTime();
+    return checkDateBoundary(tTime, dateFilter, boundaries, customStart, customEnd);
+  });
+}
+
+function checkDateBoundary(tTime: number, filter: DateFilterType, b: any, start: number, end: number) {
+  if (filter === 'Today') return tTime >= b.todayStart;
+  if (filter === 'Yesterday') return tTime >= b.yesterdayStart && tTime <= b.yesterdayEnd;
+  if (filter === 'Last7Days') return tTime >= b.last7DaysStart;
+  if (filter === 'Last30Days') return tTime >= b.last30DaysStart;
+  if (filter === 'ThisMonth') return tTime >= b.monthStart;
+  if (filter === 'LastMonth') return tTime >= b.lastMonthStart && tTime <= b.lastMonthEnd;
+  if (filter === 'Custom') {
+    return (!start || tTime >= start) && (!end || tTime <= end);
+  }
+  return true;
+}
 
 export function TransactionHistory({
   onNavigate,
@@ -21,33 +75,57 @@ export function TransactionHistory({
   currency?: string;
 }>) {
   const currentLang = lang || 'th';
-  const locale = getUserLocale();
   const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState<'All' | 'Income' | 'Expense'>('All');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [dateFilter, setDateFilter] = useState<DateFilterType>('All');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [categories, setCategories] = useState<LocalCategory[]>([]);
   const scrollParentRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    getLocalCategories().then(setCategories);
+  }, []);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filterType !== 'All') count++;
+    if (selectedCategories.length > 0) count++;
+    if (dateFilter !== 'All') count++;
+    return count;
+  }, [filterType, selectedCategories, dateFilter]);
 
   const formatCurrency = (val: number) =>
     formatMoney(val, {
       maximumFractionDigits: 2,
       minimumFractionDigits: 2,
       currency,
-      locale,
+      locale: getUserLocale(),
     });
 
   const virtualRows = useMemo<VirtualRow[]>(() => {
-    const normalizedSearch = search.trim().toLowerCase();
     const rows: VirtualRow[] = [];
     let currentDate = '';
 
-    const filtered = transactions
-      .filter((transaction) => {
-        if (!normalizedSearch) return true;
-        return (
-          transaction.merchant?.toLowerCase().includes(normalizedSearch) ||
-          transaction.category.toLowerCase().includes(normalizedSearch) ||
-          transaction.note.toLowerCase().includes(normalizedSearch)
-        );
-      })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const boundaries = getDateRangeBoundaries();
+    const customStart = dateFilter === 'Custom' && customStartDate ? parseLocalDate(customStartDate).getTime() : 0;
+    const customEnd =
+      dateFilter === 'Custom' && customEndDate ? parseLocalDate(customEndDate).setHours(23, 59, 59, 999) : 0;
+
+    const filtered = filterTransactions(transactions, {
+      search,
+      filterType,
+      selectedCategories,
+      dateFilter,
+      boundaries,
+      customStart,
+      customEnd,
+    });
+
+    filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     filtered.forEach((transaction) => {
       const dateString = new Date(transaction.date).toDateString();
@@ -63,23 +141,79 @@ export function TransactionHistory({
     });
 
     return rows;
-  }, [transactions, search]);
+  }, [transactions, search, filterType, selectedCategories, dateFilter, customStartDate, customEndDate]);
 
   const rowVirtualizer = useVirtualizer({
     count: virtualRows.length,
     getScrollElement: () => scrollParentRef.current,
     estimateSize: (index) => (virtualRows[index]?.type === 'dateHeader' ? 44 : 88),
     overscan: 10,
-    getItemKey: (index) => virtualRows[index]?.id ?? index,
+    getItemKey: (index) => {
+      const row = virtualRows[index];
+      if (!row) return index;
+      if (row.type === 'dateHeader') return row.id;
+      return row.transaction.id || row.transaction.localId || index;
+    },
   });
 
   const formatDateHeader = (dateString: string) => {
     const today = new Date().toDateString();
     const yesterday = new Date(Date.now() - 86400000).toDateString();
-    if (dateString === today) return 'วันนี้';
-    if (dateString === yesterday) return 'เมื่อวาน';
-    return new Date(dateString).toLocaleDateString('th-TH', { weekday: 'short', month: 'short', day: 'numeric' });
+    if (dateString === today) return currentLang === 'en' ? 'Today' : 'วันนี้';
+    if (dateString === yesterday) return currentLang === 'en' ? 'Yesterday' : 'เมื่อวาน';
+    return new Date(dateString).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'th-TH', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
   };
+
+  const toggleCategory = (catName: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(catName) ? prev.filter((c) => c !== catName) : [...prev, catName]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setFilterType('All');
+    setSelectedCategories([]);
+    setDateFilter('All');
+    setCustomStartDate('');
+    setCustomEndDate('');
+    setSearch('');
+  };
+
+  const labels = useMemo(
+    () => ({
+      type:
+        currentLang === 'en'
+          ? { All: 'All', Income: 'Income', Expense: 'Expense' }
+          : { All: 'ทั้งหมด', Income: 'รายรับ', Expense: 'รายจ่าย' },
+      date:
+        currentLang === 'en'
+          ? {
+              All: 'All',
+              Today: 'Today',
+              Yesterday: 'Yesterday',
+              Last7Days: 'Last 7 Days',
+              Last30Days: 'Last 30 Days',
+              ThisMonth: 'This Month',
+              LastMonth: 'Last Month',
+              Custom: 'Custom',
+            }
+          : {
+              All: 'ทั้งหมด',
+              Today: 'วันนี้',
+              Yesterday: 'เมื่อวาน',
+              Last7Days: '7 วันที่ผ่านมา',
+              Last30Days: '30 วันที่ผ่านมา',
+              ThisMonth: 'เดือนนี้',
+              LastMonth: 'เดือนที่แล้ว',
+              Custom: 'กำหนดเอง',
+            },
+    }),
+    [currentLang],
+  );
 
   return (
     <div className="flex flex-col h-full min-h-0 relative bg-slate-50 dark:bg-background-dark">
@@ -88,13 +222,37 @@ export function TransactionHistory({
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 16px)' }}
       >
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-black text-text-dark dark:text-white">รายการทั้งหมด</h1>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            className="text-primary p-2 bg-primary/10 rounded-full hover:bg-primary/20 transition-colors"
-          >
-            <Filter size={20} />
-          </motion.button>
+          <h1 className="text-2xl font-black text-text-dark dark:text-white">
+            {currentLang === 'en' ? 'Transactions' : 'รายการทั้งหมด'}
+          </h1>
+          <div className="flex items-center gap-2">
+            {(activeFilterCount > 0 || search) && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                onClick={clearAllFilters}
+                className="text-[10px] font-black text-rose-500 bg-rose-500/10 px-3 py-1.5 rounded-full"
+              >
+                {currentLang === 'en' ? 'Clear' : 'ล้างตัวกรอง'}
+              </motion.button>
+            )}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowFilters(!showFilters)}
+              className={`p-2 rounded-full transition-all duration-300 relative ${
+                showFilters
+                  ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                  : 'text-primary bg-primary/10 hover:bg-primary/20'
+              }`}
+            >
+              <Filter size={20} />
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1 -right-1 size-5 bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-surface-dark">
+                  {activeFilterCount}
+                </span>
+              )}
+            </motion.button>
+          </div>
         </div>
 
         <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 focus-within:ring-2 focus-within:ring-primary/20 focus-within:bg-white dark:focus-within:bg-slate-700 transition-all">
@@ -109,6 +267,113 @@ export function TransactionHistory({
             className="bg-transparent border-none focus:ring-0 text-[13px] font-bold w-full placeholder:text-secondary/60 outline-none text-text-dark dark:text-white"
           />
         </div>
+
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0, marginTop: 0 }}
+              animate={{ height: 'auto', opacity: 1, marginTop: 16 }}
+              exit={{ height: 0, opacity: 0, marginTop: 0 }}
+              className="overflow-hidden space-y-4"
+            >
+              <div className="flex gap-2 pb-1 overflow-x-auto no-scrollbar">
+                {(['All', 'Income', 'Expense'] as const).map((type) => (
+                  <motion.button
+                    key={type}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setFilterType(type)}
+                    className={`px-4 py-2 rounded-xl text-[11px] font-black whitespace-nowrap transition-all ${
+                      filterType === type
+                        ? 'bg-primary text-white shadow-md shadow-primary/20'
+                        : 'bg-slate-100 dark:bg-slate-800 text-secondary hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {labels.type[type as keyof typeof labels.type]}
+                  </motion.button>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <p className="text-[10px] font-black text-secondary uppercase tracking-wider pl-1">
+                  {currentLang === 'en' ? 'Date Range' : 'ช่วงเวลา'}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    'All',
+                    'Today',
+                    'Yesterday',
+                    'Last7Days',
+                    'Last30Days',
+                    'ThisMonth',
+                    'LastMonth',
+                    'Custom',
+                  ].map((type) => (
+                    <motion.button
+                      key={type}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        setDateFilter(type as DateFilterType);
+                        if (type === 'Custom') setShowDatePicker(true);
+                      }}
+                      className={`px-3 py-2 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all ${
+                        dateFilter === type
+                          ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                          : 'bg-slate-100 dark:bg-slate-800 text-secondary hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      <Calendar size={12} />
+                      {labels.date[type as keyof typeof labels.date]}
+                    </motion.button>
+                  ))}
+                </div>
+
+                {dateFilter === 'Custom' && (customStartDate || customEndDate) && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex-1 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-xl text-[11px] font-bold text-slate-500">
+                      {customStartDate || '-'}
+                    </div>
+                    <div className="text-slate-300">→</div>
+                    <div className="flex-1 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-xl text-[11px] font-bold text-slate-500">
+                      {customEndDate || '-'}
+                    </div>
+                    <button
+                      onClick={() => setShowDatePicker(true)}
+                      className="p-2.5 bg-primary/10 text-primary rounded-xl font-bold text-[11px]"
+                    >
+                      {currentLang === 'en' ? 'Edit' : 'แก้ไข'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Category Filter */}
+              <div className="flex flex-col gap-2">
+                <p className="text-[10px] font-black text-secondary uppercase tracking-wider pl-1">
+                  {currentLang === 'en' ? 'Categories' : 'หมวดหมู่'}
+                </p>
+                <div className="flex gap-2 pb-2 overflow-x-auto no-scrollbar">
+                  {categories
+                    .filter((c) => filterType === 'All' || c.type === filterType)
+                    .map((cat) => (
+                      <motion.button
+                        key={cat.id}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => toggleCategory(cat.name)}
+                        className={`px-4 py-2 rounded-xl text-[11px] font-black whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                          selectedCategories.includes(cat.name)
+                            ? 'bg-primary text-white shadow-md shadow-primary/20'
+                            : 'bg-slate-100 dark:bg-slate-800 text-secondary'
+                        }`}
+                      >
+                        {selectedCategories.includes(cat.name) && <Check size={12} />}
+                        {cat.name}
+                      </motion.button>
+                    ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       <main ref={scrollParentRef} className="flex-1 min-h-0 overflow-y-auto ios-scroll">
@@ -124,6 +389,9 @@ export function TransactionHistory({
             <h3 className="text-lg font-black text-text-dark dark:text-white mb-2">
               {currentLang === 'en' ? 'No matching transactions' : 'ไม่พบรายการที่ตรงกัน'}
             </h3>
+            <p className="text-xs font-bold text-secondary opacity-60">
+              {currentLang === 'en' ? 'Try adjusting your filters' : 'ลองปรับตัวกรองของคุณ'}
+            </p>
           </motion.div>
         ) : (
           <div
@@ -160,6 +428,17 @@ export function TransactionHistory({
           </div>
         )}
       </main>
+
+      <DateRangePicker
+        isOpen={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+        initialStart={customStartDate}
+        initialEnd={customEndDate}
+        onSelect={(start, end) => {
+          setCustomStartDate(start);
+          setCustomEndDate(end);
+        }}
+      />
     </div>
   );
 }
@@ -197,8 +476,12 @@ function TransactionRow({
       onClick={() => onClick?.(transaction.id)}
       className="mb-2 bg-white dark:bg-surface-dark p-4 rounded-[1.35rem] shadow-sm border border-border/40 dark:border-slate-800/40 flex items-center gap-4 hover:shadow-md transition-all group cursor-pointer"
     >
-      <div className="size-12 rounded-2xl flex items-center justify-center shrink-0 bg-slate-50 dark:bg-slate-800 text-slate-500">
-        {isExpense ? <TrendingDown size={22} strokeWidth={1.5} /> : <TrendingUp size={22} strokeWidth={1.5} />}
+      <div
+        className={`size-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
+          isExpense ? 'bg-expense-bg text-expense' : 'bg-income-bg text-income'
+        }`}
+      >
+        {isExpense ? <TrendingDown size={22} strokeWidth={2} /> : <TrendingUp size={22} strokeWidth={2} />}
       </div>
       <div className="flex-1 overflow-hidden">
         <p className="font-extrabold text-[15px] text-text-dark dark:text-white truncate">
@@ -216,7 +499,7 @@ function TransactionRow({
         </div>
       </div>
       <div className="text-right">
-        <p className={`font-black text-[15px] ${isExpense ? 'text-text-dark dark:text-white' : 'text-income'}`}>
+        <p className={`font-black text-[16px] tabular-nums ${isExpense ? 'text-expense' : 'text-income'}`}>
           {isExpense ? '-' : '+'}
           {formatCurrency(transaction.amount)}
         </p>

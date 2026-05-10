@@ -8,7 +8,15 @@ interface BottomNavProps {
   canCreate?: boolean;
 }
 
-export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomNavProps) {
+export function BottomNav({
+  currentView,
+  onNavigate,
+  canCreate = true,
+}: Readonly<{
+  currentView: ViewState;
+  onNavigate: (view: ViewState) => void;
+  canCreate?: boolean;
+}>) {
   const navVisibleViews: ViewState[] = [
     'dashboard',
     'transactions',
@@ -76,12 +84,12 @@ function TabItem({
   label,
   active,
   onClick,
-}: {
+}: Readonly<{
   icon: React.ReactNode;
   label: string;
   active: boolean;
   onClick: () => void;
-}) {
+}>) {
   return (
     <button
       onClick={onClick}

@@ -16,6 +16,7 @@ import {
 import { ViewState, Transaction, TransactionType } from '../App';
 import { getCurrencySymbol } from '../lib/formatters';
 import { getLocalCategories, type LocalCategory, saveLocalTransaction, deleteLocalTransaction } from '../lib/supabase';
+import { parseLocalDate } from '../lib/dateUtils';
 import { lightHaptic } from '../lib/device';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -68,7 +69,7 @@ export function TransactionDetail({
   const displayAmount = React.useMemo(() => {
     if (amount === '0' || amount === '') return '0';
     const [integerPart, decimalPart] = amount.split('.');
-    const formattedInteger = Number(integerPart).toLocaleString('en-US');
+    const formattedInteger = Number.parseInt(integerPart || '0', 10).toLocaleString('en-US');
     return decimalPart === undefined ? formattedInteger : `${formattedInteger}.${decimalPart}`;
   }, [amount]);
 
@@ -100,6 +101,9 @@ export function TransactionDetail({
     const val = Number.parseFloat(amount);
     if (val === 0) return;
 
+    // Use parseLocalDate to avoid UTC midnight parsing issues
+    const transactionDate = parseLocalDate(date);
+
     await saveLocalTransaction({
       ...transaction,
       localId: transaction.localId || transaction.id,
@@ -107,7 +111,7 @@ export function TransactionDetail({
       amount: val,
       category,
       note,
-      date: new Date(date).toISOString(),
+      date: transactionDate.toISOString(),
       merchant: note || category,
       paymentMethod,
       syncStatus: 'pending' as const,

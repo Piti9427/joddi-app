@@ -19,6 +19,7 @@ import { ViewState, Transaction, TransactionType } from '../App';
 import { motion } from 'motion/react';
 import { formatDateShort, formatMoney, getUserLocale } from '../lib/formatters';
 import { getTranslation } from '../lib/i18n';
+import { getDateRangeBoundaries } from '../lib/dateUtils';
 
 const QUICK_ADD_TYPE_KEY = 'quick_add_type';
 
@@ -57,8 +58,8 @@ export function Dashboard({
     topExpenseCategory,
     recentTransactions,
   } = useMemo(() => {
+    const boundaries = getDateRangeBoundaries();
     const now = new Date();
-    const today = now.toDateString();
 
     const monthCategoryExpenseMap: Record<string, number> = {};
     let todayIncomeValue = 0;
@@ -69,17 +70,17 @@ export function Dashboard({
     let monthExpenseValue = 0;
 
     transactions.forEach((transaction) => {
-      const transactionDate = new Date(transaction.date);
-      const isCurrentMonth =
-        transactionDate.getMonth() === now.getMonth() && transactionDate.getFullYear() === now.getFullYear();
+      const tTime = new Date(transaction.date).getTime();
+      const isCurrentMonth = tTime >= boundaries.monthStart;
+      const isToday = tTime >= boundaries.todayStart;
 
       if (transaction.type === 'Income') {
         totalIncomeValue += transaction.amount;
-        if (transactionDate.toDateString() === today) todayIncomeValue += transaction.amount;
+        if (isToday) todayIncomeValue += transaction.amount;
         if (isCurrentMonth) monthIncomeValue += transaction.amount;
       } else {
         totalExpenseValue += transaction.amount;
-        if (transactionDate.toDateString() === today) todayExpenseValue += transaction.amount;
+        if (isToday) todayExpenseValue += transaction.amount;
         if (isCurrentMonth) {
           monthExpenseValue += transaction.amount;
           monthCategoryExpenseMap[transaction.category] =

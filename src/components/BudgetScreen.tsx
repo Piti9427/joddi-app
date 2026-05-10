@@ -3,6 +3,7 @@ import { Target, Plus, Trash2, X, ChevronDown } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import { formatMoney } from '../lib/formatters';
 import { motion, AnimatePresence } from 'motion/react';
+import { getDateRangeBoundaries } from '../lib/dateUtils';
 import {
   createLocalBudget,
   deleteLocalBudget,
@@ -79,26 +80,25 @@ export function BudgetScreen({
 
   // Calculate spending per category normalised to the currently-selected viewPeriod
   const { totalBudgetLimit, totalSpent, categoryData } = useMemo(() => {
+    const boundaries = getDateRangeBoundaries();
     const now = new Date();
 
     // Calculate spending from transactions within the viewPeriod
     const periodFilteredTx = transactions.filter((t) => {
       if (t.type !== 'Expense') return false;
-      const d = new Date(t.date);
+      const tTime = new Date(t.date).getTime();
 
       switch (viewPeriod) {
         case 'daily':
-          return d.toDateString() === now.toDateString();
-        case 'weekly': {
-          const weekAgo = new Date();
-          weekAgo.setDate(now.getDate() - 6);
-          weekAgo.setHours(0, 0, 0, 0);
-          return d >= weekAgo;
-        }
+          return tTime >= boundaries.todayStart;
+        case 'weekly':
+          return tTime >= boundaries.rollingWeekStart;
         case 'monthly':
-          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        case 'yearly':
-          return d.getFullYear() === now.getFullYear();
+          return tTime >= boundaries.monthStart;
+        case 'yearly': {
+          const yearStart = new Date(now.getFullYear(), 0, 1).getTime();
+          return tTime >= yearStart;
+        }
         default:
           return true;
       }

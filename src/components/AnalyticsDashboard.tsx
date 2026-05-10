@@ -18,6 +18,7 @@ import { ArrowUpRight, ArrowDownRight, BarChart3, BrainCircuit, LineChart, Spark
 import { motion } from 'motion/react';
 import { getLocalAiInsight } from '../lib/aiInsights';
 import { formatMoney } from '../lib/formatters';
+import { getDateRangeBoundaries } from '../lib/dateUtils';
 
 // Register Chart.js components
 ChartJS.register(
@@ -74,6 +75,7 @@ export function AnalyticsDashboard({
   }, []);
 
   const { totalIncome, totalExpense, chartEntries, expenseByCategory, aiInsight } = useMemo(() => {
+    const boundaries = getDateRangeBoundaries();
     const now = new Date();
     let income = 0;
     let expense = 0;
@@ -84,8 +86,7 @@ export function AnalyticsDashboard({
 
     if (timeRange === 'Week') {
       for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
+        const d = new Date(boundaries.now - i * 24 * 60 * 60 * 1000);
         const key = d.toLocaleDateString('th-TH', { weekday: 'short' });
         orderedKeys.push(key);
         chartMap[key] = { income: 0, expense: 0 };
@@ -96,39 +97,25 @@ export function AnalyticsDashboard({
         chartMap[w] = { income: 0, expense: 0 };
       });
     } else if (timeRange === 'Year') {
-      const months = [
-        'ม.ค.',
-        'ก.พ.',
-        'มี.ค.',
-        'เม.ย.',
-        'พ.ค.',
-        'มิ.ย.',
-        'ก.ค.',
-        'ส.ค.',
-        'ก.ย.',
-        'ต.ค.',
-        'พ.ย.',
-        'ธ.ค.',
-      ];
-      months.forEach((m) => {
-        orderedKeys.push(m);
-        chartMap[m] = { income: 0, expense: 0 };
-      });
+      for (let m = 0; m < 12; m++) {
+        const d = new Date(now.getFullYear(), m, 1);
+        const key = d.toLocaleDateString('th-TH', { month: 'short' });
+        orderedKeys.push(key);
+        chartMap[key] = { income: 0, expense: 0 };
+      }
     }
 
     const filtered = transactions.filter((t) => {
-      const tDate = new Date(t.date);
+      const tTime = new Date(t.date).getTime();
       if (timeRange === 'Week') {
-        const weekAgo = new Date();
-        weekAgo.setHours(0, 0, 0, 0);
-        weekAgo.setDate(now.getDate() - 6);
-        return tDate >= weekAgo;
+        return tTime >= boundaries.rollingWeekStart;
       }
       if (timeRange === 'Month') {
-        return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+        return tTime >= boundaries.monthStart;
       }
       if (timeRange === 'Year') {
-        return tDate.getFullYear() === now.getFullYear();
+        const yearStart = new Date(now.getFullYear(), 0, 1).getTime();
+        return tTime >= yearStart;
       }
       return true;
     });
@@ -237,7 +224,10 @@ export function AnalyticsDashboard({
               </div>
               <span className="text-xs font-black uppercase tracking-wider text-primary">AI Insight</span>
             </div>
-            <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200">{aiInsight}</p>
+            <h4 className="text-sm font-black text-primary mb-1">{aiInsight.title}</h4>
+            <p className="text-xs font-medium leading-relaxed text-slate-700 dark:text-slate-200">
+              {aiInsight.summary}
+            </p>
             <Sparkles className="absolute -right-2 -bottom-2 text-primary/10" size={80} />
           </motion.section>
         )}
@@ -384,6 +374,13 @@ function MainChart({ data, type, isDark }: any) {
         borderWidth: 1,
         padding: 12,
         cornerRadius: 12,
+        displayColors: false,
+        callbacks: {
+          label: (context: any) => {
+            const val = context.parsed.y;
+            return `${context.dataset.label}: ${formatMoney(val)}`;
+          },
+        },
       },
     },
     scales: {
@@ -426,8 +423,16 @@ function DoughnutChart({ data, isDark }: any) {
       tooltip: {
         backgroundColor: isDark ? '#1e293b' : '#fff',
         titleColor: isDark ? '#fff' : '#0f172a',
+        bodyColor: isDark ? '#cbd5e1' : '#64748b',
         padding: 12,
         cornerRadius: 12,
+        displayColors: false,
+        callbacks: {
+          label: (context: any) => {
+            const val = context.parsed;
+            return ` ${formatMoney(val)}`;
+          },
+        },
       },
     },
   };
