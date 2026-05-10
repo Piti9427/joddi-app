@@ -7,10 +7,12 @@ import {
   createOptimisticTransaction,
   fetchRemoteTransactionsIntoLocal,
   getLocalTransactions,
+  getLocalCategories,
   saveLocalTransaction,
   supabase,
   syncPendingTransactions,
   type SyncStatus,
+  type LocalCategory,
 } from './lib/supabase';
 import { TransactionDetail } from './components/TransactionDetail';
 
@@ -117,6 +119,7 @@ export default function App() {
   const [baseView, setBaseView] = useState<ViewState>('dashboard');
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<LocalCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -230,7 +233,23 @@ export default function App() {
 
     initAuth();
 
-    return () => subscription.unsubscribe();
+    const fetchCategories = async () => {
+      try {
+        const localCats = await getLocalCategories();
+        setCategories(localCats);
+      } catch (err) {
+        console.error('JoddiApp: Error loading categories:', err);
+      }
+    };
+    fetchCategories();
+
+    const handleCategoriesChanged = () => fetchCategories();
+    globalThis.window.addEventListener('joddi:categories-changed', handleCategoriesChanged);
+
+    return () => {
+      subscription.unsubscribe();
+      globalThis.window.removeEventListener('joddi:categories-changed', handleCategoriesChanged);
+    };
   }, []);
 
   useEffect(() => {
@@ -407,9 +426,25 @@ export default function App() {
           />
         );
       case 'transactions':
-        return <TransactionHistory onNavigate={navigate} transactions={transactions} lang={lang} currency={currency} />;
+        return (
+          <TransactionHistory
+            onNavigate={navigate}
+            transactions={transactions}
+            categories={categories}
+            lang={lang}
+            currency={currency}
+          />
+        );
       case 'analytics':
-        return <AnalyticsDashboard onNavigate={navigate} transactions={transactions} lang={lang} currency={currency} />;
+        return (
+          <AnalyticsDashboard
+            onNavigate={navigate}
+            transactions={transactions}
+            categories={categories}
+            lang={lang}
+            currency={currency}
+          />
+        );
       case 'budget':
         return <BudgetScreen onNavigate={navigate} transactions={transactions} lang={lang} currency={currency} />;
       case 'categories':
@@ -449,9 +484,11 @@ export default function App() {
             onNavigate={navigate}
             onAddTransaction={handleAddTransaction}
             transactions={transactions}
+            categories={categories}
             userName={userName}
             canCreateTransactions={canWrite}
             readOnlyMode={false}
+            lang={lang}
             currency={currency}
           />
         );

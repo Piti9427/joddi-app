@@ -4,9 +4,6 @@ import {
   Wallet,
   TrendingUp,
   TrendingDown,
-  ShoppingBasket,
-  Coffee,
-  Banknote,
   Receipt,
   Settings,
   ChevronRight,
@@ -20,6 +17,8 @@ import { motion } from 'motion/react';
 import { formatDateShort, formatMoney, getUserLocale } from '../lib/formatters';
 import { getTranslation } from '../lib/i18n';
 import { getDateRangeBoundaries } from '../lib/dateUtils';
+import { LocalCategory } from '../lib/supabase';
+import { ICONS, getCategoryColorStyles } from '../lib/categoryUtils';
 
 const QUICK_ADD_TYPE_KEY = 'quick_add_type';
 
@@ -27,6 +26,7 @@ export function Dashboard({
   onNavigate,
   onAddTransaction,
   transactions,
+  categories,
   userName,
   lang,
   currency,
@@ -36,6 +36,7 @@ export function Dashboard({
   onNavigate: (v: ViewState, payload?: any) => void;
   onAddTransaction: (t: Omit<Transaction, 'id'>) => void | Promise<void>;
   transactions: Transaction[];
+  categories?: LocalCategory[];
   userName?: string;
   lang?: 'th' | 'en';
   currency?: string;
@@ -59,7 +60,6 @@ export function Dashboard({
     recentTransactions,
   } = useMemo(() => {
     const boundaries = getDateRangeBoundaries();
-    const now = new Date();
 
     const monthCategoryExpenseMap: Record<string, number> = {};
     let todayIncomeValue = 0;
@@ -365,6 +365,7 @@ export function Dashboard({
                 merchant={transaction.merchant}
                 date={transaction.date}
                 amount={transaction.amount}
+                categories={categories}
                 onClick={(id) => onNavigate('transaction_detail', id)}
               />
             ))
@@ -440,11 +441,12 @@ function MetricRow({
 function TransactionItem({
   id,
   type,
-  category,
+  category: categoryName,
   merchant,
   date,
   amount,
   index,
+  categories = [],
   onClick,
 }: Readonly<{
   id: string;
@@ -454,20 +456,14 @@ function TransactionItem({
   date: string;
   amount: number;
   index: number;
+  categories?: LocalCategory[];
   onClick?: (id: string) => void;
   key?: React.Key;
 }>) {
   const isExpense = type === 'Expense';
-
-  const getIcon = () => {
-    const normalized = category.toLowerCase();
-
-    if (normalized.includes('food')) return <ShoppingBasket size={20} />;
-    if (normalized.includes('coffee')) return <Coffee size={20} />;
-    if (normalized.includes('income') || normalized.includes('salary')) return <Banknote size={20} />;
-    if (normalized.includes('transport')) return <TrendingUp size={20} />;
-    return <Receipt size={20} />;
-  };
+  const categoryObj = categories.find((c) => c.name === categoryName);
+  const iconNode = (categoryObj && ICONS[categoryObj.iconName]) || <Receipt size={20} />;
+  const colorStyles = categoryObj ? getCategoryColorStyles(categoryObj.color) : { style: {}, className: 'text-slate-500' };
 
   return (
     <motion.div
@@ -478,14 +474,19 @@ function TransactionItem({
       onClick={() => onClick?.(id)}
       className="flex items-center gap-3.5 bg-white dark:bg-surface-dark p-3.5 rounded-2xl border border-border/40 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer shadow-sm"
     >
-      <div className="size-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
-        {React.cloneElement(getIcon() as React.ReactElement, { strokeWidth: 1.5 })}
+      <div 
+        className="size-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 bg-slate-50 dark:bg-slate-800/50 shadow-inner"
+        style={colorStyles.style}
+      >
+        <span className={colorStyles.className}>
+          {React.cloneElement(iconNode as React.ReactElement, { size: 20, strokeWidth: 1.5 })}
+        </span>
       </div>
       <div className="flex-1 flex justify-between items-center overflow-hidden">
         <div className="overflow-hidden">
-          <p className="text-text-dark dark:text-slate-100 font-bold text-[14px] truncate">{merchant || category}</p>
+          <p className="text-text-dark dark:text-slate-100 font-bold text-[14px] truncate">{merchant || categoryName}</p>
           <div className="flex items-center gap-1 mt-0.5">
-            <span className="text-[10px] font-semibold text-secondary">{category}</span>
+            <span className="text-[10px] font-semibold text-secondary">{categoryName}</span>
             <span className="size-1 bg-slate-200 dark:bg-slate-700 rounded-full"></span>
             <span className="text-[10px] font-semibold text-secondary opacity-60">
               {formatDateShort(date, 'th-TH')}
