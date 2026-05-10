@@ -198,7 +198,7 @@ export function DateRangePicker({ isOpen, onClose, onSelect, initialStart, initi
   );
 }
 
-function DateDisplay({ label, date, lang }: { label: string; date: Date | null; lang: 'th' | 'en' }) {
+function DateDisplay({ label, date, lang }: Readonly<{ label: string; date: Date | null; lang: 'th' | 'en' }>) {
   const locale = lang === 'th' ? 'th-TH' : 'en-US';
   const dateString = date ? date.toLocaleDateString(locale) : '-';
   
