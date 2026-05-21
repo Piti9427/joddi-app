@@ -36,11 +36,12 @@ export function formatMoney(
   },
 ) {
   const locale = options?.locale ?? getUserLocale();
-  const currency = options?.currency ?? getUserCurrency(locale);
+  const currency = options?.currency || getUserCurrency(locale);
+  const style = options?.currency === '' ? 'decimal' : 'currency';
 
   return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
+    style: style,
+    ...(style === 'currency' ? { currency } : {}),
     maximumFractionDigits: options?.maximumFractionDigits ?? 0,
     minimumFractionDigits: options?.minimumFractionDigits,
     notation: options?.compact ? 'compact' : 'standard',
