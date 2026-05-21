@@ -277,9 +277,6 @@ export function Dashboard({
       labelEn: 'Bank Account',
       icon: <Landmark size={20} className="text-white" />,
       gradient: 'from-[#7A36FF] to-[#4F46E5]',
-      brand: 'BANKING',
-      number: '•••• •••• •••• 4234',
-      holder: userName || 'User Account',
     },
     {
       id: 'card',
@@ -287,9 +284,6 @@ export function Dashboard({
       labelEn: 'Credit Card',
       icon: <CreditCard size={20} className="text-white" />,
       gradient: 'from-[#1E1E2F] to-[#3B3B54]',
-      brand: 'VISA',
-      number: '•••• •••• •••• 9261',
-      holder: userName || 'User Card',
     },
     {
       id: 'ewallet',
@@ -297,9 +291,6 @@ export function Dashboard({
       labelEn: 'E-Wallet',
       icon: <Wallet size={20} className="text-white" />,
       gradient: 'from-[#06B6D4] to-[#0891B2]',
-      brand: 'WALLET',
-      number: '•••• •••• •••• 1093',
-      holder: userName || 'E-Wallet Wallet',
     },
     {
       id: 'cash',
@@ -307,9 +298,6 @@ export function Dashboard({
       labelEn: 'Cash Wallet',
       icon: <Banknote size={20} className="text-white" />,
       gradient: 'from-[#10B981] to-[#059669]',
-      brand: 'CASH',
-      number: '•••• •••• •••• 5678',
-      holder: userName || 'Cash Balance',
     },
     {
       id: 'promptpay',
@@ -317,9 +305,6 @@ export function Dashboard({
       labelEn: 'PromptPay',
       icon: <Smartphone size={20} className="text-white" />,
       gradient: 'from-[#004A7F] to-[#007FAD]',
-      brand: 'PROMPTPAY',
-      number: '•••• •••• •••• 0098',
-      holder: userName || 'PromptPay',
     },
   ];
 
@@ -470,13 +455,11 @@ export function Dashboard({
                   <div className="p-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/15">{card.icon}</div>
                 </div>
 
-                <div className="z-10 mt-4">
-                  <p className="text-[10px] font-mono tracking-widest opacity-80 mb-2">{card.number}</p>
-                  <div className="flex justify-between items-center">
-                    <p className="text-[9px] font-black uppercase tracking-wider opacity-70 truncate max-w-[120px]">
-                      {card.holder}
+                <div className="z-10 mt-auto">
+                  <div className="flex justify-between items-end">
+                    <p className="text-[10px] font-black uppercase tracking-wider opacity-70">
+                      {currentLang === 'th' ? 'ยอดคงเหลือ' : 'Current Balance'}
                     </p>
-                    <span className="text-[10px] font-black italic tracking-widest">{card.brand}</span>
                   </div>
                 </div>
               </motion.div>

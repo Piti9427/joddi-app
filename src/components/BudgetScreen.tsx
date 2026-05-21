@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Target, Plus, Trash2, X, ChevronDown, ChevronLeft } from 'lucide-react';
+import { Target, Plus, Trash2, X, ChevronDown, ChevronLeft, Tag } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import { formatMoney } from '../lib/formatters';
 import { motion, AnimatePresence } from 'motion/react';
@@ -14,6 +14,8 @@ import {
   type LocalBudget,
 } from '../lib/supabase';
 
+import { ICONS, ICON_OPTIONS } from '../lib/categoryUtils';
+
 const PERIOD_LABELS: Record<BudgetPeriod, string> = {
   daily: 'รายวัน',
   weekly: 'รายสัปดาห์',
@@ -21,20 +23,19 @@ const PERIOD_LABELS: Record<BudgetPeriod, string> = {
   yearly: 'รายปี',
 };
 
-const DEFAULT_ICONS: Record<string, string> = {
-  Food: '🍔',
-  Shopping: '🛍️',
-  Transport: '🚗',
-  Entertainment: '🍿',
-  Lifestyle: '☕',
-  Coffee: '☕',
-  Salary: '💰',
-  Education: '📚',
-  Health: '🏥',
-  Utilities: '💡',
-  Rent: '🏠',
-  Travel: '✈️',
-};
+const DEFAULT_CATEGORIES = [
+  'Food',
+  'Shopping',
+  'Transport',
+  'Entertainment',
+  'Lifestyle',
+  'Salary',
+  'Education',
+  'Health',
+  'Utilities',
+  'Rent',
+  'Travel',
+];
 
 export function BudgetScreen({
   onNavigate,
@@ -326,8 +327,8 @@ function BudgetCard({
     <div className="bg-white dark:bg-white/2 rounded-3xl p-5 border border-border/40 dark:border-white/5 shadow-sm group relative overflow-hidden">
       <div className="flex justify-between items-start mb-5 relative z-10">
         <div className="flex items-center gap-3.5">
-          <div className="size-11 bg-background-light dark:bg-white/5 rounded-xl flex items-center justify-center text-xl border border-transparent dark:border-white/5">
-            {icon}
+          <div className="size-11 bg-background-light dark:bg-white/5 rounded-xl flex items-center justify-center border border-transparent dark:border-white/5 text-primary dark:text-white">
+            {ICONS[icon] ? <span className="scale-110">{ICONS[icon]}</span> : <span className="text-xl">{icon}</span>}
           </div>
           <div>
             <p className="font-black text-text-dark dark:text-white text-[15px] tracking-tight">{label}</p>
@@ -382,7 +383,7 @@ function AddBudgetModal({
   const [period, setPeriod] = useState<BudgetPeriod>('monthly');
   const [showPeriodMenu, setShowPeriodMenu] = useState(false);
 
-  const suggestedCategories = Object.keys(DEFAULT_ICONS).filter((c) => !existingCategories.includes(c));
+  const suggestedCategories = DEFAULT_CATEGORIES.filter((c) => !existingCategories.includes(c));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -393,7 +394,7 @@ function AddBudgetModal({
       category: trimCat,
       limit: Number.parseFloat(limit),
       period,
-      icon: DEFAULT_ICONS[trimCat] || '🏷️',
+      icon: trimCat,
     });
   };
 
@@ -444,9 +445,18 @@ function AddBudgetModal({
                     type="button"
                     key={c}
                     onClick={() => setCategory(c)}
-                    className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border transition-all ${category === c ? 'bg-primary text-white border-primary shadow-sm shadow-primary/10' : 'bg-background-light dark:bg-white/5 border-transparent text-secondary hover:border-slate-200 dark:hover:border-white/10'}`}
+                    className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 ${category === c ? 'bg-primary text-white border-primary shadow-sm shadow-primary/10' : 'bg-background-light dark:bg-white/5 border-transparent text-secondary hover:border-slate-200 dark:hover:border-white/10'}`}
                   >
-                    {DEFAULT_ICONS[c]} {c}
+                    <span>
+                      {ICONS[c] ? (
+                        <span className="opacity-80 inline-block scale-75">{ICONS[c]}</span>
+                      ) : (
+                        <span className="opacity-80 inline-block scale-75">
+                          <Tag size={20} />
+                        </span>
+                      )}
+                    </span>
+                    {c}
                   </button>
                 ))}
               </div>
