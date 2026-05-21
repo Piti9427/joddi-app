@@ -276,75 +276,71 @@ export function Dashboard({
       labelTh: 'โอนธนาคาร',
       labelEn: 'Bank Account',
       icon: <Landmark size={20} className="text-white" />,
-      gradient: 'from-[#7A36FF] to-[#4F46E5]',
+      gradient: 'from-[#7A36FF] to-[#9B66FF]',
     },
     {
       id: 'card',
       labelTh: 'บัตรเครดิต',
       labelEn: 'Credit Card',
       icon: <CreditCard size={20} className="text-white" />,
-      gradient: 'from-[#1E1E2F] to-[#3B3B54]',
+      gradient: 'from-[#1E1E2F] to-[#3F3F5F]',
     },
     {
       id: 'ewallet',
       labelTh: 'วอลเล็ต',
       labelEn: 'E-Wallet',
       icon: <Wallet size={20} className="text-white" />,
-      gradient: 'from-[#06B6D4] to-[#0891B2]',
+      gradient: 'from-[#06B6D4] to-[#3B82F6]',
     },
     {
       id: 'cash',
       labelTh: 'เงินสด',
       labelEn: 'Cash Wallet',
       icon: <Banknote size={20} className="text-white" />,
-      gradient: 'from-[#10B981] to-[#059669]',
+      gradient: 'from-[#10B981] to-[#34D399]',
     },
     {
       id: 'promptpay',
       labelTh: 'พร้อมเพย์',
       labelEn: 'PromptPay',
       icon: <Smartphone size={20} className="text-white" />,
-      gradient: 'from-[#004A7F] to-[#007FAD]',
+      gradient: 'from-[#004A7F] to-[#00A3FF]',
     },
   ];
 
   return (
-    <div className="flex flex-col min-h-full pb-32 relative bg-background-light dark:bg-background-dark">
+    <div className="flex flex-col min-h-full pb-32 relative bg-background-light dark:bg-[#09090B]">
       {/* Header */}
       <header
-        className="flex items-center justify-between px-5 pb-3 sticky top-0 z-20 bg-background-light/85 dark:bg-background-dark/85 backdrop-blur-md border-b border-border/10 dark:border-white/5"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
+        className="flex items-center justify-between px-6 pb-4 sticky top-0 z-30 bg-background-light/80 dark:bg-[#09090B]/80 backdrop-blur-xl border-b border-transparent dark:border-white/5"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 12px)' }}
       >
         <div className="flex items-center gap-3">
-          <div className="size-10 shrink-0 rounded-full bg-[#0F0F15] dark:bg-white text-white dark:text-black flex items-center justify-center font-black text-sm uppercase ring-2 ring-primary/10 shadow-sm">
-            {userName ? userName.charAt(0) : 'J'}
+          <div className="size-11 shrink-0 rounded-2xl bg-slate-100 dark:bg-white/5 border border-border/40 dark:border-white/10 flex items-center justify-center font-black text-sm uppercase shadow-inner">
+            <User size={22} className="text-secondary dark:text-white" strokeWidth={1.5} />
           </div>
           <div>
-            <h2 className="text-text-dark dark:text-slate-100 text-sm font-black tracking-tight leading-tight">
-              Hi, {userName || (currentLang === 'th' ? 'จดดี' : 'Joddi')}
+            <h2 className="text-text-dark dark:text-slate-100 text-base font-black tracking-tight leading-tight">
+              {userName || (currentLang === 'th' ? 'จดดี' : 'Joddi')}
             </h2>
-            <p className="text-secondary text-[10px] font-bold opacity-60 uppercase tracking-wider">
-              {currentLang === 'th' ? 'ยินดีต้อนรับกลับมา!' : 'Welcome back!'}
+            <p className="text-secondary text-[10px] font-bold opacity-60 uppercase tracking-widest">
+              {currentLang === 'th' ? 'สวัสดีตอนบ่าย' : 'Good Afternoon'}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Notification Bell */}
+        <div className="flex items-center gap-2.5">
           <motion.button
-            aria-label="Notifications"
+            aria-label="Search"
             whileTap={{ scale: 0.9 }}
-            className="relative flex items-center justify-center rounded-full h-10 w-10 bg-white dark:bg-white/5 text-secondary hover:text-primary transition-colors border border-border/40 dark:border-white/5 shadow-sm"
+            className="flex items-center justify-center rounded-2xl h-11 w-11 bg-white dark:bg-white/5 text-secondary border border-border/40 dark:border-white/10 shadow-sm"
           >
-            <Bell size={20} strokeWidth={1.5} />
-            <span className="absolute top-2.5 right-2.5 size-2 bg-rose-500 rounded-full ring-2 ring-white dark:ring-background-dark" />
+            <Scan size={20} strokeWidth={1.5} />
           </motion.button>
-
-          {/* Settings */}
           <motion.button
             aria-label="Settings"
             whileTap={{ scale: 0.9 }}
             onClick={() => onNavigate('settings')}
-            className="flex items-center justify-center rounded-full h-10 w-10 bg-white dark:bg-white/5 text-secondary hover:text-primary transition-colors border border-border/40 dark:border-white/5 shadow-sm"
+            className="flex items-center justify-center rounded-2xl h-11 w-11 bg-white dark:bg-white/5 text-secondary border border-border/40 dark:border-white/10 shadow-sm"
           >
             <Settings size={20} strokeWidth={1.5} />
           </motion.button>
@@ -352,113 +348,101 @@ export function Dashboard({
       </header>
 
       {readOnlyMode && (
-        <section className="px-5 pt-3">
-          <div className="rounded-2xl bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-200 text-[11px] font-black tracking-[0.1em] uppercase px-4 py-2.5 text-center ring-1 ring-amber-500/20">
-            โหมดทดลองอ่านอย่างเดียว: เข้าสู่ระบบก่อนเพิ่มหรือแก้ไขข้อมูล
+        <section className="px-6 pt-2">
+          <div className="rounded-2xl bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-200 text-[10px] font-black tracking-[0.1em] uppercase px-4 py-2 text-center ring-1 ring-amber-500/20">
+            ReadOnly Mode
           </div>
         </section>
       )}
 
-      {/* Total Balance Card */}
-      <section className="px-5 pt-5">
-        <div className="bg-[#1E1E2F] text-white rounded-[24px] p-6 shadow-[0_10px_30px_rgba(30,30,47,0.15)] relative overflow-hidden flex flex-col justify-between aspect-[2.1/1]">
-          {/* SVG Wave Overlay */}
-          <div className="absolute inset-0 opacity-15 pointer-events-none">
-            <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <path d="M0,45 Q25,85 50,45 T100,45 L100,100 L0,100 Z" fill="url(#wave-gradient)" />
-              <defs>
-                <linearGradient id="wave-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#7A36FF" />
-                  <stop offset="100%" stopColor="#FF6A39" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-
-          <div className="flex justify-between items-start z-10">
-            <div>
-              <div className="flex items-center gap-2 text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mb-1">
-                <span>{currentLang === 'th' ? 'ยอดคงเหลือทั้งหมด' : 'Total Balance'}</span>
-                <button
-                  onClick={handleToggleBalance}
-                  className="text-white/40 hover:text-white p-0.5 rounded transition-colors"
-                >
-                  {showBalance ? <Eye size={13} /> : <EyeOff size={13} />}
-                </button>
-              </div>
-              <h1 className="text-[2.2rem] font-black text-white tabular-nums tracking-tighter leading-none mt-1">
-                {showBalance ? formatCurrency(balance, 2) : '••••••'}
-              </h1>
-            </div>
-            <div className="p-2.5 rounded-xl bg-white/10 border border-white/10">
-              <Wallet size={18} className="text-white" />
-            </div>
-          </div>
-
-          <div className="flex gap-2.5 mt-5 z-10">
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={() => openQuickAdd('Expense')}
-              disabled={!canCreateTransactions}
-              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white text-[#1E1E2F] font-black text-[11px] uppercase tracking-wider shadow-sm hover:bg-white/95 active:scale-95 transition-all disabled:opacity-50"
-            >
-              <Plus size={14} strokeWidth={3} />
-              <span>{currentLang === 'th' ? 'เพิ่มรายการ' : 'Add Entry'}</span>
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={() => onNavigate('review_receipt')}
-              disabled={!canCreateTransactions}
-              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/10 font-black text-[11px] uppercase tracking-wider shadow-sm active:scale-95 transition-all disabled:opacity-50"
-            >
-              <Scan size={14} strokeWidth={2.5} />
-              <span>{currentLang === 'th' ? 'สแกนสลิป' : 'Scan Slip'}</span>
-            </motion.button>
-          </div>
+      {/* Main Balance Display */}
+      <section className="px-6 pt-8 pb-4 flex flex-col items-center text-center">
+        <div className="flex items-center gap-2 text-secondary text-[11px] font-black uppercase tracking-[0.3em] mb-3 opacity-60">
+          <span>{currentLang === 'th' ? 'ยอดคงเหลือทั้งหมด' : 'Total Balance'}</span>
+          <button onClick={handleToggleBalance} className="hover:text-primary transition-colors">
+            {showBalance ? <Eye size={14} /> : <EyeOff size={14} />}
+          </button>
+        </div>
+        <div className="flex items-start justify-center gap-1">
+          <span className="text-xl font-black text-slate-400 mt-2 tracking-tight">$</span>
+          <h1 className="text-[3.5rem] font-black text-text-dark dark:text-white tabular-nums tracking-tighter leading-none">
+            {showBalance ? formatMoney(balance, { compact: false, currency: '' }).split('.')[0] : '••••'}
+          </h1>
+          <span className="text-xl font-black text-slate-400 mt-2 tabular-nums">
+            .{showBalance ? formatMoney(balance, { compact: false, currency: '' }).split('.')[1] || '00' : '••'}
+          </span>
         </div>
       </section>
 
-      {/* Wallets Row */}
-      <section className="pt-6">
-        <div className="flex justify-between items-center px-5 mb-3.5">
-          <h3 className="text-[11px] font-black text-text-dark dark:text-white uppercase tracking-[0.2em]">
-            {currentLang === 'th' ? 'กระเป๋าเงิน' : 'My Wallets'}
+      {/* Primary Actions Grid */}
+      <section className="px-6 pt-6 grid grid-cols-4 gap-4">
+        <ActionButton
+          icon={<Plus size={22} />}
+          label={currentLang === 'th' ? 'เพิ่ม' : 'Add'}
+          onClick={() => openQuickAdd('Expense')}
+          primary
+        />
+        <ActionButton
+          icon={<Scan size={22} />}
+          label={currentLang === 'th' ? 'สแกน' : 'Scan'}
+          onClick={() => onNavigate('review_receipt')}
+        />
+        <ActionButton
+          icon={<ArrowLeftRight size={22} />}
+          label={currentLang === 'th' ? 'โอน' : 'Trans'}
+          onClick={() => openQuickAdd('Transfer')}
+        />
+        <ActionButton
+          icon={<PieChart size={22} />}
+          label={currentLang === 'th' ? 'วิเคราะห์' : 'Report'}
+          onClick={() => onNavigate('analytics')}
+        />
+      </section>
+
+      {/* My Cards / Wallets Horizontal List */}
+      <section className="pt-10">
+        <div className="flex justify-between items-center px-6 mb-5">
+          <h3 className="text-[11px] font-black text-text-dark dark:text-white uppercase tracking-[0.25em]">
+            {currentLang === 'th' ? 'กระเป๋าเงิน' : 'My Assets'}
           </h3>
+          <button
+            onClick={() => onNavigate('settings')}
+            className="text-[10px] font-black text-primary dark:text-primary-dark uppercase tracking-widest"
+          >
+            Manage
+          </button>
         </div>
 
-        <div className="flex gap-4 overflow-x-auto no-scrollbar px-5 py-1.5 scroll-smooth snap-x snap-mandatory">
+        <div className="flex gap-4 overflow-x-auto no-scrollbar px-6 py-2 snap-x snap-mandatory">
           {CARDS_DATA.map((card) => {
             const cardBalance = methodBalances[card.id] || 0;
             return (
               <motion.div
                 key={card.id}
-                whileTap={{ scale: 0.98 }}
-                className={`snap-center flex-shrink-0 w-64 rounded-3xl p-5 text-white bg-gradient-to-br ${card.gradient} shadow-[0_8px_20px_rgba(0,0,0,0.06)] relative overflow-hidden flex flex-col justify-between aspect-[1.58/1]`}
+                whileTap={{ scale: 0.97 }}
+                className={`snap-center flex-shrink-0 w-[280px] rounded-[36px] p-6 text-white bg-gradient-to-br ${card.gradient} shadow-[0_20px_40px_-12px_rgba(0,0,0,0.15)] relative overflow-hidden flex flex-col justify-between aspect-[1.6/1]`}
               >
-                {/* Decorative background pattern */}
-                <div className="absolute inset-0 opacity-10 pointer-events-none">
-                  <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
-                    <circle cx="90" cy="10" r="40" fill="white" />
-                    <circle cx="10" cy="90" r="30" fill="white" />
-                  </svg>
-                </div>
+                {/* Decorative Premium Overlay */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_60%)] pointer-events-none" />
+                <div className="absolute -left-10 -bottom-10 size-40 bg-white/5 rounded-full blur-3xl pointer-events-none" />
 
                 <div className="flex justify-between items-start z-10">
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.15em] opacity-70">
-                      {currentLang === 'th' ? card.labelTh : card.labelEn}
-                    </p>
-                    <p className="text-2xl font-black tabular-nums tracking-tighter mt-1">
-                      {showBalance ? formatCurrency(cardBalance) : '••••••'}
-                    </p>
+                  <div className="size-11 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg">
+                    {card.icon}
                   </div>
-                  <div className="p-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/15">{card.icon}</div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 pt-1">
+                    {currentLang === 'th' ? card.labelTh : card.labelEn}
+                  </p>
                 </div>
 
                 <div className="z-10 mt-auto">
-                  <div className="flex justify-between items-end">
-                    <p className="text-[10px] font-black uppercase tracking-wider opacity-70">
-                      {currentLang === 'th' ? 'ยอดคงเหลือ' : 'Current Balance'}
+                  <p className="text-3xl font-black tabular-nums tracking-tighter mb-1">
+                    {showBalance ? formatCurrency(cardBalance) : '••••••'}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="size-1.5 rounded-full bg-white/40 animate-pulse" />
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] opacity-60">
+                      {currentLang === 'th' ? 'ยอดที่ใช้ได้' : 'Available Balance'}
                     </p>
                   </div>
                 </div>
@@ -468,190 +452,79 @@ export function Dashboard({
         </div>
       </section>
 
-      {/* Today Income & Expense Summary */}
-      <section className="px-5 pt-5 grid grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-white/2 border border-border/40 dark:border-white/5 p-4 rounded-3xl shadow-[0_4px_15px_rgba(0,0,0,0.02)] flex items-center gap-3.5">
-          <div className="size-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/5 flex items-center justify-center text-emerald-500 shrink-0 border border-transparent dark:border-emerald-500/10">
-            <ArrowUpRight size={18} strokeWidth={2.5} />
-          </div>
-          <div>
-            <p className="text-secondary text-[9px] font-black uppercase tracking-wider">
-              {currentLang === 'th' ? 'รับวันนี้' : 'Today Income'}
-            </p>
-            <p className="text-base font-black text-text-dark dark:text-white tabular-nums tracking-tight mt-0.5">
-              {formatCurrency(todayIncome, 2)}
-            </p>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-white/2 border border-border/40 dark:border-white/5 p-4 rounded-3xl shadow-[0_4px_15px_rgba(0,0,0,0.02)] flex items-center gap-3.5">
-          <div className="size-9 rounded-xl bg-rose-500/10 dark:bg-[#ff6a39]/5 flex items-center justify-center text-[#ff6a39] shrink-0 border border-transparent dark:border-expense/10">
-            <ArrowDownRight size={18} strokeWidth={2.5} />
-          </div>
-          <div>
-            <p className="text-secondary text-[9px] font-black uppercase tracking-wider">
-              {currentLang === 'th' ? 'จ่ายวันนี้' : 'Today Expense'}
-            </p>
-            <p className="text-base font-black text-text-dark dark:text-white tabular-nums tracking-tight mt-0.5">
-              {formatCurrency(todayExpense, 2)}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Week/Monthly Budget Status Card */}
-      <section className="px-5 pt-4">
+      {/* Budget Overview Row */}
+      <section className="px-6 pt-10">
         <motion.div
           whileTap={{ scale: 0.98 }}
           onClick={() => onNavigate('budget')}
-          className="bg-white dark:bg-white/2 border border-border/40 dark:border-white/5 rounded-3xl p-4 shadow-[0_4px_15px_rgba(0,0,0,0.03)] flex items-center justify-between cursor-pointer hover:border-primary/20 dark:hover:border-white/10 transition-all"
+          className="bg-white dark:bg-white/2 border border-border/40 dark:border-white/5 rounded-[32px] p-6 shadow-sm flex flex-col gap-5 cursor-pointer group"
         >
-          <div className="flex items-center gap-3.5">
-            <div className="size-11 rounded-full bg-primary/10 dark:bg-white/5 flex items-center justify-center text-primary dark:text-[#9B66FF] shrink-0 border border-transparent dark:border-white/5">
-              <PieChart size={20} strokeWidth={2} />
-            </div>
-            <div>
-              <h4 className="text-xs font-black text-text-dark dark:text-white uppercase tracking-wider">
-                {currentLang === 'th' ? 'งบประมาณเดือนนี้' : 'This Month Budget'}
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary dark:text-primary-dark shadow-inner">
+                <PieChart size={20} strokeWidth={2.5} />
+              </div>
+              <h4 className="text-[11px] font-black text-text-dark dark:text-white uppercase tracking-[0.2em]">
+                {currentLang === 'th' ? 'งบประมาณรายเดือน' : 'Monthly Budget'}
               </h4>
-              <p className="text-[10px] font-bold text-secondary opacity-60 mt-0.5">{budgetRangeText}</p>
+            </div>
+            <span className="text-[10px] font-black text-secondary/50 uppercase tracking-widest">
+              {budgetRangeText}
+            </span>
+          </div>
+
+          <div className="flex items-end justify-between">
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-secondary uppercase tracking-widest opacity-60">Remaining</p>
+              <p className="text-2xl font-black text-text-dark dark:text-white tabular-nums tracking-tighter">
+                {formatCurrency(Math.max(budgetData.totalLimit - budgetData.spent, 0))}
+              </p>
+            </div>
+            <div className="text-right space-y-1">
+              <p className="text-[10px] font-bold text-secondary uppercase tracking-widest opacity-60">Total Limit</p>
+              <p className="text-lg font-black text-secondary tabular-nums tracking-tighter">
+                {formatCurrency(budgetData.totalLimit)}
+              </p>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-base font-black text-text-dark dark:text-white tabular-nums tracking-tight">
-              {formatCurrency(monthExpense)}
-            </p>
-            <p className="text-[9px] font-bold text-secondary uppercase tracking-widest mt-0.5">
-              {budgetData.totalLimit > 0
-                ? `${currentLang === 'th' ? 'จาก' : 'of'} ${formatCurrency(budgetData.totalLimit)}`
-                : currentLang === 'th'
-                  ? 'ยังไม่ได้ตั้งค่า'
-                  : 'No Limit'}
-            </p>
+
+          {/* Liquid Progress Bar */}
+          <div className="relative h-2.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden border border-border/20 dark:border-white/5">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min((budgetData.spent / budgetData.totalLimit) * 100, 100)}%` }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+              className="h-full bg-primary shadow-[0_0_12px_rgba(122,54,255,0.4)] rounded-full"
+            />
           </div>
         </motion.div>
       </section>
 
-      {/* Analytics Chart Section */}
-      <section className="px-5 pt-5 animate-slide-up">
-        <div className="bg-white dark:bg-white/2 border border-border/40 dark:border-white/5 rounded-[24px] p-5 shadow-[0_4px_15px_rgba(0,0,0,0.03)] transition-all">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">
-                {currentLang === 'th' ? 'สถิติรายจ่าย 7 วันล่าสุด' : 'Last 7 Days Expenses'}
-              </p>
-              <h3 className="text-sm font-black text-text-dark dark:text-white tracking-tight leading-tight">
-                {currentLang === 'th' ? 'การใช้จ่ายสะสม' : 'Weekly Expenses'}
-              </h3>
-            </div>
-            {activeBarIndex !== null && last7DaysData[activeBarIndex].amount > 0 && (
-              <div className="text-right">
-                <span className="text-[9px] font-bold text-secondary uppercase tracking-widest block">
-                  {last7DaysData[activeBarIndex].label}
-                </span>
-                <span className="text-xs font-black text-[#7A36FF] dark:text-[#9B66FF] tabular-nums tracking-tight">
-                  {formatCurrency(last7DaysData[activeBarIndex].amount, 2)}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Bar Chart Bars */}
-          <div className="flex justify-between items-end h-28 pt-6 px-2 relative">
-            {last7DaysData.map((d, index) => {
-              const heightPct = maxAmount > 0 ? (d.amount / maxAmount) * 100 : 0;
-              const isActive = activeBarIndex === index;
-
-              return (
-                <div
-                  key={d.label + index}
-                  className="flex flex-col items-center flex-1 group cursor-pointer relative"
-                  onMouseEnter={() => setActiveBarIndex(index)}
-                  onMouseLeave={() => setActiveBarIndex(null)}
-                  onClick={() => setActiveBarIndex(isActive ? null : index)}
-                >
-                  {/* Tooltip absolutely positioned overlaying the bar */}
-                  {isActive && d.amount > 0 && (
-                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-black py-1 px-1.5 rounded-[6px] whitespace-nowrap shadow-md z-20 transition-all pointer-events-none">
-                      {formatCurrency(d.amount)}
-                    </div>
-                  )}
-
-                  {/* Vertical Bar */}
-                  <div className="w-full h-20 flex items-end justify-center relative">
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: `${Math.max(heightPct, 6)}%` }}
-                      transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-                      className={`w-3.5 rounded-full transition-colors duration-200 ${
-                        isActive ? 'bg-[#7A36FF] dark:bg-[#9B66FF]' : 'bg-[#E5E7EB] dark:bg-white/10'
-                      }`}
-                    />
-                  </div>
-
-                  {/* Label */}
-                  <span
-                    className={`text-[9px] mt-2 font-bold uppercase tracking-wider ${
-                      isActive ? 'text-[#7A36FF] dark:text-[#9B66FF]' : 'text-secondary/60'
-                    }`}
-                  >
-                    {d.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* AI Insight Card */}
-      <AiInsightCard insight={aiInsight} onNavigate={onNavigate} />
-
-      {/* Recent Transactions */}
-      <section className="flex flex-col px-5 mt-6">
-        <div className="flex items-center justify-between mb-4 px-1">
-          <h3 className="text-[11px] font-black text-text-dark dark:text-white uppercase tracking-[0.2em]">
-            {currentLang === 'th' ? 'รายการล่าสุด' : 'Latest Entries'}
+      {/* Transaction Feed */}
+      <section className="flex flex-col px-6 mt-10">
+        <div className="flex items-center justify-between mb-6 px-1">
+          <h3 className="text-[11px] font-black text-text-dark dark:text-white uppercase tracking-[0.25em]">
+            {currentLang === 'th' ? 'รายการล่าสุด' : 'Recent Activity'}
           </h3>
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={() => onNavigate('transactions')}
-            className="flex items-center gap-1 text-primary dark:text-[#9B66FF] text-[10px] font-black uppercase tracking-[0.1em] transition-all"
+            className="flex items-center gap-1 text-primary dark:text-primary-dark text-[10px] font-black uppercase tracking-widest"
           >
-            {currentLang === 'th' ? 'ดูทั้งหมด' : 'View All'}
-            <ChevronRight size={14} />
+            See All
+            <ChevronRight size={12} strokeWidth={3} />
           </motion.button>
         </div>
 
-        <div className="space-y-2.5 pb-4">
+        <div className="space-y-3.5 pb-10">
           {recentTransactions.length === 0 ? (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="flex flex-col items-center justify-center py-12 bg-white dark:bg-white/2 rounded-3xl border border-dashed border-border dark:border-white/5"
+              className="flex flex-col items-center justify-center py-14 bg-white dark:bg-white/2 rounded-[32px] border border-dashed border-border/40 dark:border-white/5"
             >
-              <div className="size-14 bg-background-light dark:bg-white/5 rounded-full flex items-center justify-center mb-4 text-slate-300 dark:text-white/60 border border-transparent dark:border-white/5">
-                <Receipt size={28} strokeWidth={1} />
-              </div>
-              <p className="text-secondary text-[11px] font-black uppercase tracking-[0.2em]">
-                {currentLang === 'th' ? 'ไม่มีรายการชำระเงิน' : 'No entries yet'}
-              </p>
-              <button
-                disabled={!canCreateTransactions}
-                onClick={() => onNavigate('add_transaction')}
-                className={`mt-4 text-[10px] font-black uppercase tracking-widest ${
-                  canCreateTransactions
-                    ? 'text-primary dark:text-[#9B66FF]'
-                    : 'text-secondary opacity-60 cursor-not-allowed'
-                }`}
-              >
-                {canCreateTransactions
-                  ? currentLang === 'th'
-                    ? 'เพิ่มรายการแรกเลย'
-                    : 'Add First Transaction'
-                  : currentLang === 'th'
-                    ? 'เข้าสู่ระบบเพื่อเริ่มต้น'
-                    : 'Login to Start'}
-              </button>
+              <Receipt size={32} strokeWidth={1} className="text-slate-300 dark:text-white/20 mb-4" />
+              <p className="text-secondary text-[10px] font-black uppercase tracking-[0.2em] opacity-50">No Activity</p>
             </motion.div>
           ) : (
             recentTransactions.map((transaction, index) => (
@@ -674,9 +547,40 @@ export function Dashboard({
           )}
         </div>
       </section>
-
-      <div className="h-3" />
     </div>
+  );
+}
+
+function ActionButton({
+  icon,
+  label,
+  onClick,
+  primary = false,
+}: Readonly<{
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  primary?: boolean;
+}>) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.92 }}
+      onClick={onClick}
+      className="flex flex-col items-center gap-2.5 flex-1 group"
+    >
+      <div
+        className={`size-14 rounded-[20px] flex items-center justify-center transition-all shadow-sm ${
+          primary
+            ? 'bg-primary text-white shadow-[0_8px_20px_-4px_rgba(122,54,255,0.4)]'
+            : 'bg-white dark:bg-white/5 text-secondary dark:text-white border border-border/40 dark:border-white/10 group-hover:border-primary/40'
+        }`}
+      >
+        {React.cloneElement(icon as React.ReactElement, { strokeWidth: primary ? 2.5 : 1.5 })}
+      </div>
+      <span className="text-[10px] font-black text-secondary dark:text-white/60 uppercase tracking-widest">
+        {label}
+      </span>
+    </motion.button>
   );
 }
 
@@ -757,25 +661,27 @@ function TransactionItem({
       transition={{ delay: 0.04 + index * 0.03 }}
       whileTap={{ scale: 0.98 }}
       onClick={() => onClick?.(id)}
-      className="flex items-center gap-3.5 bg-white dark:bg-white/2 p-3.5 rounded-2xl border border-border/40 dark:border-white/5 hover:bg-background-light dark:hover:bg-white/5 transition-all group cursor-pointer"
+      className="flex items-center gap-4 bg-white dark:bg-[#121214] p-4 rounded-[28px] border border-border/40 dark:border-white/5 hover:bg-background-light dark:hover:bg-white/5 transition-all group cursor-pointer shadow-sm"
     >
       <div
-        className="size-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 bg-background-light dark:bg-white/10 border border-transparent dark:border-white/5"
+        className="size-11 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 border border-transparent dark:border-white/5 shadow-inner"
         style={colorStyles.style}
       >
         <span className={colorStyles.className}>
-          {React.cloneElement(iconNode as React.ReactElement, { size: 20, strokeWidth: 1.5 })}
+          {React.cloneElement(iconNode as React.ReactElement, { size: 22, strokeWidth: 1.5 })}
         </span>
       </div>
       <div className="flex-1 flex justify-between items-center overflow-hidden">
         <div className="overflow-hidden">
-          <p className="text-text-dark dark:text-slate-100 font-black text-[14px] truncate tracking-tight">
+          <p className="text-text-dark dark:text-white font-black text-[14px] truncate tracking-tight mb-0.5">
             {displayName}
           </p>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-[9px] font-black text-secondary uppercase tracking-widest">{displayCategory}</span>
-            <span className="size-0.5 bg-slate-200 dark:bg-white/10 rounded-full"></span>
-            <span className="text-[9px] font-bold text-secondary opacity-60 uppercase tracking-wider">
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-black text-secondary uppercase tracking-[0.1em] opacity-80">
+              {displayCategory}
+            </span>
+            <span className="size-1 bg-slate-200 dark:bg-white/10 rounded-full"></span>
+            <span className="text-[9px] font-bold text-secondary opacity-50 uppercase tracking-widest">
               {formatDateShort(date, currentLang === 'th' ? 'th-TH' : 'en-US')}
             </span>
           </div>
@@ -784,14 +690,14 @@ function TransactionItem({
           <p
             className={`${
               isTransfer
-                ? 'text-blue-500 dark:text-blue-400'
+                ? 'text-primary dark:text-primary-dark'
                 : isExpense
                   ? 'text-text-dark dark:text-white'
                   : 'text-emerald-500'
             } font-black text-[15px] tabular-nums tracking-tighter`}
           >
             {isTransfer ? '' : isExpense ? '-' : '+'}
-            {formatMoney(amount, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
+            {formatMoney(amount, { maximumFractionDigits: 2, minimumFractionDigits: 2, currency: '' })}
           </p>
         </div>
       </div>
