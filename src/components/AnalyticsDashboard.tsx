@@ -333,7 +333,17 @@ export function AnalyticsDashboard({
   );
 }
 
-function StatCard({ label, value, type, icon }: any) {
+function StatCard({
+  label,
+  value,
+  type,
+  icon,
+}: Readonly<{
+  label: string;
+  value: string;
+  type: 'income' | 'expense';
+  icon: React.ReactElement;
+}>) {
   return (
     <div className="bg-white dark:bg-surface-dark p-4 rounded-3xl shadow-sm border border-border dark:border-slate-800">
       <div
@@ -351,10 +361,18 @@ function StatCard({ label, value, type, icon }: any) {
   );
 }
 
-function MainChart({ data, type, isDark }: any) {
-  const labels = data.map((d: any) => d[0]);
-  const incomeData = data.map((d: any) => d[1].income);
-  const expenseData = data.map((d: any) => d[1].expense);
+function MainChart({
+  data,
+  type,
+  isDark,
+}: Readonly<{
+  data: ReadonlyArray<[string, { income: number; expense: number }]>;
+  type: ChartType;
+  isDark: boolean;
+}>) {
+  const labels = data.map((d) => d[0]);
+  const incomeData = data.map((d) => d[1].income);
+  const expenseData = data.map((d) => d[1].expense);
 
   const chartData = {
     labels,
@@ -411,14 +429,14 @@ function MainChart({ data, type, isDark }: any) {
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: '#94a3b8', font: { size: 10, weight: '600' } },
+        ticks: { color: '#94a3b8', font: { size: 10, weight: 'bold' } },
       },
       y: {
         grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', drawBorder: false },
         ticks: {
           color: '#94a3b8',
-          font: { size: 10, weight: '600' },
-          callback: (val: any) => formatMoney(val, { compact: true }),
+          font: { size: 10, weight: 'bold' },
+          callback: (val: any) => formatMoney(Number(val), { compact: true }),
         },
       },
     },
@@ -427,13 +445,19 @@ function MainChart({ data, type, isDark }: any) {
   return type === 'Bar' ? <Bar data={chartData} options={options} /> : <Line data={chartData} options={options} />;
 }
 
-function DoughnutChart({ data, isDark }: any) {
+function DoughnutChart({
+  data,
+  isDark,
+}: Readonly<{
+  data: ReadonlyArray<{ name: string; amount: number; color: string }>;
+  isDark: boolean;
+}>) {
   const chartData = {
-    labels: data.map((d: any) => d.name),
+    labels: data.map((d) => d.name),
     datasets: [
       {
-        data: data.map((d: any) => d.amount),
-        backgroundColor: data.map((d: any) => d.color),
+        data: data.map((d) => d.amount),
+        backgroundColor: data.map((d) => d.color),
         borderWidth: 0,
       },
     ],
@@ -469,7 +493,7 @@ function DoughnutChart({ data, isDark }: any) {
         <span className="text-[10px] font-black text-slate-400 uppercase">รวม</span>
         <span className="text-lg font-black text-slate-900 dark:text-white">
           {formatMoney(
-            data.reduce((a: any, b: any) => a + b.amount, 0),
+            data.reduce((a, b) => a + b.amount, 0),
             { compact: true },
           )}
         </span>

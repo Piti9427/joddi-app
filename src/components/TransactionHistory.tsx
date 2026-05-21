@@ -20,7 +20,7 @@ interface FilterParams {
   filterType: 'All' | 'Income' | 'Expense';
   selectedCategories: string[];
   dateFilter: DateFilterType;
-  boundaries: any; // Type defined by getDateRangeBoundaries return
+  boundaries: ReturnType<typeof getDateRangeBoundaries>;
   customStart: number;
   customEnd: number;
 }
@@ -51,7 +51,13 @@ function filterTransactions(transactions: Transaction[], params: FilterParams) {
   });
 }
 
-function checkDateBoundary(tTime: number, filter: DateFilterType, b: any, start: number, end: number) {
+function checkDateBoundary(
+  tTime: number,
+  filter: DateFilterType,
+  b: ReturnType<typeof getDateRangeBoundaries>,
+  start: number,
+  end: number,
+) {
   if (filter === 'Today') return tTime >= b.todayStart;
   if (filter === 'Yesterday') return tTime >= b.yesterdayStart && tTime <= b.yesterdayEnd;
   if (filter === 'Last7Days') return tTime >= b.last7DaysStart;

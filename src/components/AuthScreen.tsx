@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Session } from '@supabase/supabase-js';
 import { supabase, getAuthRedirectUrl, requireEmailVerification } from '../lib/supabase';
 import { Wallet, Mail, Lock, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 
 interface AuthScreenProps {
-  onAuthSuccess: (session?: any) => void;
+  onAuthSuccess: (session?: Session | null) => void;
   allowGuestReadOnly?: boolean;
   onContinueAsGuest?: () => void;
 }
@@ -103,9 +104,10 @@ export default function AuthScreen({
 
       // Final fallback
       onAuthSuccess(signUpData.session || undefined);
-    } catch (err: any) {
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
       setAuthPhase('error');
-      setErrorMsg(mapAuthError(err?.message || 'Authentication failed'));
+      setErrorMsg(mapAuthError(error.message || 'Authentication failed'));
     } finally {
       setLoading(false);
     }
@@ -125,8 +127,9 @@ export default function AuthScreen({
         redirectTo: getAuthRedirectUrl(),
       });
       if (error) throw error;
-    } catch (err: any) {
-      setErrorMsg(mapAuthError(err?.message || 'Unable to send reset email'));
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setErrorMsg(mapAuthError(error.message || 'Unable to send reset email'));
     } finally {
       setLoading(false);
     }

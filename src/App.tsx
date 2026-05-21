@@ -306,16 +306,17 @@ export default function App() {
         })
         .then((localTransactions) => setTransactions(localTransactions))
         .catch((syncError) => console.error('Transaction background sync error:', syncError));
-    } catch (error: any) {
-      console.error('Error saving transaction locally:', error);
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('Error saving transaction locally:', err);
       // ถ้าบันทึกในเครื่องไม่สำเร็จ ให้เปลี่ยนสถานะเป็น 'failed' เพื่อให้ผู้ใช้รับทราบ
       const failedTransaction = {
         ...newTransaction,
         syncStatus: 'failed' as const,
-        syncError: error?.message || 'Failed to save transaction locally',
+        syncError: err.message || 'Failed to save transaction locally',
       };
       setTransactions((prev) => prev.map((item) => (item.id === newTransaction.id ? failedTransaction : item)));
-      showAccessMessage(mapMutationError(error?.message || 'Failed to save transaction locally'));
+      showAccessMessage(mapMutationError(err.message || 'Failed to save transaction locally'));
     }
   };
 

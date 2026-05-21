@@ -31,6 +31,16 @@ export function getDateRangeBoundaries() {
   // Today start
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
+  // Yesterday start & end
+  const yesterdayStart = todayStart - 24 * 60 * 60 * 1000;
+  const yesterdayEnd = todayStart - 1;
+
+  // Last 7 days start
+  const last7DaysStart = todayStart - 6 * 24 * 60 * 60 * 1000;
+
+  // Last 30 days start
+  const last30DaysStart = todayStart - 29 * 24 * 60 * 60 * 1000;
+
   // This Week (Starting Sunday)
   const tempWeek = new Date(now);
   const sunday = new Date(tempWeek.setDate(tempWeek.getDate() - tempWeek.getDay()));
@@ -40,13 +50,23 @@ export function getDateRangeBoundaries() {
   // This Month start
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
+  // Last Month start & end
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+  const lastMonthEnd = monthStart - 1;
+
   // Last 7 days (rolling)
   const rollingWeekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).getTime();
 
   return {
     todayStart,
+    yesterdayStart,
+    yesterdayEnd,
+    last7DaysStart,
+    last30DaysStart,
     weekStart,
     monthStart,
+    lastMonthStart,
+    lastMonthEnd,
     rollingWeekStart,
     now: now.getTime(),
   };

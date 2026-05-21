@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronLeft, BadgeCheck, Banknote, Calendar, Camera, CheckCircle, FileEdit, Store, Tag } from 'lucide-react';
-import { ViewState } from '../App';
+import { ViewState, Transaction } from '../App';
 import { captureReceiptPhoto, lightHaptic } from '../lib/device';
 import {
   createLocalReceiptDraft,
@@ -15,7 +15,7 @@ export function ReviewReceipt({
   onAddTransaction,
 }: Readonly<{
   onNavigate: (v: ViewState, payload?: any) => void;
-  onAddTransaction: (t: any) => void | Promise<void>;
+  onAddTransaction: (t: Omit<Transaction, 'id'>) => void | Promise<void>;
 }>) {
   const [receiptImage, setReceiptImage] = useState('');
   const [merchant, setMerchant] = useState('');

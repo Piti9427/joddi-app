@@ -96,8 +96,9 @@ export function Settings({
     try {
       await syncAllOfflineData();
       setStatusMessage('ซิงก์ข้อมูลเรียบร้อย');
-    } catch (error: any) {
-      setStatusMessage(error?.message || 'ซิงก์ข้อมูลไม่สำเร็จ');
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      setStatusMessage(err.message || 'ซิงก์ข้อมูลไม่สำเร็จ');
     } finally {
       setSyncing(false);
     }
@@ -239,7 +240,17 @@ export function Settings({
   );
 }
 
-function SettingRow({ icon, label, value, children }: any) {
+function SettingRow({
+  icon,
+  label,
+  value,
+  children,
+}: Readonly<{
+  icon: React.ReactElement;
+  label: string;
+  value?: string;
+  children?: React.ReactNode;
+}>) {
   return (
     <div className="flex items-center gap-4 group p-3 rounded-2xl hover:bg-input-bg dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
       <div className="size-10 rounded-xl bg-input-bg dark:bg-slate-800 flex items-center justify-center text-secondary shrink-0">
