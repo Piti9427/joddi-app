@@ -47,18 +47,18 @@ export function BottomNav({
       />
 
       {/* Center FAB Button */}
-      <div className="flex justify-center items-center px-1 shrink-0">
+      <div className="relative -top-4 flex justify-center items-center px-1 shrink-0">
         <button
           onClick={() => canCreate && onNavigate('add_transaction')}
           disabled={!canCreate}
-          className={`w-11 h-11 rounded-full border-none flex items-center justify-center transition-all active:scale-90 ${
+          className={`w-14 h-14 rounded-full border-none flex items-center justify-center transition-all active:scale-95 shadow-[0_8px_20px_rgba(255,106,57,0.4)] ${
             canCreate
-              ? 'bg-[#FF6A39] text-white shadow-lg shadow-[#FF6A39]/30 hover:bg-[#ff7b4d]'
+              ? 'bg-[#FF6A39] text-white hover:bg-[#ff7b4d]'
               : 'bg-slate-300 dark:bg-white/10 text-white cursor-default'
           }`}
           aria-label="Add Transaction"
         >
-          <Plus size={22} strokeWidth={2.5} />
+          <Plus size={28} strokeWidth={3} />
         </button>
       </div>
 

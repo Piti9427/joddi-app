@@ -1,6 +1,17 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Search, Filter, Calendar, Check, Receipt, ChevronLeft, TrendingUp, TrendingDown } from 'lucide-react';
+import {
+  Search,
+  Filter,
+  Calendar,
+  Check,
+  Receipt,
+  ChevronLeft,
+  TrendingUp,
+  TrendingDown,
+  Download,
+  ArrowLeftRight,
+} from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatMoney, getUserLocale } from '../lib/formatters';
@@ -17,7 +28,7 @@ type DateFilterType = 'All' | 'Today' | 'Yesterday' | 'Last7Days' | 'Last30Days'
 
 interface FilterParams {
   search: string;
-  filterType: 'All' | 'Income' | 'Expense';
+  filterType: 'All' | 'Income' | 'Expense' | 'Transfer';
   selectedCategories: string[];
   dateFilter: DateFilterType;
   boundaries: ReturnType<typeof getDateRangeBoundaries>;
@@ -85,7 +96,7 @@ export function TransactionHistory({
 }>) {
   const currentLang = lang || 'th';
   const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState<'All' | 'Income' | 'Expense'>('All');
+  const [filterType, setFilterType] = useState<'All' | 'Income' | 'Expense' | 'Transfer'>('All');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState<DateFilterType>('All');
   const [customStartDate, setCustomStartDate] = useState('');
@@ -174,7 +185,7 @@ export function TransactionHistory({
     calendarFiltered.forEach((t) => {
       if (t.type === 'Income') {
         income += t.amount;
-      } else {
+      } else if (t.type === 'Expense') {
         expense += t.amount;
       }
     });
@@ -209,6 +220,81 @@ export function TransactionHistory({
       })
       .sort((a, b) => b.amount - a.amount);
   }, [filteredTotals.list, localCategories]);
+
+  const handleExportCSV = () => {
+    const dataToExport = [...filteredTotals.list];
+    dataToExport.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    const headers =
+      currentLang === 'en'
+        ? ['ID', 'Date', 'Type', 'Amount', 'Category', 'Payment Method', 'Destination Method', 'Merchant', 'Note']
+        : [
+            'ไอดี',
+            'วันที่',
+            'ประเภท',
+            'จำนวน',
+            'หมวดหมู่',
+            'ช่องทางการชำระ',
+            'ช่องทางปลายทาง',
+            'ร้านค้า/รายการ',
+            'หมายเหตุ',
+          ];
+
+    const getMethodLabel = (method?: string) => {
+      if (!method) return '';
+      return METHOD_LABELS[method]?.[currentLang] || method;
+    };
+
+    const getTypeLabel = (type: string) => {
+      if (currentLang === 'en') return type;
+      if (type === 'Income') return 'รายรับ';
+      if (type === 'Expense') return 'รายจ่าย';
+      if (type === 'Transfer') return 'โอนเงิน';
+      return type;
+    };
+
+    const rows = dataToExport.map((t) => {
+      const dateStr = new Date(t.date).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'th-TH', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      const values = [
+        t.id,
+        dateStr,
+        getTypeLabel(t.type),
+        t.amount.toString(),
+        t.category,
+        getMethodLabel(t.paymentMethod),
+        t.type === 'Transfer' ? getMethodLabel(t.toPaymentMethod) : '',
+        t.merchant || '',
+        t.note || '',
+      ];
+
+      return values
+        .map((val) => {
+          const escaped = val.replaceAll('"', '""');
+          return `"${escaped}"`;
+        })
+        .join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    const formattedDate = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `joddiapp_transactions_${formattedDate}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     if (headerRef.current) {
@@ -282,8 +368,8 @@ export function TransactionHistory({
     () => ({
       type:
         currentLang === 'en'
-          ? { All: 'All', Income: 'Income', Expense: 'Expense' }
-          : { All: 'ทั้งหมด', Income: 'รายรับ', Expense: 'รายจ่าย' },
+          ? { All: 'All', Income: 'Income', Expense: 'Expense', Transfer: 'Transfer' }
+          : { All: 'ทั้งหมด', Income: 'รายรับ', Expense: 'รายจ่าย', Transfer: 'โอนเงิน' },
       date:
         currentLang === 'en'
           ? {
@@ -339,6 +425,14 @@ export function TransactionHistory({
             )}
             <motion.button
               whileTap={{ scale: 0.9 }}
+              onClick={handleExportCSV}
+              title={currentLang === 'en' ? 'Export CSV' : 'ส่งออกไฟล์ CSV'}
+              className="p-2 rounded-full text-primary bg-primary/10 hover:bg-primary/20 transition-all duration-300 flex items-center justify-center border border-transparent dark:border-white/5"
+            >
+              <Download size={20} />
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
               onClick={() => setShowFilters(!showFilters)}
               className={`p-2 rounded-full transition-all duration-300 relative ${
                 showFilters
@@ -378,7 +472,7 @@ export function TransactionHistory({
               className="overflow-hidden space-y-4"
             >
               <div className="flex gap-2 pb-1 overflow-x-auto no-scrollbar">
-                {(['All', 'Income', 'Expense'] as const).map((type) => (
+                {(['All', 'Income', 'Expense', 'Transfer'] as const).map((type) => (
                   <motion.button
                     key={type}
                     whileTap={{ scale: 0.95 }}
@@ -636,6 +730,7 @@ export function TransactionHistory({
                       categories={localCategories}
                       formatCurrency={formatCurrency}
                       onClick={(id) => onNavigate('transaction_detail', id)}
+                      currentLang={currentLang}
                     />
                   )}
                 </div>
@@ -669,23 +764,43 @@ function DateHeader({ label }: Readonly<{ label: string }>) {
   );
 }
 
+const METHOD_LABELS: Record<string, { th: string; en: string }> = {
+  cash: { th: 'เงินสด', en: 'Cash' },
+  bank: { th: 'โอนธนาคาร', en: 'Bank Transfer' },
+  card: { th: 'บัตรเครดิต', en: 'Credit Card' },
+  ewallet: { th: 'วอลเล็ต', en: 'E-Wallet' },
+  promptpay: { th: 'พร้อมเพย์', en: 'PromptPay' },
+};
+
 function TransactionRow({
   transaction,
   categories = [],
   formatCurrency,
   onClick,
+  currentLang = 'th',
 }: Readonly<{
   transaction: Transaction;
   categories?: LocalCategory[];
   formatCurrency: (value: number) => string;
   onClick?: (id: string) => void;
+  currentLang?: 'th' | 'en';
 }>) {
   const isExpense = transaction.type === 'Expense';
+  const isTransfer = transaction.type === 'Transfer';
   const categoryObj = categories.find((c) => c.name === transaction.category);
-  const iconNode = (categoryObj && ICONS[categoryObj.iconName]) || <Receipt size={22} />;
-  const colorStyles = categoryObj
+
+  let iconNode = (categoryObj && ICONS[categoryObj.iconName]) || <Receipt size={22} />;
+  let colorStyles: { style: React.CSSProperties; className: string } = categoryObj
     ? getCategoryColorStyles(categoryObj.color)
     : { style: {}, className: isExpense ? 'text-expense' : 'text-income' };
+
+  if (isTransfer) {
+    iconNode = <ArrowLeftRight size={22} />;
+    colorStyles = {
+      style: { backgroundColor: 'rgba(59, 130, 246, 0.1)' },
+      className: 'text-blue-500',
+    };
+  }
 
   const getSyncLabel = (status: string) => {
     if (status === 'pending') return 'รอซิงก์';
@@ -694,7 +809,22 @@ function TransactionRow({
   };
   const syncLabel = getSyncLabel(transaction.syncStatus);
 
-  const fallbackClass = isExpense ? 'bg-expense-bg text-expense' : 'bg-income-bg text-income';
+  const fallbackClass = isTransfer
+    ? 'bg-blue-500/10 text-blue-500'
+    : isExpense
+      ? 'bg-expense-bg text-expense'
+      : 'bg-income-bg text-income';
+
+  const getMethodLabel = (method?: string) => {
+    if (!method) return '';
+    return METHOD_LABELS[method]?.[currentLang] || method;
+  };
+
+  const displayName = isTransfer
+    ? `${getMethodLabel(transaction.paymentMethod)} → ${getMethodLabel(transaction.toPaymentMethod)}`
+    : transaction.merchant || transaction.category;
+
+  const displayCategory = isTransfer ? (currentLang === 'en' ? 'Transfer' : 'โอนเงิน') : transaction.category;
 
   return (
     <motion.div
@@ -704,7 +834,7 @@ function TransactionRow({
     >
       <div
         className={`size-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors shadow-inner ${
-          categoryObj ? '' : fallbackClass
+          categoryObj && !isTransfer ? '' : fallbackClass
         }`}
         style={colorStyles.style}
       >
@@ -713,11 +843,9 @@ function TransactionRow({
         </span>
       </div>
       <div className="flex-1 overflow-hidden">
-        <p className="font-extrabold text-[15px] text-text-dark dark:text-white truncate">
-          {transaction.merchant || transaction.category}
-        </p>
+        <p className="font-extrabold text-[15px] text-text-dark dark:text-white truncate">{displayName}</p>
         <div className="flex items-center gap-2 overflow-hidden">
-          <p className="text-[10px] font-semibold text-secondary opacity-70 truncate">{transaction.category}</p>
+          <p className="text-[10px] font-semibold text-secondary opacity-70 truncate">{displayCategory}</p>
           {syncLabel && (
             <span
               className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold ${transaction.syncStatus === 'failed' ? 'bg-expense-bg text-expense' : 'bg-amber-100 text-amber-700'}`}
@@ -728,8 +856,12 @@ function TransactionRow({
         </div>
       </div>
       <div className="text-right">
-        <p className={`font-black text-[16px] tabular-nums ${isExpense ? 'text-expense' : 'text-income'}`}>
-          {isExpense ? '-' : '+'}
+        <p
+          className={`font-black text-[16px] tabular-nums ${
+            isTransfer ? 'text-blue-500 dark:text-blue-400' : isExpense ? 'text-expense' : 'text-income'
+          }`}
+        >
+          {isTransfer ? '' : isExpense ? '-' : '+'}
           {formatCurrency(transaction.amount)}
         </p>
         {transaction.note && (

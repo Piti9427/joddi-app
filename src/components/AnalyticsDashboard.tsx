@@ -129,8 +129,9 @@ export function AnalyticsDashboard({
     });
 
     filtered.forEach((t) => {
-      if (t.type === 'Income') income += t.amount;
-      else {
+      if (t.type === 'Income') {
+        income += t.amount;
+      } else if (t.type === 'Expense') {
         expense += t.amount;
         catMap[t.category] = (catMap[t.category] || 0) + t.amount;
       }
@@ -149,8 +150,11 @@ export function AnalyticsDashboard({
       }
 
       if (chartMap[key]) {
-        if (t.type === 'Income') chartMap[key].income += t.amount;
-        else chartMap[key].expense += t.amount;
+        if (t.type === 'Income') {
+          chartMap[key].income += t.amount;
+        } else if (t.type === 'Expense') {
+          chartMap[key].expense += t.amount;
+        }
       }
     });
 
@@ -190,7 +194,7 @@ export function AnalyticsDashboard({
     });
 
   return (
-    <div className="flex flex-col min-h-full pb-32 relative bg-slate-50 dark:bg-background-dark">
+    <div className="flex flex-col min-h-full pb-32 relative bg-background-light dark:bg-background-dark">
       <header
         className="bg-white dark:bg-surface-dark px-4 pb-4 sticky top-0 z-20 shadow-sm border-b border-border/50 dark:border-white/5"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
@@ -198,7 +202,7 @@ export function AnalyticsDashboard({
         <div className="flex items-center gap-3 h-12 mb-4">
           <button
             onClick={() => onNavigate('dashboard')}
-            className="size-10 flex items-center justify-center bg-slate-50 dark:bg-white/5 rounded-xl text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
+            className="size-10 flex items-center justify-center bg-background-light dark:bg-white/5 rounded-xl text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
           >
             <ChevronLeft size={24} />
           </button>
@@ -301,7 +305,7 @@ export function AnalyticsDashboard({
 
           <div className="flex flex-col items-center gap-8">
             <div className="relative size-56">
-              <DoughnutChart data={expenseByCategory} isDark={isDark} />
+              <DoughnutChart data={expenseByCategory} isDark={isDark} lang={lang} />
             </div>
 
             <div className="w-full space-y-3">
@@ -453,9 +457,11 @@ function MainChart({
 function DoughnutChart({
   data,
   isDark,
+  lang = 'th',
 }: Readonly<{
   data: ReadonlyArray<{ name: string; amount: number; color: string }>;
   isDark: boolean;
+  lang?: 'th' | 'en';
 }>) {
   const chartData = {
     labels: data.map((d) => d.name),
@@ -491,18 +497,41 @@ function DoughnutChart({
     },
   };
 
+  const totalAmount = data.reduce((a, b) => a + b.amount, 0);
+
   return (
-    <div className="relative w-full h-full">
+    <div
+      className="relative w-full h-full"
+      role="img"
+      aria-label={
+        lang === 'th'
+          ? 'แผนภูมิวงกลมแสดงสัดส่วนรายจ่ายตามหมวดหมู่'
+          : 'Doughnut chart showing expense breakdown by category'
+      }
+    >
       <Doughnut data={chartData} options={options} />
-      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+
+      {/* Hidden structure for screen readers */}
+      <div className="sr-only">
+        <h3>{lang === 'th' ? 'สรุปรายจ่ายตามหมวดหมู่' : 'Expense breakdown by category'}</h3>
+        <ul>
+          {data.map((d) => (
+            <li key={d.name}>
+              {d.name}: {formatMoney(d.amount)}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div
+        className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
+        aria-hidden="true"
+      >
         <span className="text-[10px] font-black text-slate-400 dark:text-white/40 uppercase tracking-[0.2em]">
-          Total
+          {lang === 'th' ? 'รวมทั้งหมด' : 'Total'}
         </span>
         <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-0.5 tabular-nums">
-          {formatMoney(
-            data.reduce((a, b) => a + b.amount, 0),
-            { compact: false },
-          )}
+          {formatMoney(totalAmount, { compact: false })}
         </span>
       </div>
     </div>

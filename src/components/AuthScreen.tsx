@@ -174,7 +174,7 @@ export default function AuthScreen({
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-text-dark dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                className="w-full bg-white dark:bg-white/5 border border-border/40 dark:border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-text-dark dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all outline-none"
                 placeholder="อีเมล"
               />
             </div>
@@ -189,7 +189,7 @@ export default function AuthScreen({
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-text-dark dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                className="w-full bg-white dark:bg-white/5 border border-border/40 dark:border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-text-dark dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all outline-none"
                 placeholder="รหัสผ่าน"
               />
             </div>

@@ -27,7 +27,7 @@ export type ViewState =
   | 'categories'
   | 'transaction_detail'
   | 'settings';
-export type TransactionType = 'Income' | 'Expense';
+export type TransactionType = 'Income' | 'Expense' | 'Transfer';
 
 export interface Transaction {
   id: string;
@@ -38,6 +38,7 @@ export interface Transaction {
   date: string;
   merchant?: string;
   paymentMethod?: string;
+  toPaymentMethod?: string;
   localId?: string;
   syncStatus?: SyncStatus;
   syncError?: string;

@@ -56,6 +56,7 @@ export function TransactionDetail({
   const [note, setNote] = useState(transaction.note || '');
   const [date, setDate] = useState(transaction.date.split('T')[0]);
   const [paymentMethod, setPaymentMethod] = useState(transaction.paymentMethod || 'cash');
+  const [toPaymentMethod, setToPaymentMethod] = useState(transaction.toPaymentMethod || 'bank');
   const [userCategories, setUserCategories] = useState<LocalCategory[]>([]);
 
   const currencySymbol = getCurrencySymbol(undefined, currency);
@@ -105,16 +106,24 @@ export function TransactionDetail({
     // Use parseLocalDate to avoid UTC midnight parsing issues
     const transactionDate = parseLocalDate(date);
 
+    const isTransfer = type === 'Transfer';
+    const finalCategory = isTransfer
+      ? lang === 'en'
+        ? 'Transfer'
+        : 'โอนเงิน'
+      : category || (type === 'Expense' ? 'อื่น ๆ' : 'รายรับ');
+
     await saveLocalTransaction({
       ...transaction,
       localId: transaction.localId || transaction.id,
       type,
       amount: val,
-      category,
+      category: finalCategory,
       note,
       date: transactionDate.toISOString(),
-      merchant: note || category,
+      merchant: isTransfer ? (lang === 'en' ? 'Transfer' : 'โอนเงิน') : note || category,
       paymentMethod,
+      toPaymentMethod: isTransfer ? toPaymentMethod : undefined,
       syncStatus: 'pending' as const,
     });
 
@@ -131,9 +140,9 @@ export function TransactionDetail({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-background-dark overflow-hidden relative">
+    <div className="flex flex-col h-full bg-background-light dark:bg-background-dark overflow-hidden relative">
       {/* Header */}
-      <div className="pt-5 px-4 pb-3 safe-top bg-slate-50 dark:bg-white/2 flex justify-between items-center border-b border-border dark:border-white/5">
+      <div className="pt-5 px-4 pb-3 safe-top bg-background-light/85 dark:bg-background-dark/85 backdrop-blur-md flex justify-between items-center border-b border-border/10 dark:border-white/5 sticky top-0 z-10">
         <button
           onClick={() => onNavigate('dashboard')}
           className="size-10 flex items-center justify-center bg-white dark:bg-white/5 rounded-xl shadow-sm text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
@@ -149,12 +158,24 @@ export function TransactionDetail({
       <div className="flex-1 overflow-y-auto pb-24">
         {/* Amount Section */}
         <div
-          className={`px-4 py-8 text-center transition-colors ${type === 'Expense' ? 'bg-expense/5 dark:bg-white/2' : 'bg-income/5 dark:bg-white/2'}`}
+          className={`px-4 py-8 text-center transition-colors ${
+            type === 'Expense'
+              ? 'bg-expense/5 dark:bg-white/2'
+              : type === 'Transfer'
+                ? 'bg-blue-500/5 dark:bg-white/2'
+                : 'bg-income/5 dark:bg-white/2'
+          }`}
         >
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">ยอดเงิน</p>
           <div className="flex items-center justify-center gap-2">
             <span
-              className={`text-2xl font-black ${type === 'Expense' ? 'text-text-dark dark:text-white' : 'text-emerald-500'}`}
+              className={`text-2xl font-black ${
+                type === 'Expense'
+                  ? 'text-text-dark dark:text-white'
+                  : type === 'Transfer'
+                    ? 'text-blue-500'
+                    : 'text-emerald-500'
+              }`}
             >
               {currencySymbol}
             </span>
@@ -168,15 +189,21 @@ export function TransactionDetail({
               <div className="flex bg-white dark:bg-white/5 p-1 rounded-xl border border-border/60 dark:border-white/5">
                 <button
                   onClick={() => setType('Expense')}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${type === 'Expense' ? 'bg-expense text-white shadow-sm' : 'text-secondary'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${type === 'Expense' ? 'bg-expense text-white shadow-sm' : 'text-secondary hover:bg-background-light dark:hover:bg-white/5'}`}
                 >
                   รายจ่าย
                 </button>
                 <button
                   onClick={() => setType('Income')}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${type === 'Income' ? 'bg-income text-white shadow-sm' : 'text-secondary'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${type === 'Income' ? 'bg-income text-white shadow-sm' : 'text-secondary hover:bg-background-light dark:hover:bg-white/5'}`}
                 >
                   รายรับ
+                </button>
+                <button
+                  onClick={() => setType('Transfer')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${type === 'Transfer' ? 'bg-blue-500 text-white shadow-sm' : 'text-secondary hover:bg-background-light dark:hover:bg-white/5'}`}
+                >
+                  โอนเงิน
                 </button>
               </div>
             </div>
@@ -185,69 +212,71 @@ export function TransactionDetail({
 
         <div className="p-5 space-y-6">
           {/* Category */}
-          <section>
-            <p className="text-[10px] text-secondary font-black uppercase tracking-[0.2em] mb-3 px-1">หมวดหมู่</p>
-            {isEditing ? (
-              <div className="flex flex-wrap gap-2">
-                {filteredCategories.map((cat) => {
-                  const catColorStyles = getCategoryColorStyles(cat.color);
-                  const isSelected = category === cat.name;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => setCategory(cat.name)}
-                      className={`px-4 py-2 rounded-xl text-[11px] font-black transition-all border flex items-center gap-2 ${
-                        isSelected
-                          ? 'bg-white dark:bg-white/10 border-primary/40 text-primary shadow-sm ring-1 ring-primary/10'
-                          : 'bg-slate-50 dark:bg-white/5 border-transparent dark:border-white/5 text-secondary'
-                      }`}
-                    >
-                      <div
-                        className={`size-4 rounded-full flex items-center justify-center ${isSelected ? '' : 'opacity-60'}`}
-                        style={catColorStyles.style}
+          {type !== 'Transfer' && (
+            <section>
+              <p className="text-[10px] text-secondary font-black uppercase tracking-[0.2em] mb-3 px-1">หมวดหมู่</p>
+              {isEditing ? (
+                <div className="flex flex-wrap gap-2">
+                  {filteredCategories.map((cat) => {
+                    const catColorStyles = getCategoryColorStyles(cat.color);
+                    const isSelected = category === cat.name;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => setCategory(cat.name)}
+                        className={`px-4 py-2 rounded-xl text-[11px] font-black transition-all border flex items-center gap-2 ${
+                          isSelected
+                            ? 'bg-white dark:bg-white/10 border-primary/40 text-primary shadow-sm ring-1 ring-primary/10'
+                            : 'bg-background-light dark:bg-white/5 border-transparent dark:border-white/5 text-secondary'
+                        }`}
                       >
-                        <span className={catColorStyles.className}>
-                          {React.cloneElement((ICONS[cat.iconName] || <Tag />) as React.ReactElement, {
-                            size: 10,
-                            strokeWidth: 2.5,
-                          })}
-                        </span>
-                      </div>
-                      {cat.name}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl border border-transparent dark:border-white/5">
-                {(() => {
-                  const catObj = userCategories.find((c) => c.name === category);
-                  const colorStyles = catObj
-                    ? getCategoryColorStyles(catObj.color)
-                    : { style: {}, className: 'text-white/60' };
-                  const iconNode = (catObj && ICONS[catObj.iconName]) || <Tag size={18} />;
-                  return (
-                    <>
-                      <div
-                        className="size-10 bg-white dark:bg-white/10 rounded-xl flex items-center justify-center shadow-sm border border-transparent dark:border-white/5"
-                        style={colorStyles.style}
-                      >
-                        <span className={colorStyles.className}>
-                          {React.cloneElement(iconNode as React.ReactElement, { size: 18, strokeWidth: 1.5 })}
-                        </span>
-                      </div>
-                      <span className="font-bold text-slate-900 dark:text-white">{category}</span>
-                    </>
-                  );
-                })()}
-              </div>
-            )}
-          </section>
+                        <div
+                          className={`size-4 rounded-full flex items-center justify-center ${isSelected ? '' : 'opacity-60'}`}
+                          style={catColorStyles.style}
+                        >
+                          <span className={catColorStyles.className}>
+                            {React.cloneElement((ICONS[cat.iconName] || <Tag />) as React.ReactElement, {
+                              size: 10,
+                              strokeWidth: 2.5,
+                            })}
+                          </span>
+                        </div>
+                        {cat.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 bg-white dark:bg-white/5 p-3.5 rounded-2xl border border-border/40 dark:border-white/5 shadow-sm">
+                  {(() => {
+                    const catObj = userCategories.find((c) => c.name === category);
+                    const colorStyles = catObj
+                      ? getCategoryColorStyles(catObj.color)
+                      : { style: {}, className: 'text-white/60' };
+                    const iconNode = (catObj && ICONS[catObj.iconName]) || <Tag size={18} />;
+                    return (
+                      <>
+                        <div
+                          className="size-10 bg-white dark:bg-white/10 rounded-xl flex items-center justify-center shadow-sm border border-transparent dark:border-white/5"
+                          style={colorStyles.style}
+                        >
+                          <span className={colorStyles.className}>
+                            {React.cloneElement(iconNode as React.ReactElement, { size: 18, strokeWidth: 1.5 })}
+                          </span>
+                        </div>
+                        <span className="font-bold text-slate-900 dark:text-white">{category}</span>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+            </section>
+          )}
 
           {/* Details Grid */}
           <div className="grid grid-cols-1 gap-4">
             {/* Date */}
-            <div className="bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl border border-transparent dark:border-white/5">
+            <div className="bg-white dark:bg-white/5 p-3.5 rounded-2xl border border-border/40 dark:border-white/5 shadow-sm">
               <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-1 opacity-50 flex items-center gap-1">
                 <Calendar size={12} /> วันที่
               </p>
@@ -266,7 +295,7 @@ export function TransactionDetail({
             </div>
 
             {/* Note */}
-            <div className="bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl border border-transparent dark:border-white/5">
+            <div className="bg-white dark:bg-white/5 p-3.5 rounded-2xl border border-border/40 dark:border-white/5 shadow-sm">
               <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-1 opacity-50">
                 หมายเหตุ
               </p>
@@ -283,28 +312,115 @@ export function TransactionDetail({
               )}
             </div>
 
-            {/* Payment Method */}
-            <div className="bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl border border-transparent dark:border-white/5">
-              <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-3 opacity-50">
-                วิธีชำระเงิน
-              </p>
-              {isEditing ? (
-                <div className="flex flex-wrap gap-2">
-                  {PAYMENT_METHODS.map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={() => setPaymentMethod(m.id)}
-                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
-                        paymentMethod === m.id
-                          ? 'bg-slate-900 dark:bg-white dark:text-black text-white border-slate-900 dark:border-white shadow-sm'
-                          : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-500 dark:text-white/60'
-                      }`}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
+            {/* Payment Method / Transfer Info */}
+            {isEditing ? (
+              type === 'Transfer' ? (
+                <>
+                  {/* Source Wallet Grid */}
+                  <div className="bg-white dark:bg-white/5 p-3.5 rounded-2xl border border-border/40 dark:border-white/5 shadow-sm">
+                    <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-3 opacity-50">
+                      {lang === 'en' ? 'From (Source Wallet)' : 'โอนจาก (ต้นทาง)'}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {PAYMENT_METHODS.map((m) => (
+                        <button
+                          key={`source-${m.id}`}
+                          onClick={() => setPaymentMethod(m.id)}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
+                            paymentMethod === m.id
+                              ? 'bg-slate-900 dark:bg-white dark:text-black text-white border-slate-900 dark:border-white shadow-sm'
+                              : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-500 dark:text-white/60'
+                          }`}
+                        >
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Destination Wallet Grid */}
+                  <div className="bg-white dark:bg-white/5 p-3.5 rounded-2xl border border-border/40 dark:border-white/5 shadow-sm">
+                    <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-3 opacity-50">
+                      {lang === 'en' ? 'To (Destination Wallet)' : 'โอนไปที่ (ปลายทาง)'}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {PAYMENT_METHODS.map((m) => (
+                        <button
+                          key={`dest-${m.id}`}
+                          onClick={() => setToPaymentMethod(m.id)}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
+                            toPaymentMethod === m.id
+                              ? 'bg-slate-900 dark:bg-white dark:text-black text-white border-slate-900 dark:border-white shadow-sm'
+                              : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-500 dark:text-white/60'
+                          }`}
+                        >
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
               ) : (
+                /* Single Payment Method */
+                <div className="bg-white dark:bg-white/5 p-3.5 rounded-2xl border border-border/40 dark:border-white/5 shadow-sm">
+                  <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-3 opacity-50">
+                    {lang === 'en' ? 'Payment Method' : 'วิธีชำระเงิน'}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {PAYMENT_METHODS.map((m) => (
+                      <button
+                        key={m.id}
+                        onClick={() => setPaymentMethod(m.id)}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
+                          paymentMethod === m.id
+                            ? 'bg-slate-900 dark:bg-white dark:text-black text-white border-slate-900 dark:border-white shadow-sm'
+                            : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-500 dark:text-white/60'
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            ) : type === 'Transfer' ? (
+              <>
+                {/* Source Wallet */}
+                <div className="bg-white dark:bg-white/5 p-3.5 rounded-2xl border border-border/40 dark:border-white/5 shadow-sm">
+                  <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-2 opacity-50">
+                    {lang === 'en' ? 'From (Source Wallet)' : 'โอนจาก (ต้นทาง)'}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-500 dark:text-white/60">
+                      {PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.icon || <CreditCard size={16} />}
+                    </span>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">
+                      {PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.label || paymentMethod}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Destination Wallet */}
+                <div className="bg-white dark:bg-white/5 p-3.5 rounded-2xl border border-border/40 dark:border-white/5 shadow-sm">
+                  <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-2 opacity-50">
+                    {lang === 'en' ? 'To (Destination Wallet)' : 'โอนไปที่ (ปลายทาง)'}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-500 dark:text-white/60">
+                      {PAYMENT_METHODS.find((m) => m.id === toPaymentMethod)?.icon || <CreditCard size={16} />}
+                    </span>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">
+                      {PAYMENT_METHODS.find((m) => m.id === toPaymentMethod)?.label || toPaymentMethod}
+                    </span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Single Payment Method */
+              <div className="bg-white dark:bg-white/5 p-3.5 rounded-2xl border border-border/40 dark:border-white/5 shadow-sm">
+                <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-3 opacity-50">
+                  {lang === 'en' ? 'Payment Method' : 'วิธีชำระเงิน'}
+                </p>
                 <div className="flex items-center gap-2">
                   <span className="text-slate-500 dark:text-white/60">
                     {PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.icon || <CreditCard size={16} />}
@@ -313,8 +429,8 @@ export function TransactionDetail({
                     {PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.label || paymentMethod}
                   </span>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {!isEditing && (
@@ -344,7 +460,7 @@ export function TransactionDetail({
             initial={{ y: 300 }}
             animate={{ y: 0 }}
             exit={{ y: 300 }}
-            className="absolute inset-x-0 bottom-0 bg-slate-50 dark:bg-black/90 p-4 pb-safe border-t border-border dark:border-white/5 shadow-2xl z-30"
+            className="absolute inset-x-0 bottom-0 bg-background-light dark:bg-black/90 p-4 pb-safe border-t border-border dark:border-white/5 shadow-2xl z-30"
           >
             <div className="flex items-center justify-between mb-4 px-2">
               <span className="text-xs font-bold text-slate-400">แก้ไขจำนวนเงิน</span>

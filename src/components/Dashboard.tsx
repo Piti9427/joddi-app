@@ -19,6 +19,7 @@ import {
   Eye,
   EyeOff,
   Smartphone,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
 import { motion } from 'motion/react';
@@ -126,7 +127,7 @@ export function Dashboard({
         totalIncomeValue += transaction.amount;
         if (isToday) todayIncomeValue += transaction.amount;
         if (isCurrentMonth) monthIncomeValue += transaction.amount;
-      } else {
+      } else if (transaction.type === 'Expense') {
         totalExpenseValue += transaction.amount;
         if (isToday) todayExpenseValue += transaction.amount;
         if (isCurrentMonth) {
@@ -175,8 +176,13 @@ export function Dashboard({
       const key = balances[method] !== undefined ? method : 'cash';
       if (tx.type === 'Income') {
         balances[key] += tx.amount;
-      } else {
+      } else if (tx.type === 'Expense') {
         balances[key] -= tx.amount;
+      } else if (tx.type === 'Transfer') {
+        balances[key] -= tx.amount;
+        const toMethod = tx.toPaymentMethod || 'cash';
+        const toKey = balances[toMethod] !== undefined ? toMethod : 'cash';
+        balances[toKey] += tx.amount;
       }
     });
 
@@ -318,10 +324,10 @@ export function Dashboard({
   ];
 
   return (
-    <div className="flex flex-col min-h-full pb-32 relative bg-slate-50 dark:bg-background-dark">
+    <div className="flex flex-col min-h-full pb-32 relative bg-background-light dark:bg-background-dark">
       {/* Header */}
       <header
-        className="flex items-center justify-between px-5 pb-3 sticky top-0 z-20 bg-slate-50/85 dark:bg-background-dark/85 backdrop-blur-md border-b border-border/10 dark:border-white/5"
+        className="flex items-center justify-between px-5 pb-3 sticky top-0 z-20 bg-background-light/85 dark:bg-background-dark/85 backdrop-blur-md border-b border-border/10 dark:border-white/5"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
         <div className="flex items-center gap-3">
@@ -368,42 +374,62 @@ export function Dashboard({
         </section>
       )}
 
-      {/* Balance Section */}
-      <section className="px-5 pt-5 flex flex-col gap-4">
-        <div>
-          <div className="flex items-center gap-1.5 text-secondary text-[11px] font-black uppercase tracking-[0.2em] mb-1.5">
-            <span>{currentLang === 'th' ? 'ยอดคงเหลือทั้งหมด' : 'Your Balance'}</span>
-            <button
-              onClick={handleToggleBalance}
-              className="text-secondary/70 hover:text-primary p-1 rounded transition-colors"
-            >
-              {showBalance ? <Eye size={14} /> : <EyeOff size={14} />}
-            </button>
+      {/* Total Balance Card */}
+      <section className="px-5 pt-5">
+        <div className="bg-[#1E1E2F] text-white rounded-[24px] p-6 shadow-[0_10px_30px_rgba(30,30,47,0.15)] relative overflow-hidden flex flex-col justify-between aspect-[2.1/1]">
+          {/* SVG Wave Overlay */}
+          <div className="absolute inset-0 opacity-15 pointer-events-none">
+            <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <path d="M0,45 Q25,85 50,45 T100,45 L100,100 L0,100 Z" fill="url(#wave-gradient)" />
+              <defs>
+                <linearGradient id="wave-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#7A36FF" />
+                  <stop offset="100%" stopColor="#FF6A39" />
+                </linearGradient>
+              </defs>
+            </svg>
           </div>
-          <h1 className="text-[2.4rem] font-black text-text-dark dark:text-white tabular-nums tracking-tighter leading-none">
-            {showBalance ? formatCurrency(balance, 2) : '••••••'}
-          </h1>
-        </div>
 
-        <div className="grid grid-cols-2 gap-3 mt-1">
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={() => openQuickAdd('Expense')}
-            disabled={!canCreateTransactions}
-            className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-[#0F0F15] dark:bg-white text-white dark:text-background-dark font-black text-xs uppercase tracking-wider shadow-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
-          >
-            <Plus size={16} strokeWidth={2.5} />
-            <span>{currentLang === 'th' ? 'เพิ่มรายการ' : 'Add / Deposit'}</span>
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={() => onNavigate('review_receipt')}
-            disabled={!canCreateTransactions}
-            className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-white dark:bg-white/5 text-text-dark dark:text-white border border-border dark:border-white/5 font-black text-xs uppercase tracking-wider shadow-sm hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 transition-all disabled:opacity-50"
-          >
-            <Scan size={16} strokeWidth={2} />
-            <span>{currentLang === 'th' ? 'สแกนสลิป' : 'Scan Receipt'}</span>
-          </motion.button>
+          <div className="flex justify-between items-start z-10">
+            <div>
+              <div className="flex items-center gap-2 text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mb-1">
+                <span>{currentLang === 'th' ? 'ยอดคงเหลือทั้งหมด' : 'Total Balance'}</span>
+                <button
+                  onClick={handleToggleBalance}
+                  className="text-white/40 hover:text-white p-0.5 rounded transition-colors"
+                >
+                  {showBalance ? <Eye size={13} /> : <EyeOff size={13} />}
+                </button>
+              </div>
+              <h1 className="text-[2.2rem] font-black text-white tabular-nums tracking-tighter leading-none mt-1">
+                {showBalance ? formatCurrency(balance, 2) : '••••••'}
+              </h1>
+            </div>
+            <div className="p-2.5 rounded-xl bg-white/10 border border-white/10">
+              <Wallet size={18} className="text-white" />
+            </div>
+          </div>
+
+          <div className="flex gap-2.5 mt-5 z-10">
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={() => openQuickAdd('Expense')}
+              disabled={!canCreateTransactions}
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white text-[#1E1E2F] font-black text-[11px] uppercase tracking-wider shadow-sm hover:bg-white/95 active:scale-95 transition-all disabled:opacity-50"
+            >
+              <Plus size={14} strokeWidth={3} />
+              <span>{currentLang === 'th' ? 'เพิ่มรายการ' : 'Add Entry'}</span>
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onNavigate('review_receipt')}
+              disabled={!canCreateTransactions}
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/10 font-black text-[11px] uppercase tracking-wider shadow-sm active:scale-95 transition-all disabled:opacity-50"
+            >
+              <Scan size={14} strokeWidth={2.5} />
+              <span>{currentLang === 'th' ? 'สแกนสลิป' : 'Scan Slip'}</span>
+            </motion.button>
+          </div>
         </div>
       </section>
 
@@ -620,7 +646,7 @@ export function Dashboard({
               animate={{ scale: 1, opacity: 1 }}
               className="flex flex-col items-center justify-center py-12 bg-white dark:bg-white/2 rounded-3xl border border-dashed border-border dark:border-white/5"
             >
-              <div className="size-14 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-4 text-slate-300 dark:text-white/60 border border-transparent dark:border-white/5">
+              <div className="size-14 bg-background-light dark:bg-white/5 rounded-full flex items-center justify-center mb-4 text-slate-300 dark:text-white/60 border border-transparent dark:border-white/5">
                 <Receipt size={28} strokeWidth={1} />
               </div>
               <p className="text-secondary text-[11px] font-black uppercase tracking-[0.2em]">
@@ -655,6 +681,8 @@ export function Dashboard({
                 merchant={transaction.merchant}
                 date={transaction.date}
                 amount={transaction.amount}
+                paymentMethod={transaction.paymentMethod}
+                toPaymentMethod={transaction.toPaymentMethod}
                 categories={categories}
                 onClick={(id) => onNavigate('transaction_detail', id)}
                 currentLang={currentLang}
@@ -669,6 +697,14 @@ export function Dashboard({
   );
 }
 
+const METHOD_LABELS: Record<string, { th: string; en: string }> = {
+  cash: { th: 'เงินสด', en: 'Cash' },
+  bank: { th: 'โอนธนาคาร', en: 'Bank Transfer' },
+  card: { th: 'บัตรเครดิต', en: 'Credit Card' },
+  ewallet: { th: 'วอลเล็ต', en: 'E-Wallet' },
+  promptpay: { th: 'พร้อมเพย์', en: 'PromptPay' },
+};
+
 function TransactionItem({
   id,
   type,
@@ -676,6 +712,8 @@ function TransactionItem({
   merchant,
   date,
   amount,
+  paymentMethod,
+  toPaymentMethod,
   index,
   categories = [],
   onClick,
@@ -687,6 +725,8 @@ function TransactionItem({
   merchant?: string;
   date: string;
   amount: number;
+  paymentMethod?: string;
+  toPaymentMethod?: string;
   index: number;
   categories?: LocalCategory[];
   onClick?: (id: string) => void;
@@ -694,11 +734,38 @@ function TransactionItem({
   key?: React.Key;
 }>) {
   const isExpense = type === 'Expense';
+  const isTransfer = type === 'Transfer';
   const categoryObj = categories.find((c) => c.name === categoryName);
-  const iconNode = (categoryObj && ICONS[categoryObj.iconName]) || <Receipt size={20} />;
-  const colorStyles = categoryObj
+
+  let iconNode = (categoryObj && ICONS[categoryObj.iconName]) || <Receipt size={20} />;
+  let colorStyles: { style: React.CSSProperties; className: string } = categoryObj
     ? getCategoryColorStyles(categoryObj.color)
     : { style: {}, className: 'text-white/60' };
+
+  if (isTransfer) {
+    iconNode = <ArrowLeftRight size={20} />;
+    colorStyles = {
+      style: { backgroundColor: 'rgba(59, 130, 246, 0.1)' },
+      className: 'text-blue-500',
+    };
+  }
+
+  const getMethodLabel = (method?: string) => {
+    if (!method) return '';
+    return METHOD_LABELS[method]?.[currentLang] || method;
+  };
+
+  const displayName = isTransfer
+    ? `${getMethodLabel(paymentMethod)} → ${getMethodLabel(toPaymentMethod)}`
+    : merchant || categoryName;
+
+  const displayCategory = isTransfer ? (currentLang === 'en' ? 'Transfer' : 'โอนเงิน') : categoryName;
+
+  const fallbackClass = isTransfer
+    ? 'bg-blue-500/10 text-blue-500'
+    : isExpense
+      ? 'bg-expense-bg text-expense'
+      : 'bg-income-bg text-income';
 
   return (
     <motion.div
@@ -707,10 +774,10 @@ function TransactionItem({
       transition={{ delay: 0.04 + index * 0.03 }}
       whileTap={{ scale: 0.98 }}
       onClick={() => onClick?.(id)}
-      className="flex items-center gap-3.5 bg-white dark:bg-white/2 p-3.5 rounded-2xl border border-border/40 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 transition-all group cursor-pointer"
+      className="flex items-center gap-3.5 bg-white dark:bg-white/2 p-3.5 rounded-2xl border border-border/40 dark:border-white/5 hover:bg-background-light dark:hover:bg-white/5 transition-all group cursor-pointer"
     >
       <div
-        className="size-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 bg-slate-50 dark:bg-white/10 border border-transparent dark:border-white/5"
+        className="size-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 bg-background-light dark:bg-white/10 border border-transparent dark:border-white/5"
         style={colorStyles.style}
       >
         <span className={colorStyles.className}>
@@ -720,10 +787,10 @@ function TransactionItem({
       <div className="flex-1 flex justify-between items-center overflow-hidden">
         <div className="overflow-hidden">
           <p className="text-text-dark dark:text-slate-100 font-black text-[14px] truncate tracking-tight">
-            {merchant || categoryName}
+            {displayName}
           </p>
           <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-[9px] font-black text-secondary uppercase tracking-widest">{categoryName}</span>
+            <span className="text-[9px] font-black text-secondary uppercase tracking-widest">{displayCategory}</span>
             <span className="size-0.5 bg-slate-200 dark:bg-white/10 rounded-full"></span>
             <span className="text-[9px] font-bold text-secondary opacity-60 uppercase tracking-wider">
               {formatDateShort(date, currentLang === 'th' ? 'th-TH' : 'en-US')}
@@ -733,10 +800,14 @@ function TransactionItem({
         <div className="text-right shrink-0">
           <p
             className={`${
-              isExpense ? 'text-text-dark dark:text-white' : 'text-emerald-500'
+              isTransfer
+                ? 'text-blue-500 dark:text-blue-400'
+                : isExpense
+                  ? 'text-text-dark dark:text-white'
+                  : 'text-emerald-500'
             } font-black text-[15px] tabular-nums tracking-tighter`}
           >
-            {isExpense ? '-' : '+'}
+            {isTransfer ? '' : isExpense ? '-' : '+'}
             {formatMoney(amount, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
           </p>
         </div>

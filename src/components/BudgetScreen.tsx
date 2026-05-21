@@ -154,12 +154,12 @@ export function BudgetScreen({
   return (
     <div className="flex flex-col min-h-full pb-32 relative bg-background-light dark:bg-background-dark">
       <header
-        className="flex items-center bg-white dark:bg-surface-dark p-4 border-b border-border/50 dark:border-white/5 sticky top-0 z-10 shadow-sm"
+        className="flex items-center bg-background-light/85 dark:bg-background-dark/85 backdrop-blur-md p-4 border-b border-border/10 dark:border-white/5 sticky top-0 z-10"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
         <button
           onClick={() => onNavigate('dashboard')}
-          className="size-10 flex items-center justify-center bg-slate-50 dark:bg-white/5 rounded-xl text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
+          className="size-10 flex items-center justify-center bg-white dark:bg-white/5 rounded-xl text-secondary hover:text-text-dark transition-colors border border-border/40 dark:border-white/5 shadow-sm"
         >
           <ChevronLeft size={24} />
         </button>
@@ -176,7 +176,7 @@ export function BudgetScreen({
 
       <main className="p-4 flex flex-col flex-1 space-y-6">
         {/* Period Selector */}
-        <div className="grid grid-cols-4 bg-slate-100 dark:bg-white/5 rounded-xl p-1 border border-transparent dark:border-white/5">
+        <div className="grid grid-cols-4 bg-slate-200/50 dark:bg-white/5 rounded-xl p-1 border border-transparent dark:border-white/5">
           {(['daily', 'weekly', 'monthly', 'yearly'] as BudgetPeriod[]).map((p) => {
             const active = viewPeriod === p;
             return (
@@ -323,10 +323,10 @@ function BudgetCard({
   }
 
   return (
-    <div className="bg-white dark:bg-white/2 rounded-3xl p-5 border border-border/50 dark:border-white/5 group relative overflow-hidden">
+    <div className="bg-white dark:bg-white/2 rounded-3xl p-5 border border-border/40 dark:border-white/5 shadow-sm group relative overflow-hidden">
       <div className="flex justify-between items-start mb-5 relative z-10">
         <div className="flex items-center gap-3.5">
-          <div className="size-11 bg-slate-50 dark:bg-white/5 rounded-xl flex items-center justify-center text-xl border border-transparent dark:border-white/5">
+          <div className="size-11 bg-background-light dark:bg-white/5 rounded-xl flex items-center justify-center text-xl border border-transparent dark:border-white/5">
             {icon}
           </div>
           <div>
@@ -355,7 +355,7 @@ function BudgetCard({
         <p className="font-black text-lg text-text-dark dark:text-white tabular-nums tracking-tighter">{fmt(spent)}</p>
         <p className="text-[10px] font-black text-secondary uppercase tracking-[0.1em]">of {fmt(limit)}</p>
       </div>
-      <div className="h-1 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden relative z-10">
+      <div className="h-1 w-full bg-background-light dark:bg-white/5 rounded-full overflow-hidden relative z-10">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${percent}%` }}
@@ -435,7 +435,7 @@ function AddBudgetModal({
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               placeholder="e.g. Food, Travel"
-              className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl py-3.5 px-4 text-sm font-bold text-text-dark dark:text-white outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+              className="w-full bg-background-light dark:bg-white/5 border border-border/40 dark:border-white/5 rounded-2xl py-3.5 px-4 text-sm font-bold text-text-dark dark:text-white outline-none focus:ring-2 focus:ring-primary/10 transition-all"
             />
             {suggestedCategories.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3 ml-1">
@@ -444,7 +444,7 @@ function AddBudgetModal({
                     type="button"
                     key={c}
                     onClick={() => setCategory(c)}
-                    className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border transition-all ${category === c ? 'bg-primary text-white border-primary shadow-sm shadow-primary/10' : 'bg-slate-50 dark:bg-white/5 border-transparent text-secondary hover:border-slate-200 dark:hover:border-white/10'}`}
+                    className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border transition-all ${category === c ? 'bg-primary text-white border-primary shadow-sm shadow-primary/10' : 'bg-background-light dark:bg-white/5 border-transparent text-secondary hover:border-slate-200 dark:hover:border-white/10'}`}
                   >
                     {DEFAULT_ICONS[c]} {c}
                   </button>
@@ -470,7 +470,7 @@ function AddBudgetModal({
               placeholder="0.00"
               min="0"
               step="any"
-              className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl py-3.5 px-4 text-sm font-bold text-text-dark dark:text-white tabular-nums outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+              className="w-full bg-background-light dark:bg-white/5 border border-border/40 dark:border-white/5 rounded-2xl py-3.5 px-4 text-sm font-bold text-text-dark dark:text-white tabular-nums outline-none focus:ring-2 focus:ring-primary/10 transition-all"
             />
           </div>
 
@@ -487,7 +487,7 @@ function AddBudgetModal({
                 id="budget-period"
                 type="button"
                 onClick={() => setShowPeriodMenu(!showPeriodMenu)}
-                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl py-3.5 px-4 text-sm font-bold text-text-dark dark:text-white flex justify-between items-center outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+                className="w-full bg-background-light dark:bg-white/5 border border-border/40 dark:border-white/5 rounded-2xl py-3.5 px-4 text-sm font-bold text-text-dark dark:text-white flex justify-between items-center outline-none focus:ring-2 focus:ring-primary/10 transition-all"
               >
                 <span className="uppercase tracking-wide">{PERIOD_LABELS[period]}</span>
                 <ChevronDown
@@ -511,7 +511,7 @@ function AddBudgetModal({
                           setPeriod(p);
                           setShowPeriodMenu(false);
                         }}
-                        className={`w-full text-left px-5 py-3.5 text-xs font-black uppercase tracking-wider transition-colors ${period === p ? 'bg-primary text-white' : 'text-text-dark dark:text-white hover:bg-slate-50 dark:hover:bg-white/10'}`}
+                        className={`w-full text-left px-5 py-3.5 text-xs font-black uppercase tracking-wider transition-colors ${period === p ? 'bg-primary text-white' : 'text-text-dark dark:text-white hover:bg-background-light dark:hover:bg-white/10'}`}
                       >
                         {PERIOD_LABELS[p]}
                       </button>
