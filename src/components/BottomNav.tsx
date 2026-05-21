@@ -94,7 +94,7 @@ function TabItem({
     <button
       onClick={onClick}
       className={`flex flex-col items-center justify-center gap-1 w-full h-full border-none bg-transparent cursor-pointer p-0 transition-colors ${
-        active ? 'text-primary' : 'text-slate-400 dark:text-slate-500'
+        active ? 'text-primary' : 'text-slate-400 dark:text-white/40'
       }`}
     >
       <div className="relative flex items-center justify-center">

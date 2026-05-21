@@ -135,8 +135,8 @@ export function TransactionDetail({
       {/* Header */}
       <div className="pt-5 px-4 pb-3 safe-top bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center border-b border-border dark:border-slate-800">
         <button
-          onClick={() => onNavigate(finalReturnView)}
-          className="size-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-xl shadow-sm text-secondary hover:text-text-dark transition-colors"
+          onClick={() => onNavigate('dashboard')}
+          className="size-10 flex items-center justify-center bg-white dark:bg-white/5 rounded-xl shadow-sm text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
         >
           <ChevronLeft size={24} />
         </button>
@@ -163,7 +163,7 @@ export function TransactionDetail({
 
           {isEditing && (
             <div className="flex justify-center mt-4">
-              <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl border border-border/60">
+              <div className="flex bg-white dark:bg-white/5 p-1 rounded-xl border border-border/60 dark:border-white/5">
                 <button
                   onClick={() => setType('Expense')}
                   className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${type === 'Expense' ? 'bg-expense text-white shadow-sm' : 'text-secondary'}`}
@@ -217,17 +217,17 @@ export function TransactionDetail({
                 })}
               </div>
             ) : (
-              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl">
+              <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl border border-transparent dark:border-white/5">
                 {(() => {
                   const catObj = userCategories.find((c) => c.name === category);
                   const colorStyles = catObj
                     ? getCategoryColorStyles(catObj.color)
-                    : { style: {}, className: 'text-slate-500' };
+                    : { style: {}, className: 'text-white/60' };
                   const iconNode = (catObj && ICONS[catObj.iconName]) || <Tag size={18} />;
                   return (
                     <>
                       <div
-                        className="size-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-sm"
+                        className="size-10 bg-white dark:bg-white/10 rounded-xl flex items-center justify-center shadow-sm border border-transparent dark:border-white/5"
                         style={colorStyles.style}
                       >
                         <span className={colorStyles.className}>
@@ -245,7 +245,7 @@ export function TransactionDetail({
           {/* Details Grid */}
           <div className="grid grid-cols-1 gap-4">
             {/* Date */}
-            <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl">
+            <div className="bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl border border-transparent dark:border-white/5">
               <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-1 opacity-50 flex items-center gap-1">
                 <Calendar size={12} /> วันที่
               </p>
@@ -264,7 +264,7 @@ export function TransactionDetail({
             </div>
 
             {/* Note */}
-            <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl">
+            <div className="bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl border border-transparent dark:border-white/5">
               <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-1 opacity-50">หมายเหตุ</p>
               {isEditing ? (
                 <input
@@ -280,7 +280,7 @@ export function TransactionDetail({
             </div>
 
             {/* Payment Method */}
-            <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl">
+            <div className="bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl border border-transparent dark:border-white/5">
               <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-3 opacity-50">
                 วิธีชำระเงิน
               </p>
@@ -292,8 +292,8 @@ export function TransactionDetail({
                       onClick={() => setPaymentMethod(m.id)}
                       className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
                         paymentMethod === m.id
-                          ? 'bg-slate-900 text-white border-slate-900'
-                          : 'bg-white dark:bg-slate-800 border-slate-200 text-slate-500'
+                          ? 'bg-slate-900 dark:bg-white dark:text-black text-white border-slate-900 dark:border-white shadow-sm'
+                          : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-500 dark:text-white/60'
                       }`}
                     >
                       {m.label}
@@ -302,7 +302,7 @@ export function TransactionDetail({
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-500">
+                  <span className="text-slate-500 dark:text-white/60">
                     {PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.icon || <CreditCard size={16} />}
                   </span>
                   <span className="text-sm font-bold text-slate-900 dark:text-white">
@@ -398,7 +398,7 @@ export function TransactionDetail({
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold py-3 rounded-2xl"
+                  className="bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/80 font-bold py-3 rounded-2xl"
                 >
                   ยกเลิก
                 </button>

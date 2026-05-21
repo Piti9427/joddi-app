@@ -21,11 +21,25 @@ export function isToday(date: string | Date): boolean {
   return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
 }
 
+export interface DateRangeBoundaries {
+  todayStart: number;
+  yesterdayStart: number;
+  yesterdayEnd: number;
+  last7DaysStart: number;
+  last30DaysStart: number;
+  weekStart: number;
+  monthStart: number;
+  lastMonthStart: number;
+  lastMonthEnd: number;
+  rollingWeekStart: number;
+  now: number;
+}
+
 /**
  * Returns boundaries for common date ranges in local time.
  * Using timestamps (numbers) for faster comparisons in filter loops.
  */
-export function getDateRangeBoundaries() {
+export function getDateRangeBoundaries(): DateRangeBoundaries {
   const now = new Date();
 
   // Today start

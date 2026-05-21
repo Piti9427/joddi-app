@@ -213,7 +213,7 @@ export function AnalyticsDashboard({
               key={r}
               onClick={() => setTimeRange(r)}
               className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-lg transition-all relative ${
-                timeRange === r ? 'text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                timeRange === r ? 'text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white/80'
               }`}
             >
               {timeRange === r && (
@@ -250,7 +250,7 @@ export function AnalyticsDashboard({
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">AI Insight</span>
             </div>
             <h4 className="text-sm font-black text-primary mb-1 tracking-tight">{aiInsight.title}</h4>
-            <p className="text-xs font-bold leading-relaxed text-slate-700 dark:text-slate-400">{aiInsight.summary}</p>
+            <p className="text-xs font-bold leading-relaxed text-slate-700 dark:text-white/60">{aiInsight.summary}</p>
             <Sparkles className="absolute -right-2 -bottom-2 text-primary/5" size={80} />
           </motion.section>
         )}
@@ -310,7 +310,7 @@ export function AnalyticsDashboard({
                   <div key={cat.name} className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="size-2 rounded-full" style={{ backgroundColor: cat.color }} />
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{cat.name}</span>
+                      <span className="text-xs font-bold text-slate-700 dark:text-white/80">{cat.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-black text-slate-900 dark:text-white tabular-nums tracking-tight">
@@ -495,7 +495,7 @@ function DoughnutChart({
     <div className="relative w-full h-full">
       <Doughnut data={chartData} options={options} />
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total</span>
+        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Total</span>
         <span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter">
           {formatMoney(
             data.reduce((a, b) => a + b.amount, 0),

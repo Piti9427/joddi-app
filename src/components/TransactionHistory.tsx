@@ -235,7 +235,7 @@ export function TransactionHistory({
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => onNavigate('dashboard')}
-            className="size-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl text-secondary hover:text-text-dark transition-colors"
+            className="size-10 flex items-center justify-center bg-slate-100 dark:bg-white/5 rounded-xl text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
           >
             <ChevronLeft size={24} />
           </button>
@@ -272,7 +272,7 @@ export function TransactionHistory({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 focus-within:ring-2 focus-within:ring-primary/20 focus-within:bg-white dark:focus-within:bg-slate-700 transition-all">
+        <div className="flex items-center gap-3 bg-slate-100 dark:bg-white/5 rounded-2xl px-4 py-3 focus-within:ring-2 focus-within:ring-primary/20 focus-within:bg-white dark:focus-within:bg-white/10 transition-all border border-transparent dark:border-white/5">
           <Search size={18} className="text-secondary" />
           <input
             type="text"
@@ -348,11 +348,11 @@ export function TransactionHistory({
 
                 {dateFilter === 'Custom' && (customStartDate || customEndDate) && (
                   <div className="flex items-center gap-2 mt-2">
-                    <div className="flex-1 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-xl text-[11px] font-bold text-slate-500">
+                    <div className="flex-1 bg-slate-100 dark:bg-white/5 p-2.5 rounded-xl text-[11px] font-bold text-slate-500 dark:text-white/60">
                       {customStartDate || '-'}
                     </div>
                     <div className="text-slate-300">→</div>
-                    <div className="flex-1 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-xl text-[11px] font-bold text-slate-500">
+                    <div className="flex-1 bg-slate-100 dark:bg-white/5 p-2.5 rounded-xl text-[11px] font-bold text-slate-500 dark:text-white/60">
                       {customEndDate || '-'}
                     </div>
                     <button
@@ -378,10 +378,10 @@ export function TransactionHistory({
                         key={cat.id}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => toggleCategory(cat.name)}
-                        className={`px-4 py-2 rounded-xl text-[11px] font-black whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                        className={`px-4 py-2 rounded-xl text-[11px] font-black whitespace-nowrap transition-all flex items-center gap-1.5 border ${
                           selectedCategories.includes(cat.name)
-                            ? 'bg-primary text-white shadow-md shadow-primary/20'
-                            : 'bg-slate-100 dark:bg-slate-800 text-secondary'
+                            ? 'bg-primary text-white shadow-md shadow-primary/20 border-primary'
+                            : 'bg-slate-100 dark:bg-white/5 text-secondary border-transparent dark:border-white/5'
                         }`}
                       >
                         {selectedCategories.includes(cat.name) && <Check size={12} />}
@@ -402,7 +402,7 @@ export function TransactionHistory({
             animate={{ scale: 1, opacity: 1 }}
             className="flex flex-col items-center justify-center py-20 text-center px-10"
           >
-            <div className="size-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 text-slate-300">
+            <div className="size-24 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-6 text-slate-300 dark:text-white/20 border border-transparent dark:border-white/5">
               <Search size={48} />
             </div>
             <h3 className="text-lg font-black text-text-dark dark:text-white mb-2">
@@ -466,9 +466,9 @@ export function TransactionHistory({
 function DateHeader({ label }: Readonly<{ label: string }>) {
   return (
     <div className="flex items-center gap-3 px-2 py-3">
-      <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+      <div className="h-px flex-1 bg-slate-200 dark:bg-white/5" />
       <h3 className="text-[11px] font-extrabold text-secondary opacity-70">{label}</h3>
-      <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+      <div className="h-px flex-1 bg-slate-200 dark:bg-white/5" />
     </div>
   );
 }

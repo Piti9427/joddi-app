@@ -204,11 +204,11 @@ export function Dashboard({
 
           <div className="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-white/5 relative z-10">
             <div className="flex items-center gap-2.5">
-              <div className="size-8.5 rounded-xl bg-white/10 dark:bg-white/5 flex items-center justify-center text-white/80 dark:text-white/40 border border-white/5 dark:border-white/5">
+              <div className="size-[34px] rounded-xl bg-white/10 dark:bg-white/5 flex items-center justify-center text-white/80 dark:text-white/80 border border-white/5 dark:border-white/5">
                 <ArrowUpRight size={16} strokeWidth={2.5} />
               </div>
               <div>
-                <p className="text-blue-100 dark:text-slate-500 text-[9px] font-black uppercase tracking-[0.2em]">
+                <p className="text-blue-100 dark:text-white/60 text-[9px] font-black uppercase tracking-[0.2em]">
                   {t.income}
                 </p>
                 <p className="text-sm font-black text-white tabular-nums tracking-tight">
@@ -217,11 +217,11 @@ export function Dashboard({
               </div>
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="size-8.5 rounded-xl bg-white/10 dark:bg-white/5 flex items-center justify-center text-white/80 dark:text-white/40 border border-white/5 dark:border-white/5">
+              <div className="size-[34px] rounded-xl bg-white/10 dark:bg-white/5 flex items-center justify-center text-white/80 dark:text-white/80 border border-white/5 dark:border-white/5">
                 <ArrowDownRight size={16} strokeWidth={2.5} />
               </div>
               <div>
-                <p className="text-blue-100 dark:text-slate-500 text-[9px] font-black uppercase tracking-[0.2em]">
+                <p className="text-blue-100 dark:text-white/60 text-[9px] font-black uppercase tracking-[0.2em]">
                   {t.expense}
                 </p>
                 <p className="text-sm font-black text-white tabular-nums tracking-tight">
@@ -315,7 +315,7 @@ export function Dashboard({
             </div>
             <button
               onClick={() => onNavigate('budget')}
-              className="rounded-xl bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-slate-400 px-3 py-2 text-[10px] font-black uppercase tracking-wider hover:bg-slate-100 dark:hover:bg-white/10 transition-colors border border-transparent dark:border-white/5"
+              className="rounded-xl bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-white/60 px-3 py-2 text-[10px] font-black uppercase tracking-wider hover:bg-slate-100 dark:hover:bg-white/10 transition-colors border border-transparent dark:border-white/5"
             >
               Manage
             </button>
@@ -352,7 +352,7 @@ export function Dashboard({
               animate={{ scale: 1, opacity: 1 }}
               className="flex flex-col items-center justify-center py-12 bg-white dark:bg-white/2 rounded-3xl border border-dashed border-border dark:border-white/5"
             >
-              <div className="size-14 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-4 text-slate-300 dark:text-slate-600 border border-transparent dark:border-white/5">
+              <div className="size-14 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-4 text-slate-300 dark:text-white/60 border border-transparent dark:border-white/5">
                 <Receipt size={28} strokeWidth={1} />
               </div>
               <p className="text-secondary text-[11px] font-black uppercase tracking-[0.2em]">No entries yet</p>
@@ -475,7 +475,7 @@ function TransactionItem({
   const iconNode = (categoryObj && ICONS[categoryObj.iconName]) || <Receipt size={20} />;
   const colorStyles = categoryObj
     ? getCategoryColorStyles(categoryObj.color)
-    : { style: {}, className: 'text-slate-500' };
+    : { style: {}, className: 'text-white/60' };
 
   return (
     <motion.div
@@ -487,7 +487,7 @@ function TransactionItem({
       className="flex items-center gap-3.5 bg-white dark:bg-white/2 p-3.5 rounded-2xl border border-border/40 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 transition-all group cursor-pointer"
     >
       <div
-        className="size-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 bg-slate-50 dark:bg-white/5 border border-transparent dark:border-white/5"
+        className="size-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 bg-slate-50 dark:bg-white/10 border border-transparent dark:border-white/5"
         style={colorStyles.style}
       >
         <span className={colorStyles.className}>

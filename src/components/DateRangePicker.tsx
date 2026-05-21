@@ -135,7 +135,7 @@ export function DateRangePicker({
             </div>
 
             {/* Display selected range */}
-            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5">
               <DateDisplay label={currentLang === 'th' ? 'เริ่มต้น' : 'Start'} date={startDate} lang={currentLang} />
               <div className="w-px h-8 bg-slate-200 dark:bg-slate-700" />
               <DateDisplay label={currentLang === 'th' ? 'สิ้นสุด' : 'End'} date={endDate} lang={currentLang} />
@@ -143,7 +143,7 @@ export function DateRangePicker({
 
             {/* Calendar Control */}
             <div className="flex items-center justify-between">
-              <h4 className="font-bold text-slate-700 dark:text-slate-200">
+              <h4 className="font-bold text-slate-700 dark:text-slate-100">
                 {currentLang === 'th' ? THAI_MONTHS[currentDate.getMonth()] : EN_MONTHS[currentDate.getMonth()]}{' '}
                 {currentDate.getFullYear() + (currentLang === 'th' ? 543 : 0)}
               </h4>
@@ -181,7 +181,7 @@ export function DateRangePicker({
                     key={`${item.year}-${item.month}-${item.day}`}
                     onClick={() => handleDateClick(item.day, item.month, item.year)}
                     className={`h-10 rounded-xl text-xs font-bold transition-all relative flex items-center justify-center ${
-                      item.isCurrentMonth ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'
+                      item.isCurrentMonth ? 'text-slate-700 dark:text-slate-100' : 'text-slate-300 dark:text-white/40'
                     } ${selected ? 'bg-primary text-white shadow-lg shadow-primary/30 z-10' : ''} ${
                       inRange ? 'bg-primary/10 text-primary rounded-none' : ''
                     }`}
@@ -213,8 +213,10 @@ function DateDisplay({ label, date, lang }: Readonly<{ label: string; date: Date
 
   return (
     <div className="flex-1">
-      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{label}</p>
-      <p className="text-sm font-black text-slate-700 dark:text-slate-200">{dateString}</p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-white/40 mb-0.5">
+        {label}
+      </p>
+      <p className="text-sm font-black text-slate-700 dark:text-slate-100">{dateString}</p>
     </div>
   );
 }

@@ -51,7 +51,7 @@ function CategoryRow({
 
   if (editing) {
     return (
-      <div className="flex flex-col gap-4 p-5 rounded-2xl bg-highlight/40 dark:bg-slate-800/80 border border-primary/30 mb-2 animate-in fade-in zoom-in-95 duration-200">
+      <div className="flex flex-col gap-4 p-5 rounded-2xl bg-highlight/40 dark:bg-white/5 border border-primary/30 mb-2 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center gap-3">
           <div
             className={`size-12 rounded-2xl bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm ${editColorStyles.className}`}
@@ -136,7 +136,7 @@ function CategoryRow({
       className="w-full text-left flex items-center gap-4 group cursor-pointer p-4 rounded-2xl hover:bg-highlight/50 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/50"
     >
       <div
-        className={`size-12 rounded-2xl bg-input-bg dark:bg-slate-800 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${colorStyles.className}`}
+        className={`size-12 rounded-2xl bg-input-bg dark:bg-white/5 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${colorStyles.className}`}
         style={colorStyles.style}
       >
         {React.cloneElement(iconNode as React.ReactElement, { size: 24 })}
@@ -144,7 +144,7 @@ function CategoryRow({
       <div className="flex-1 flex justify-between items-center">
         <div>
           <p className="text-text-dark dark:text-slate-100 font-extrabold text-[15px]">{category.name}</p>
-          <p className="text-text-secondary dark:text-slate-500 text-[11px] font-semibold mt-0.5">
+          <p className="text-text-secondary dark:text-white/60 text-[11px] font-semibold mt-0.5">
             ใช้แล้ว {count} รายการ{category.syncStatus === 'synced' ? '' : ` · ${category.syncStatus}`}
           </p>
         </div>
@@ -287,8 +287,9 @@ export function CategoriesManagement({
       >
         <button
           onClick={() => onNavigate('dashboard')}
-          className="size-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl text-secondary hover:text-text-dark transition-colors"
+          className="size-10 flex items-center justify-center bg-slate-100 dark:bg-white/5 rounded-xl text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
         >
+          {' '}
           <ChevronLeft size={24} />
         </button>
         <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">หมวดหมู่</h1>
@@ -338,19 +339,19 @@ export function CategoriesManagement({
                 placeholder="เช่น ของใช้ เกม ค่าเดินทาง"
                 value={newCategory.name}
                 onChange={(e) => setNewCategory((prev) => ({ ...prev, name: e.target.value }))}
-                className="w-full bg-input-bg dark:bg-slate-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/50 text-text-dark dark:text-white font-bold"
+                className="w-full bg-input-bg dark:bg-white/5 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/50 text-text-dark dark:text-white font-bold"
               />
 
               <div className="flex gap-2">
                 <button
                   onClick={() => setNewCategory((prev) => ({ ...prev, type: 'Expense' }))}
-                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${newCategory.type === 'Expense' ? 'bg-expense text-white shadow-md' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${newCategory.type === 'Expense' ? 'bg-expense text-white shadow-md' : 'bg-input-bg dark:bg-white/5 text-secondary'}`}
                 >
                   รายจ่าย
                 </button>
                 <button
                   onClick={() => setNewCategory((prev) => ({ ...prev, type: 'Income' }))}
-                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${newCategory.type === 'Income' ? 'bg-income text-white shadow-md' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${newCategory.type === 'Income' ? 'bg-income text-white shadow-md' : 'bg-input-bg dark:bg-white/5 text-secondary'}`}
                 >
                   รายรับ
                 </button>
@@ -363,7 +364,7 @@ export function CategoriesManagement({
                     <button
                       key={opt.name}
                       onClick={() => setNewCategory((prev) => ({ ...prev, icon: opt.name }))}
-                      className={`size-10 rounded-xl flex items-center justify-center transition-all ${newCategory.icon === opt.name ? 'bg-primary text-white scale-110 shadow-md shadow-primary/20' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}
+                      className={`size-10 rounded-xl flex items-center justify-center transition-all ${newCategory.icon === opt.name ? 'bg-primary text-white scale-110 shadow-md shadow-primary/20' : 'bg-input-bg dark:bg-white/5 text-secondary'}`}
                     >
                       {React.cloneElement(opt.icon as React.ReactElement, { size: 18 })}
                     </button>
