@@ -45,7 +45,7 @@ export function AiInsightCard({
         type="button"
         whileTap={{ scale: 0.985 }}
         onClick={() => onNavigate(targetView)}
-        className={`ai-surface w-full bg-gradient-to-br ${tone.shell} text-left rounded-[1.35rem] p-3.5 border border-white/70 dark:border-slate-700/70 shadow-sm`}
+        className={`ai-surface w-full bg-gradient-to-br ${tone.shell} text-left rounded-[1.35rem] p-3.5 border border-white/70 dark:border-white/5 shadow-sm`}
       >
         <div className="flex items-start gap-3">
           <div className={`size-10 rounded-2xl ${tone.icon} flex items-center justify-center shadow-lg`}>
@@ -67,7 +67,7 @@ export function AiInsightCard({
             <h3 className="text-[15px] font-extrabold text-text-dark dark:text-white leading-snug">{insight.title}</h3>
             <p className="text-[12px] font-medium text-secondary leading-relaxed mt-1">{insight.summary}</p>
           </div>
-          <div className="size-8 rounded-xl bg-white/80 dark:bg-slate-900/80 text-text-dark dark:text-white flex items-center justify-center shrink-0">
+          <div className="size-8 rounded-xl bg-white/80 dark:bg-white/5 text-text-dark dark:text-white flex items-center justify-center shrink-0 border border-transparent dark:border-white/5">
             <ChevronRight size={17} />
           </div>
         </div>

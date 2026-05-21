@@ -1,27 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import {
-  Plus,
-  Coffee,
-  Utensils,
-  Car,
-  Receipt,
-  ShoppingBag,
-  Banknote,
-  Gift,
-  Shield,
-  MoreHorizontal,
-  X,
-  Trash,
-  Check,
-  Tag,
-  BrainCircuit,
-  Sparkles,
-  ScanLine,
-  WalletCards,
-  Landmark,
-  Smartphone,
-  ChartNoAxesCombined,
-} from 'lucide-react';
+import { Plus, MoreHorizontal, X, Trash, Check, Pipette, ChevronLeft, Receipt, Sparkles } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import {
   createLocalCategory,
@@ -31,57 +9,152 @@ import {
   syncAllOfflineData,
   type LocalCategory,
 } from '../lib/supabase';
+import { ICON_OPTIONS, ICONS, COLOR_OPTIONS, getCategoryColorStyles, isHex } from '../lib/categoryUtils';
 
 export type Category = LocalCategory;
 
-const ICONS: Record<string, React.ReactNode> = {
-  Coffee: <Coffee />,
-  Utensils: <Utensils />,
-  Car: <Car />,
-  Receipt: <Receipt />,
-  ShoppingBag: <ShoppingBag />,
-  Shield: <Shield />,
-  Banknote: <Banknote />,
-  Gift: <Gift />,
-  Tag: <Tag />,
-  BrainCircuit: <BrainCircuit />,
-  Sparkles: <Sparkles />,
-  ScanLine: <ScanLine />,
-  WalletCards: <WalletCards />,
-  Landmark: <Landmark />,
-  Smartphone: <Smartphone />,
-  ChartNoAxesCombined: <ChartNoAxesCombined />,
-};
+interface CategoryRowProps {
+  key?: string;
+  category: LocalCategory;
+  count: number;
+  editing: boolean;
+  editName: string;
+  editIcon: string;
+  editColor: string;
+  setEditName: (v: string) => void;
+  setEditIcon: (v: string) => void;
+  setEditColor: (v: string) => void;
+  onEdit: () => void;
+  onSave: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
+}
 
-const ICON_OPTIONS = [
-  { name: 'Coffee', icon: <Coffee size={20} /> },
-  { name: 'Utensils', icon: <Utensils size={20} /> },
-  { name: 'Car', icon: <Car size={20} /> },
-  { name: 'Receipt', icon: <Receipt size={20} /> },
-  { name: 'ShoppingBag', icon: <ShoppingBag size={20} /> },
-  { name: 'Shield', icon: <Shield size={20} /> },
-  { name: 'Banknote', icon: <Banknote size={20} /> },
-  { name: 'Gift', icon: <Gift size={20} /> },
-  { name: 'Tag', icon: <Tag size={20} /> },
-  { name: 'BrainCircuit', icon: <BrainCircuit size={20} /> },
-  { name: 'Sparkles', icon: <Sparkles size={20} /> },
-  { name: 'ScanLine', icon: <ScanLine size={20} /> },
-  { name: 'WalletCards', icon: <WalletCards size={20} /> },
-  { name: 'Landmark', icon: <Landmark size={20} /> },
-  { name: 'Smartphone', icon: <Smartphone size={20} /> },
-  { name: 'ChartNoAxesCombined', icon: <ChartNoAxesCombined size={20} /> },
-];
+function CategoryRow({
+  category,
+  count,
+  editing,
+  editName,
+  editIcon,
+  editColor,
+  setEditName,
+  setEditIcon,
+  setEditColor,
+  onEdit,
+  onSave,
+  onDelete,
+  onCancel,
+}: Readonly<CategoryRowProps>) {
+  const iconNode = ICONS[category.iconName] || <Receipt />;
+  const colorStyles = getCategoryColorStyles(category.color);
+  const editColorStyles = getCategoryColorStyles(editColor);
 
-const COLOR_OPTIONS = [
-  { name: 'Red', value: 'text-rose-500 dark:text-rose-400' },
-  { name: 'Blue', value: 'text-blue-500 dark:text-blue-400' },
-  { name: 'Amber', value: 'text-amber-600 dark:text-amber-400' },
-  { name: 'Green', value: 'text-primary dark:text-primary' },
-  { name: 'Indigo', value: 'text-indigo-500 dark:text-indigo-400' },
-  { name: 'Pink', value: 'text-pink-500 dark:text-pink-400' },
-  { name: 'Emerald', value: 'text-emerald-500 dark:text-emerald-400' },
-  { name: 'Fuchsia', value: 'text-fuchsia-500 dark:text-fuchsia-400' },
-];
+  if (editing) {
+    return (
+      <div className="flex flex-col gap-4 p-5 rounded-2xl bg-highlight/40 dark:bg-white/5 border border-primary/30 mb-2 animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center gap-3">
+          <div
+            className={`size-12 rounded-2xl bg-white dark:bg-white/10 flex items-center justify-center shrink-0 shadow-sm ${editColorStyles.className}`}
+            style={editColorStyles.style}
+          >
+            {React.cloneElement((ICONS[editIcon] || <Receipt />) as React.ReactElement, { size: 24 })}
+          </div>
+          <input
+            autoFocus
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            className="flex-1 bg-white dark:bg-white/5 border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/50 text-text-dark dark:text-white font-bold"
+          />
+        </div>
+
+        <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
+          {ICON_OPTIONS.map((opt) => (
+            <button
+              key={opt.name}
+              onClick={() => setEditIcon(opt.name)}
+              className={`size-9 rounded-xl flex items-center justify-center transition-all ${editIcon === opt.name ? 'bg-primary text-white shadow-md' : 'bg-white dark:bg-white/5 text-secondary'}`}
+            >
+              {React.cloneElement(opt.icon as React.ReactElement, { size: 16 })}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {COLOR_OPTIONS.map((opt) => (
+            <button
+              key={opt.name}
+              onClick={() => setEditColor(opt.text)}
+              className={`size-7 rounded-full transition-all ${opt.bg} ${editColor === opt.text ? 'ring-2 ring-primary scale-110 shadow-md' : 'opacity-60 hover:opacity-100'}`}
+            />
+          ))}
+          <div className="relative size-7">
+            <input
+              type="color"
+              id={`color-picker-${category.id}`}
+              value={isHex(editColor) ? editColor : '#3b82f6'}
+              onChange={(e) => setEditColor(e.target.value)}
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+            />
+            <button
+              onClick={() => document.getElementById(`color-picker-${category.id}`)?.click()}
+              className={`size-7 rounded-full flex items-center justify-center border-2 border-dashed border-secondary/30 hover:border-primary transition-all ${isHex(editColor) ? 'ring-2 ring-primary scale-110' : ''}`}
+              style={isHex(editColor) ? { backgroundColor: editColor } : {}}
+            >
+              {!isHex(editColor) && <Pipette size={14} className="text-secondary" />}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-white/5">
+          <button
+            onClick={onSave}
+            className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-primary/20"
+          >
+            <Check size={18} /> บันทึก
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-3 text-rose-500 bg-rose-500/10 rounded-xl hover:bg-rose-500/20 transition-colors"
+          >
+            <Trash size={18} />
+          </button>
+          <button
+            onClick={onCancel}
+            className="p-3 text-secondary bg-white dark:bg-white/5 rounded-xl hover:bg-highlight transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={onEdit}
+      className="w-full text-left flex items-center gap-4 group cursor-pointer p-4 rounded-2xl hover:bg-highlight/50 dark:hover:bg-white/5 transition-all border border-transparent hover:border-border/50"
+    >
+      <div
+        className={`size-12 rounded-2xl bg-input-bg dark:bg-white/5 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${colorStyles.className}`}
+        style={colorStyles.style}
+      >
+        {React.cloneElement(iconNode as React.ReactElement, { size: 24 })}
+      </div>
+      <div className="flex-1 flex justify-between items-center">
+        <div>
+          <p className="text-text-dark dark:text-slate-100 font-extrabold text-[15px]">{category.name}</p>
+          <p className="text-text-secondary dark:text-white/60 text-[11px] font-semibold mt-0.5">
+            ใช้แล้ว {count} รายการ{category.syncStatus === 'synced' ? '' : ` · ${category.syncStatus}`}
+          </p>
+        </div>
+        <div className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
+          <MoreHorizontal size={20} />
+        </div>
+      </div>
+    </button>
+  );
+}
 
 export function CategoriesManagement({
   onNavigate,
@@ -96,15 +169,17 @@ export function CategoriesManagement({
   // Edit states
   const [editName, setEditName] = useState('');
   const [editIcon, setEditIcon] = useState('Receipt');
-  const [editColor, setEditColor] = useState(COLOR_OPTIONS[0].value);
+  const [editColor, setEditColor] = useState(COLOR_OPTIONS[0].text);
   const [editType, setEditType] = useState<'Expense' | 'Income'>('Expense');
 
   // Add states
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newType, setNewType] = useState<'Expense' | 'Income'>('Expense');
-  const [newIcon, setNewIcon] = useState('Receipt');
-  const [newColor, setNewColor] = useState(COLOR_OPTIONS[0].value);
+  const [newCategory, setNewCategory] = useState({
+    name: '',
+    type: 'Expense' as 'Expense' | 'Income',
+    icon: 'Receipt',
+    color: COLOR_OPTIONS[0].text,
+  });
 
   const loadCategories = async () => {
     try {
@@ -162,16 +237,16 @@ export function CategoriesManagement({
     }
   };
 
-  const handleAddNew = async () => {
-    if (!newName.trim()) return;
+  const handleCreate = async () => {
+    if (!newCategory.name.trim()) return;
     const newCat = createLocalCategory({
-      name: newName.trim(),
-      type: newType,
-      iconName: newIcon,
-      color: newColor,
+      name: newCategory.name.trim(),
+      type: newCategory.type,
+      iconName: newCategory.icon,
+      color: newCategory.color,
     });
     await saveCategories([...categories, newCat]);
-    setNewName('');
+    setNewCategory({ name: '', type: 'Expense', icon: 'Receipt', color: COLOR_OPTIONS[0].text });
     setShowAddForm(false);
   };
 
@@ -207,11 +282,19 @@ export function CategoriesManagement({
   return (
     <div className="flex flex-col min-h-full pb-6 relative bg-background-light dark:bg-background-dark">
       <header
-        className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10"
+        className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-white/5 sticky top-0 z-10"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
-        <div className="size-10 shrink-0"></div>
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">หมวดหมู่</h1>
+        <button
+          onClick={() => onNavigate('dashboard')}
+          className="size-10 flex items-center justify-center bg-slate-100 dark:bg-white/5 rounded-xl text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
+        >
+          {' '}
+          <ChevronLeft size={24} />
+        </button>
+        <h1 className="text-sm font-black leading-tight flex-1 text-center text-text-dark dark:text-white uppercase tracking-[0.1em]">
+          หมวดหมู่
+        </h1>
         <button
           onClick={() => {
             setShowAddForm(!showAddForm);
@@ -224,7 +307,7 @@ export function CategoriesManagement({
       </header>
 
       <main className="p-4 flex flex-col flex-1 space-y-5">
-        <section className="ai-surface bg-surface dark:bg-surface-dark rounded-[1.35rem] p-4 border border-border dark:border-slate-800 shadow-sm">
+        <section className="ai-surface bg-surface dark:bg-surface-dark rounded-[1.35rem] p-4 border border-border dark:border-white/5 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="size-11 rounded-2xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center">
               <Sparkles size={20} />
@@ -256,21 +339,21 @@ export function CategoriesManagement({
                 autoFocus
                 type="text"
                 placeholder="เช่น ของใช้ เกม ค่าเดินทาง"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                className="w-full bg-input-bg dark:bg-slate-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/50 text-text-dark dark:text-white font-bold"
+                value={newCategory.name}
+                onChange={(e) => setNewCategory((prev) => ({ ...prev, name: e.target.value }))}
+                className="w-full bg-input-bg dark:bg-white/5 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/50 text-text-dark dark:text-white font-bold"
               />
 
               <div className="flex gap-2">
                 <button
-                  onClick={() => setNewType('Expense')}
-                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${newType === 'Expense' ? 'bg-expense text-white shadow-md' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}
+                  onClick={() => setNewCategory((prev) => ({ ...prev, type: 'Expense' }))}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${newCategory.type === 'Expense' ? 'bg-expense text-white shadow-md' : 'bg-input-bg dark:bg-white/5 text-secondary'}`}
                 >
                   รายจ่าย
                 </button>
                 <button
-                  onClick={() => setNewType('Income')}
-                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${newType === 'Income' ? 'bg-income text-white shadow-md' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}
+                  onClick={() => setNewCategory((prev) => ({ ...prev, type: 'Income' }))}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${newCategory.type === 'Income' ? 'bg-income text-white shadow-md' : 'bg-input-bg dark:bg-white/5 text-secondary'}`}
                 >
                   รายรับ
                 </button>
@@ -278,14 +361,14 @@ export function CategoriesManagement({
 
               <div>
                 <p className="text-[11px] text-secondary font-semibold mb-2">เลือกไอคอน</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
                   {ICON_OPTIONS.map((opt) => (
                     <button
                       key={opt.name}
-                      onClick={() => setNewIcon(opt.name)}
-                      className={`size-10 rounded-xl flex items-center justify-center transition-all ${newIcon === opt.name ? 'bg-primary text-white scale-110 shadow-md shadow-primary/20' : 'bg-input-bg dark:bg-slate-800 text-secondary'}`}
+                      onClick={() => setNewCategory((prev) => ({ ...prev, icon: opt.name }))}
+                      className={`size-10 rounded-xl flex items-center justify-center transition-all ${newCategory.icon === opt.name ? 'bg-primary text-white scale-110 shadow-md shadow-primary/20' : 'bg-input-bg dark:bg-white/5 text-secondary'}`}
                     >
-                      {opt.icon}
+                      {React.cloneElement(opt.icon as React.ReactElement, { size: 18 })}
                     </button>
                   ))}
                 </div>
@@ -293,20 +376,36 @@ export function CategoriesManagement({
 
               <div>
                 <p className="text-[11px] text-secondary font-semibold mb-2">เลือกสี</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {COLOR_OPTIONS.map((opt) => (
                     <button
                       key={opt.name}
-                      onClick={() => setNewColor(opt.value)}
-                      className={`size-8 rounded-full transition-all ${opt.value.split(' ')[0].replace('text-', 'bg-')} ${newColor === opt.value ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'opacity-60 hover:opacity-100'}`}
+                      onClick={() => setNewCategory((prev) => ({ ...prev, color: opt.text }))}
+                      className={`size-8 rounded-full transition-all ${opt.bg} ${newCategory.color === opt.text ? 'ring-2 ring-primary scale-110 shadow-md' : 'opacity-60 hover:opacity-100'}`}
                     />
                   ))}
+                  <div className="relative size-8">
+                    <input
+                      type="color"
+                      id="new-category-color-picker"
+                      value={isHex(newCategory.color) ? newCategory.color : '#3b82f6'}
+                      onChange={(e) => setNewCategory((prev) => ({ ...prev, color: e.target.value }))}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    />
+                    <button
+                      onClick={() => document.getElementById('new-category-color-picker')?.click()}
+                      className={`size-8 rounded-full flex items-center justify-center border-2 border-dashed border-secondary/30 hover:border-primary transition-all ${isHex(newCategory.color) ? 'ring-2 ring-primary scale-110' : ''}`}
+                      style={isHex(newCategory.color) ? { backgroundColor: newCategory.color } : {}}
+                    >
+                      {!isHex(newCategory.color) && <Pipette size={16} className="text-secondary" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <button
-                onClick={handleAddNew}
-                disabled={!newName.trim()}
+                onClick={handleCreate}
+                disabled={!newCategory.name.trim()}
                 className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all disabled:opacity-30 flex items-center justify-center gap-2"
               >
                 <Check size={20} /> สร้างหมวดหมู่
@@ -317,8 +416,10 @@ export function CategoriesManagement({
 
         {/* Expenses */}
         <section className="space-y-3">
-          <h3 className="text-sm font-extrabold text-secondary pl-2">รายจ่าย ({expenses.length})</h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
+          <h3 className="text-[10px] font-black text-secondary pl-2 uppercase tracking-[0.2em]">
+            รายจ่าย ({expenses.length})
+          </h3>
+          <div className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-2 shadow-sm border border-border dark:border-white/5 space-y-1">
             {expenses.map((cat) => (
               <CategoryRow
                 key={cat.id}
@@ -342,8 +443,10 @@ export function CategoriesManagement({
 
         {/* Income */}
         <section className="space-y-3">
-          <h3 className="text-sm font-extrabold text-secondary pl-2">รายรับ ({incomes.length})</h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
+          <h3 className="text-[10px] font-black text-secondary pl-2 uppercase tracking-[0.2em]">
+            รายรับ ({incomes.length})
+          </h3>
+          <div className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-2 shadow-sm border border-border dark:border-white/5 space-y-1">
             {incomes.map((cat) => (
               <CategoryRow
                 key={cat.id}
@@ -366,111 +469,5 @@ export function CategoriesManagement({
         </section>
       </main>
     </div>
-  );
-}
-
-function CategoryRow({
-  category,
-  count,
-  editing,
-  editName,
-  editIcon,
-  editColor,
-  setEditName,
-  setEditIcon,
-  setEditColor,
-  onEdit,
-  onSave,
-  onDelete,
-  onCancel,
-}: any) {
-  const iconNode = ICONS[category.iconName] || <Receipt />;
-
-  if (editing) {
-    return (
-      <div className="flex flex-col gap-4 p-5 rounded-2xl bg-highlight/40 dark:bg-slate-800/80 border border-primary/30 mb-2 animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center gap-3">
-          <div
-            className={`size-12 rounded-2xl bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm ${editColor}`}
-          >
-            {React.cloneElement((ICONS[editIcon] || <Receipt />) as React.ReactElement, { size: 24 })}
-          </div>
-          <input
-            autoFocus
-            type="text"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            className="flex-1 bg-white dark:bg-slate-900 border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/50 text-text-dark dark:text-white font-bold"
-          />
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {ICON_OPTIONS.map((opt) => (
-            <button
-              key={opt.name}
-              onClick={() => setEditIcon(opt.name)}
-              className={`size-9 rounded-xl flex items-center justify-center transition-all ${editIcon === opt.name ? 'bg-primary text-white shadow-md' : 'bg-white dark:bg-slate-900 text-secondary'}`}
-            >
-              {React.cloneElement(opt.icon as React.ReactElement, { size: 18 })}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {COLOR_OPTIONS.map((opt) => (
-            <button
-              key={opt.name}
-              onClick={() => setEditColor(opt.value)}
-              className={`size-7 rounded-full transition-all ${opt.value.split(' ')[0].replace('text-', 'bg-')} ${editColor === opt.value ? 'ring-2 ring-primary scale-110' : 'opacity-60 hover:opacity-100'}`}
-            />
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-slate-700">
-          <button
-            onClick={onSave}
-            className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-primary/20"
-          >
-            <Check size={18} /> บันทึก
-          </button>
-          <button
-            onClick={onDelete}
-            className="p-3 text-rose-500 bg-rose-500/10 rounded-xl hover:bg-rose-500/20 transition-colors"
-          >
-            <Trash size={18} />
-          </button>
-          <button
-            onClick={onCancel}
-            className="p-3 text-secondary bg-white dark:bg-slate-900 rounded-xl hover:bg-highlight transition-colors"
-          >
-            <X size={18} />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <button
-      onClick={onEdit}
-      className="w-full text-left flex items-center gap-4 group cursor-pointer p-4 rounded-2xl hover:bg-highlight/50 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/50"
-    >
-      <div
-        className={`size-12 rounded-2xl bg-input-bg dark:bg-slate-800 flex items-center justify-center shrink-0 ${category.color} transition-transform group-hover:scale-105`}
-      >
-        {React.cloneElement(iconNode as React.ReactElement, { size: 24 })}
-      </div>
-      <div className="flex-1 flex justify-between items-center">
-        <div>
-          <p className="text-text-dark dark:text-slate-100 font-extrabold text-[15px]">{category.name}</p>
-          <p className="text-text-secondary dark:text-slate-500 text-[11px] font-semibold mt-0.5">
-            ใช้แล้ว {count} รายการ{category.syncStatus === 'synced' ? '' : ` · ${category.syncStatus}`}
-          </p>
-        </div>
-        <div className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
-          <MoreHorizontal size={20} />
-        </div>
-      </div>
-    </button>
   );
 }

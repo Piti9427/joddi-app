@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Target, Plus, Trash2, X, ChevronDown } from 'lucide-react';
+import { Target, Plus, Trash2, X, ChevronDown, ChevronLeft } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import { formatMoney } from '../lib/formatters';
 import { motion, AnimatePresence } from 'motion/react';
+import { getDateRangeBoundaries } from '../lib/dateUtils';
 import {
   createLocalBudget,
   deleteLocalBudget,
@@ -79,26 +80,25 @@ export function BudgetScreen({
 
   // Calculate spending per category normalised to the currently-selected viewPeriod
   const { totalBudgetLimit, totalSpent, categoryData } = useMemo(() => {
+    const boundaries = getDateRangeBoundaries();
     const now = new Date();
 
     // Calculate spending from transactions within the viewPeriod
     const periodFilteredTx = transactions.filter((t) => {
       if (t.type !== 'Expense') return false;
-      const d = new Date(t.date);
+      const tTime = new Date(t.date).getTime();
 
       switch (viewPeriod) {
         case 'daily':
-          return d.toDateString() === now.toDateString();
-        case 'weekly': {
-          const weekAgo = new Date();
-          weekAgo.setDate(now.getDate() - 6);
-          weekAgo.setHours(0, 0, 0, 0);
-          return d >= weekAgo;
-        }
+          return tTime >= boundaries.todayStart;
+        case 'weekly':
+          return tTime >= boundaries.rollingWeekStart;
         case 'monthly':
-          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        case 'yearly':
-          return d.getFullYear() === now.getFullYear();
+          return tTime >= boundaries.monthStart;
+        case 'yearly': {
+          const yearStart = new Date(now.getFullYear(), 0, 1).getTime();
+          return tTime >= yearStart;
+        }
         default:
           return true;
       }
@@ -154,14 +154,21 @@ export function BudgetScreen({
   return (
     <div className="flex flex-col min-h-full pb-6 relative bg-background-light dark:bg-background-dark">
       <header
-        className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10"
+        className="flex items-center bg-white dark:bg-surface-dark p-4 border-b border-border/50 dark:border-white/5 sticky top-0 z-10 shadow-sm"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
-        <div className="size-10 shrink-0"></div>
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">งบประมาณ</h1>
+        <button
+          onClick={() => onNavigate('dashboard')}
+          className="size-10 flex items-center justify-center bg-slate-50 dark:bg-white/5 rounded-xl text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
+        >
+          <ChevronLeft size={24} />
+        </button>
+        <h1 className="text-xl font-black tracking-tighter flex-1 text-center text-text-dark dark:text-white uppercase">
+          Budgets
+        </h1>
         <button
           onClick={() => setShowAddForm(true)}
-          className="text-primary hover:text-text-dark transition-colors p-2 bg-highlight dark:bg-primary/20 rounded-full"
+          className="text-primary hover:text-text-dark transition-colors p-2 bg-primary/5 dark:bg-white/5 rounded-full"
         >
           <Plus size={20} />
         </button>
@@ -169,19 +176,19 @@ export function BudgetScreen({
 
       <main className="p-4 flex flex-col flex-1 space-y-6">
         {/* Period Selector */}
-        <div className="grid grid-cols-4 bg-slate-100 dark:bg-slate-900 rounded-xl p-1">
+        <div className="grid grid-cols-4 bg-slate-100 dark:bg-white/5 rounded-xl p-1 border border-transparent dark:border-white/5">
           {(['daily', 'weekly', 'monthly', 'yearly'] as BudgetPeriod[]).map((p) => {
             const active = viewPeriod === p;
             return (
               <button
                 key={p}
                 onClick={() => setViewPeriod(p)}
-                className={`relative py-1.5 text-[10px] font-extrabold transition-all ${active ? 'text-text-dark dark:text-slate-900' : 'text-secondary opacity-70'}`}
+                className={`relative py-1.5 text-[10px] font-black uppercase tracking-[0.2em] transition-all ${active ? 'text-text-dark dark:text-primary' : 'text-secondary opacity-70'}`}
               >
                 {active && (
                   <motion.span
                     layoutId="budget-period-pill"
-                    className="absolute inset-0 rounded-lg bg-white dark:bg-white shadow-sm"
+                    className="absolute inset-0 rounded-lg bg-white dark:bg-white/10 shadow-sm"
                     transition={{ type: 'spring', bounce: 0.2, duration: 0.45 }}
                   />
                 )}
@@ -192,24 +199,28 @@ export function BudgetScreen({
         </div>
 
         {/* Overall Budget Card */}
-        <section className="bg-primary rounded-3xl p-6 shadow-xl shadow-primary/20 text-white relative overflow-hidden">
-          <div className="absolute -right-6 -top-6 text-white/10">
+        <section className="bg-text-dark dark:bg-white/2 rounded-3xl p-6 border border-transparent dark:border-white/5 text-white relative overflow-hidden ring-1 ring-white/5">
+          <div className="absolute -right-6 -top-6 text-white/5 dark:text-white/5">
             <Target size={120} />
           </div>
-          <p className="text-white/80 text-sm font-bold uppercase tracking-wider mb-2 relative z-10">งบ{periodLabel}</p>
+          <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] mb-2 relative z-10">
+            {periodLabel} Budget
+          </p>
           <div className="flex items-end gap-2 mb-6 relative z-10">
-            <h2 className="text-4xl font-extrabold tracking-tight">{fmt(totalSpent)}</h2>
-            <p className="text-white/60 text-lg font-medium mb-1">/ {fmt(totalBudgetLimit)}</p>
+            <h2 className="text-4xl font-black tracking-tighter">{fmt(totalSpent)}</h2>
+            <p className="text-white/20 text-lg font-bold mb-1 tabular-nums tracking-tighter">
+              / {fmt(totalBudgetLimit)}
+            </p>
           </div>
 
           <div className="relative z-10">
-            <div className="flex justify-between text-xs font-bold mb-2">
-              <span>เหลือ {fmt(totalLeft)}</span>
-              <span>{totalPct.toFixed(0)}%</span>
+            <div className="flex justify-between text-[11px] font-black uppercase tracking-wider mb-2.5">
+              <span className="text-white/60">Remains {fmt(totalLeft)}</span>
+              <span className="text-white/80">{totalPct.toFixed(0)}%</span>
             </div>
-            <div className="h-3 w-full bg-black/20 rounded-full overflow-hidden p-0.5">
+            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full shadow-sm transition-all duration-700 ${totalPct > 90 ? 'bg-rose-300' : 'bg-white'}`}
+                className={`h-full transition-all duration-700 ${totalPct > 90 ? 'bg-rose-500' : 'bg-primary'}`}
                 style={{ width: `${totalPct}%` }}
               />
             </div>
@@ -218,14 +229,18 @@ export function BudgetScreen({
 
         {/* Category Budgets */}
         <section className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-bold text-text-dark dark:text-slate-100">เพดานแต่ละหมวด</h3>
-            <span className="text-[10px] font-bold text-secondary">{categoryData.length} งบที่ใช้งาน</span>
+          <div className="flex justify-between items-center px-1">
+            <h3 className="text-[10px] font-black text-text-dark dark:text-white uppercase tracking-[0.2em]">
+              Category Limits
+            </h3>
+            <span className="text-[9px] font-black text-secondary uppercase tracking-[0.1em] opacity-60">
+              {categoryData.length} active
+            </span>
           </div>
           <div className="space-y-3">
             {categoryData.length === 0 ? (
-              <div className="text-center py-12 text-secondary text-sm font-bold opacity-60">
-                ยังไม่มีงบประมาณ แตะ + เพื่อเพิ่มรายการแรก
+              <div className="text-center py-12 text-secondary text-[11px] font-black uppercase tracking-[0.2em] opacity-60">
+                No budgets set. Tap + to start.
               </div>
             ) : (
               categoryData.map((cat) => (
@@ -293,55 +308,54 @@ function BudgetCard({
   const fmt = (v: number) => formatMoney(v, { maximumFractionDigits: 0 });
 
   let barColor = 'bg-primary';
-  let badgeColor = 'bg-highlight text-primary dark:bg-primary/20';
-  let statusText = 'ยังอยู่ในแผน';
+  let badgeColor = 'bg-primary/5 text-primary dark:bg-white/10 dark:text-primary';
+  let statusText = 'On Track';
 
   if (warning) {
     barColor = 'bg-amber-500';
-    badgeColor = 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400';
-    statusText = 'ใกล้เต็มงบ';
+    badgeColor = 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400';
+    statusText = 'Near Limit';
   }
   if (over) {
     barColor = 'bg-rose-500';
-    badgeColor = 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400';
-    statusText = 'เกินงบ';
+    badgeColor = 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400';
+    statusText = 'Over Budget';
   }
 
   return (
-    <div className="bg-surface dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800 group">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-center gap-3">
-          <div className="size-10 bg-input-bg dark:bg-slate-800 rounded-xl flex items-center justify-center text-lg shadow-sm">
+    <div className="bg-white dark:bg-white/2 rounded-3xl p-5 border border-border/50 dark:border-white/5 group relative overflow-hidden">
+      <div className="flex justify-between items-start mb-5 relative z-10">
+        <div className="flex items-center gap-3.5">
+          <div className="size-11 bg-slate-50 dark:bg-white/5 rounded-xl flex items-center justify-center text-xl border border-transparent dark:border-white/5">
             {icon}
           </div>
           <div>
-            <p className="font-bold text-text-dark dark:text-slate-100 text-[15px]">{label}</p>
+            <p className="font-black text-text-dark dark:text-white text-[15px] tracking-tight">{label}</p>
             <div className="flex items-center gap-2 mt-1">
               <span
-                className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${badgeColor}`}
+                className={`inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-[0.1em] ${badgeColor}`}
               >
                 {statusText}
               </span>
-              <span className="text-[9px] text-secondary font-bold opacity-60">
-                ({fmt(originalLimit)}/{PERIOD_LABELS[originalPeriod].toLowerCase()})
-                {syncStatus === 'synced' ? '' : ` · ${syncStatus}`}
+              <span className="text-[9px] text-secondary font-bold opacity-60 uppercase tracking-widest">
+                {fmt(originalLimit)}/{originalPeriod.slice(0, 3)}
               </span>
             </div>
           </div>
         </div>
         <button
           onClick={onDelete}
-          className="opacity-0 group-hover:opacity-100 transition-opacity text-secondary hover:text-expense p-1"
+          className="opacity-0 group-hover:opacity-100 transition-opacity text-secondary hover:text-rose-500 p-1"
         >
           <Trash2 size={14} />
         </button>
       </div>
 
-      <div className="flex justify-between items-end mb-2">
-        <p className="font-bold text-lg text-text-dark dark:text-slate-100">{fmt(spent)}</p>
-        <p className="font-bold text-sm text-secondary">จาก {fmt(limit)}</p>
+      <div className="flex justify-between items-end mb-2.5 relative z-10">
+        <p className="font-black text-lg text-text-dark dark:text-white tabular-nums tracking-tighter">{fmt(spent)}</p>
+        <p className="text-[10px] font-black text-secondary uppercase tracking-[0.1em]">of {fmt(limit)}</p>
       </div>
-      <div className="h-2 w-full bg-input-bg dark:bg-slate-800 rounded-full overflow-hidden">
+      <div className="h-1 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden relative z-10">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${percent}%` }}
@@ -388,7 +402,7 @@ function AddBudgetModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm"
       onClick={onClose}
     >
       <motion.div
@@ -396,41 +410,41 @@ function AddBudgetModal({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="w-full max-w-md bg-white dark:bg-surface-dark rounded-t-[2rem] p-6 pb-10"
+        className="w-full max-w-md bg-white dark:bg-surface-dark rounded-t-[2.5rem] border-t border-border dark:border-white/10 p-7 pb-10"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-black text-text-dark dark:text-white">เพิ่มงบประมาณ</h2>
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-xl font-black text-text-dark dark:text-white tracking-tight uppercase">New Budget</h2>
           <button onClick={onClose} className="text-secondary hover:text-text-dark dark:hover:text-white p-1">
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Category Input */}
           <div>
             <label
               htmlFor="budget-category"
-              className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2"
+              className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary block mb-2.5 ml-1"
             >
-              หมวดหมู่
+              Category
             </label>
             <input
               id="budget-category"
               type="text"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              placeholder="เช่น อาหาร เดินทาง ช้อปปิ้ง"
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-3 px-4 text-sm font-bold text-text-dark dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
+              placeholder="e.g. Food, Travel"
+              className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl py-3.5 px-4 text-sm font-bold text-text-dark dark:text-white outline-none focus:ring-2 focus:ring-primary/10 transition-all"
             />
             {suggestedCategories.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
+              <div className="flex flex-wrap gap-2 mt-3 ml-1">
                 {suggestedCategories.slice(0, 6).map((c) => (
                   <button
                     type="button"
                     key={c}
                     onClick={() => setCategory(c)}
-                    className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all ${category === c ? 'bg-primary text-white border-primary' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-secondary'}`}
+                    className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border transition-all ${category === c ? 'bg-primary text-white border-primary shadow-sm shadow-primary/10' : 'bg-slate-50 dark:bg-white/5 border-transparent text-secondary hover:border-slate-200 dark:hover:border-white/10'}`}
                   >
                     {DEFAULT_ICONS[c]} {c}
                   </button>
@@ -443,9 +457,9 @@ function AddBudgetModal({
           <div>
             <label
               htmlFor="budget-limit"
-              className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2"
+              className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary block mb-2.5 ml-1"
             >
-              วงเงินงบประมาณ (฿)
+              Limit Amount (฿)
             </label>
             <input
               id="budget-limit"
@@ -456,7 +470,7 @@ function AddBudgetModal({
               placeholder="0.00"
               min="0"
               step="any"
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-3 px-4 text-sm font-bold text-text-dark dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl py-3.5 px-4 text-sm font-bold text-text-dark dark:text-white tabular-nums outline-none focus:ring-2 focus:ring-primary/10 transition-all"
             />
           </div>
 
@@ -464,21 +478,21 @@ function AddBudgetModal({
           <div>
             <label
               htmlFor="budget-period"
-              className="text-[10px] font-black uppercase tracking-widest text-secondary block mb-2"
+              className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary block mb-2.5 ml-1"
             >
-              รอบงบประมาณ
+              Period
             </label>
             <div className="relative">
               <button
                 id="budget-period"
                 type="button"
                 onClick={() => setShowPeriodMenu(!showPeriodMenu)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-3 px-4 text-sm font-bold text-text-dark dark:text-white flex justify-between items-center"
+                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl py-3.5 px-4 text-sm font-bold text-text-dark dark:text-white flex justify-between items-center outline-none focus:ring-2 focus:ring-primary/10 transition-all"
               >
-                <span>{PERIOD_LABELS[period]}</span>
+                <span className="uppercase tracking-wide">{PERIOD_LABELS[period]}</span>
                 <ChevronDown
                   size={16}
-                  className={`text-secondary transition-transform ${showPeriodMenu ? 'rotate-180' : ''}`}
+                  className={`text-secondary transition-transform duration-300 ${showPeriodMenu ? 'rotate-180' : ''}`}
                 />
               </button>
               <AnimatePresence>
@@ -487,7 +501,7 @@ function AddBudgetModal({
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
-                    className="absolute top-full mt-1 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xl z-20"
+                    className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-black border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-2xl z-20"
                   >
                     {(['daily', 'weekly', 'monthly', 'yearly'] as BudgetPeriod[]).map((p) => (
                       <button
@@ -497,15 +511,9 @@ function AddBudgetModal({
                           setPeriod(p);
                           setShowPeriodMenu(false);
                         }}
-                        className={`w-full text-left px-4 py-2.5 text-sm font-bold transition-colors ${period === p ? 'bg-primary/10 text-primary' : 'text-text-dark dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                        className={`w-full text-left px-5 py-3.5 text-xs font-black uppercase tracking-wider transition-colors ${period === p ? 'bg-primary text-white' : 'text-text-dark dark:text-white hover:bg-slate-50 dark:hover:bg-white/10'}`}
                       >
                         {PERIOD_LABELS[p]}
-                        <span className="text-[10px] text-secondary ml-2">
-                          {p === 'daily' && '(เช่น ฿200/วัน)'}
-                          {p === 'weekly' && '(เช่น ฿1,500/สัปดาห์)'}
-                          {p === 'monthly' && '(เช่น ฿5,000/เดือน)'}
-                          {p === 'yearly' && '(เช่น ฿60,000/ปี)'}
-                        </span>
                       </button>
                     ))}
                   </motion.div>
@@ -518,10 +526,10 @@ function AddBudgetModal({
           <button
             type="submit"
             disabled={!category.trim() || !limit || Number.parseFloat(limit) <= 0}
-            className="w-full bg-text-dark dark:bg-white text-white dark:text-slate-900 font-black py-4 rounded-2xl mt-2 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+            className="w-full bg-text-dark dark:bg-white text-white dark:text-black font-black uppercase tracking-[0.2em] py-4.5 rounded-2xl mt-4 flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-40 disabled:hover:scale-100"
           >
-            <Plus size={18} />
-            เพิ่มงบประมาณ
+            <Plus size={18} strokeWidth={3} />
+            Create Budget
           </button>
         </form>
       </motion.div>

@@ -8,7 +8,15 @@ interface BottomNavProps {
   canCreate?: boolean;
 }
 
-export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomNavProps) {
+export function BottomNav({
+  currentView,
+  onNavigate,
+  canCreate = true,
+}: Readonly<{
+  currentView: ViewState;
+  onNavigate: (view: ViewState) => void;
+  canCreate?: boolean;
+}>) {
   const navVisibleViews: ViewState[] = [
     'dashboard',
     'transactions',
@@ -24,7 +32,7 @@ export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomN
   const activeView = currentView === 'add_transaction' ? 'add_transaction' : currentView;
 
   return (
-    <div className="shrink-0 border-t border-border/60 dark:border-slate-800 bg-white dark:bg-surface-dark safe-bottom">
+    <div className="shrink-0 border-t border-border/40 dark:border-white/5 bg-white/80 dark:bg-black/80 backdrop-blur-lg safe-bottom">
       <div className="grid grid-cols-5 h-[60px] items-center">
         <TabItem
           icon={<Home size={22} strokeWidth={activeView === 'dashboard' ? 2.2 : 1.6} />}
@@ -46,8 +54,8 @@ export function BottomNav({ currentView, onNavigate, canCreate = true }: BottomN
             disabled={!canCreate}
             className={`w-12 h-12 rounded-2xl border-none flex items-center justify-center transition-all active:scale-90 ${
               canCreate
-                ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                : 'bg-slate-300 dark:bg-slate-700 text-white cursor-default'
+                ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                : 'bg-slate-300 dark:bg-white/10 text-white cursor-default'
             }`}
           >
             <Plus size={24} strokeWidth={2.5} />
@@ -76,24 +84,24 @@ function TabItem({
   label,
   active,
   onClick,
-}: {
+}: Readonly<{
   icon: React.ReactNode;
   label: string;
   active: boolean;
   onClick: () => void;
-}) {
+}>) {
   return (
     <button
       onClick={onClick}
       className={`flex flex-col items-center justify-center gap-1 w-full h-full border-none bg-transparent cursor-pointer p-0 transition-colors ${
-        active ? 'text-primary' : 'text-slate-400 dark:text-slate-500'
+        active ? 'text-primary' : 'text-slate-400 dark:text-white/30'
       }`}
     >
-      <div className={`relative flex items-center justify-center ${active ? '' : ''}`}>
-        {active && <div className="absolute -inset-x-3 -inset-y-1 bg-primary/8 dark:bg-primary/15 rounded-lg" />}
+      <div className="relative flex items-center justify-center">
+        {active && <div className="absolute -inset-x-3 -inset-y-1 bg-primary/8 dark:bg-primary/10 rounded-lg" />}
         <span className="relative">{icon}</span>
       </div>
-      <span className={`text-[11px] leading-none tracking-[0.02em] ${active ? 'font-extrabold' : 'font-semibold'}`}>
+      <span className={`text-[10px] leading-none tracking-[0.05em] ${active ? 'font-black' : 'font-bold'}`}>
         {label}
       </span>
     </button>

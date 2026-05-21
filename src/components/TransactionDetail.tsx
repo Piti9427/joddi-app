@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  X,
   Check,
   Trash2,
   Calendar,
@@ -12,12 +11,15 @@ import {
   Wallet,
   ChevronDown,
   AlertCircle,
+  ChevronLeft,
 } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
 import { getCurrencySymbol } from '../lib/formatters';
 import { getLocalCategories, type LocalCategory, saveLocalTransaction, deleteLocalTransaction } from '../lib/supabase';
+import { parseLocalDate } from '../lib/dateUtils';
 import { lightHaptic } from '../lib/device';
 import { motion, AnimatePresence } from 'motion/react';
+import { ICONS, getCategoryColorStyles } from '../lib/categoryUtils';
 
 const PAYMENT_METHODS = [
   { id: 'cash', label: 'เงินสด', icon: <Banknote size={18} strokeWidth={1.5} /> },
@@ -68,7 +70,7 @@ export function TransactionDetail({
   const displayAmount = React.useMemo(() => {
     if (amount === '0' || amount === '') return '0';
     const [integerPart, decimalPart] = amount.split('.');
-    const formattedInteger = Number(integerPart).toLocaleString('en-US');
+    const formattedInteger = Number.parseInt(integerPart || '0', 10).toLocaleString('en-US');
     return decimalPart === undefined ? formattedInteger : `${formattedInteger}.${decimalPart}`;
   }, [amount]);
 
@@ -100,6 +102,9 @@ export function TransactionDetail({
     const val = Number.parseFloat(amount);
     if (val === 0) return;
 
+    // Use parseLocalDate to avoid UTC midnight parsing issues
+    const transactionDate = parseLocalDate(date);
+
     await saveLocalTransaction({
       ...transaction,
       localId: transaction.localId || transaction.id,
@@ -107,7 +112,7 @@ export function TransactionDetail({
       amount: val,
       category,
       note,
-      date: new Date(date).toISOString(),
+      date: transactionDate.toISOString(),
       merchant: note || category,
       paymentMethod,
       syncStatus: 'pending' as const,
@@ -128,12 +133,12 @@ export function TransactionDetail({
   return (
     <div className="flex flex-col h-full bg-white dark:bg-background-dark overflow-hidden relative">
       {/* Header */}
-      <div className="pt-5 px-4 pb-3 safe-top bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center border-b border-border dark:border-slate-800">
+      <div className="pt-5 px-4 pb-3 safe-top bg-slate-50 dark:bg-white/2 flex justify-between items-center border-b border-border dark:border-white/5">
         <button
-          onClick={() => onNavigate(finalReturnView)}
-          className="size-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow-sm text-secondary hover:text-text-dark transition-colors"
+          onClick={() => onNavigate('dashboard')}
+          className="size-10 flex items-center justify-center bg-white dark:bg-white/5 rounded-xl shadow-sm text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
         >
-          <X size={20} />
+          <ChevronLeft size={24} />
         </button>
         <h2 className="text-sm font-black tracking-tight text-slate-900 dark:text-white uppercase">
           {isEditing ? 'แก้ไขรายการ' : 'รายละเอียด'}
@@ -144,21 +149,23 @@ export function TransactionDetail({
       <div className="flex-1 overflow-y-auto pb-24">
         {/* Amount Section */}
         <div
-          className={`px-4 py-8 text-center transition-colors ${type === 'Expense' ? 'bg-expense/5' : 'bg-income/5'}`}
+          className={`px-4 py-8 text-center transition-colors ${type === 'Expense' ? 'bg-expense/5 dark:bg-white/2' : 'bg-income/5 dark:bg-white/2'}`}
         >
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">ยอดเงิน</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">ยอดเงิน</p>
           <div className="flex items-center justify-center gap-2">
-            <span className={`text-2xl font-black ${type === 'Expense' ? 'text-expense' : 'text-income'}`}>
+            <span
+              className={`text-2xl font-black ${type === 'Expense' ? 'text-text-dark dark:text-white' : 'text-emerald-500'}`}
+            >
               {currencySymbol}
             </span>
-            <span className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white tabular-nums">
+            <span className="text-5xl font-black tracking-tighter text-slate-900 dark:text-white tabular-nums">
               {displayAmount}
             </span>
           </div>
 
           {isEditing && (
             <div className="flex justify-center mt-4">
-              <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl border border-border/60">
+              <div className="flex bg-white dark:bg-white/5 p-1 rounded-xl border border-border/60 dark:border-white/5">
                 <button
                   onClick={() => setType('Expense')}
                   className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${type === 'Expense' ? 'bg-expense text-white shadow-sm' : 'text-secondary'}`}
@@ -179,29 +186,60 @@ export function TransactionDetail({
         <div className="p-5 space-y-6">
           {/* Category */}
           <section>
-            <p className="text-[11px] text-secondary font-bold uppercase tracking-widest mb-3 px-1">หมวดหมู่</p>
+            <p className="text-[10px] text-secondary font-black uppercase tracking-[0.2em] mb-3 px-1">หมวดหมู่</p>
             {isEditing ? (
               <div className="flex flex-wrap gap-2">
-                {filteredCategories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setCategory(cat.name)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-                      category === cat.name
-                        ? 'bg-primary/10 border-primary/30 text-primary'
-                        : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary'
-                    }`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
+                {filteredCategories.map((cat) => {
+                  const catColorStyles = getCategoryColorStyles(cat.color);
+                  const isSelected = category === cat.name;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setCategory(cat.name)}
+                      className={`px-4 py-2 rounded-xl text-[11px] font-black transition-all border flex items-center gap-2 ${
+                        isSelected
+                          ? 'bg-white dark:bg-white/10 border-primary/40 text-primary shadow-sm ring-1 ring-primary/10'
+                          : 'bg-slate-50 dark:bg-white/5 border-transparent dark:border-white/5 text-secondary'
+                      }`}
+                    >
+                      <div
+                        className={`size-4 rounded-full flex items-center justify-center ${isSelected ? '' : 'opacity-60'}`}
+                        style={catColorStyles.style}
+                      >
+                        <span className={catColorStyles.className}>
+                          {React.cloneElement((ICONS[cat.iconName] || <Tag />) as React.ReactElement, {
+                            size: 10,
+                            strokeWidth: 2.5,
+                          })}
+                        </span>
+                      </div>
+                      {cat.name}
+                    </button>
+                  );
+                })}
               </div>
             ) : (
-              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl">
-                <div className="size-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-500 shadow-sm">
-                  <Tag size={18} strokeWidth={1.5} />
-                </div>
-                <span className="font-bold text-slate-900 dark:text-white">{category}</span>
+              <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl border border-transparent dark:border-white/5">
+                {(() => {
+                  const catObj = userCategories.find((c) => c.name === category);
+                  const colorStyles = catObj
+                    ? getCategoryColorStyles(catObj.color)
+                    : { style: {}, className: 'text-white/60' };
+                  const iconNode = (catObj && ICONS[catObj.iconName]) || <Tag size={18} />;
+                  return (
+                    <>
+                      <div
+                        className="size-10 bg-white dark:bg-white/10 rounded-xl flex items-center justify-center shadow-sm border border-transparent dark:border-white/5"
+                        style={colorStyles.style}
+                      >
+                        <span className={colorStyles.className}>
+                          {React.cloneElement(iconNode as React.ReactElement, { size: 18, strokeWidth: 1.5 })}
+                        </span>
+                      </div>
+                      <span className="font-bold text-slate-900 dark:text-white">{category}</span>
+                    </>
+                  );
+                })()}
               </div>
             )}
           </section>
@@ -209,8 +247,8 @@ export function TransactionDetail({
           {/* Details Grid */}
           <div className="grid grid-cols-1 gap-4">
             {/* Date */}
-            <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl">
-              <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-1 opacity-50 flex items-center gap-1">
+            <div className="bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl border border-transparent dark:border-white/5">
+              <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-1 opacity-50 flex items-center gap-1">
                 <Calendar size={12} /> วันที่
               </p>
               {isEditing ? (
@@ -228,8 +266,10 @@ export function TransactionDetail({
             </div>
 
             {/* Note */}
-            <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl">
-              <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-1 opacity-50">หมายเหตุ</p>
+            <div className="bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl border border-transparent dark:border-white/5">
+              <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-1 opacity-50">
+                หมายเหตุ
+              </p>
               {isEditing ? (
                 <input
                   type="text"
@@ -244,8 +284,8 @@ export function TransactionDetail({
             </div>
 
             {/* Payment Method */}
-            <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl">
-              <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-3 opacity-50">
+            <div className="bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl border border-transparent dark:border-white/5">
+              <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-3 opacity-50">
                 วิธีชำระเงิน
               </p>
               {isEditing ? (
@@ -256,8 +296,8 @@ export function TransactionDetail({
                       onClick={() => setPaymentMethod(m.id)}
                       className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
                         paymentMethod === m.id
-                          ? 'bg-slate-900 text-white border-slate-900'
-                          : 'bg-white dark:bg-slate-800 border-slate-200 text-slate-500'
+                          ? 'bg-slate-900 dark:bg-white dark:text-black text-white border-slate-900 dark:border-white shadow-sm'
+                          : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-500 dark:text-white/60'
                       }`}
                     >
                       {m.label}
@@ -266,7 +306,7 @@ export function TransactionDetail({
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-500">
+                  <span className="text-slate-500 dark:text-white/60">
                     {PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.icon || <CreditCard size={16} />}
                   </span>
                   <span className="text-sm font-bold text-slate-900 dark:text-white">
@@ -281,13 +321,13 @@ export function TransactionDetail({
             <div className="pt-4 flex flex-col gap-3">
               <button
                 onClick={() => setIsEditing(true)}
-                className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all"
+                className="w-full bg-text-dark dark:bg-white text-white dark:text-black font-black py-4 rounded-2xl shadow-lg shadow-black/5 active:scale-95 transition-all border-none"
               >
                 แก้ไขรายการ
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="w-full bg-red-50 text-red-500 font-bold py-4 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                className="w-full bg-rose-50 dark:bg-rose-500/5 text-rose-600 dark:text-rose-400 font-black py-4 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2 border border-rose-100/50 dark:border-rose-500/10"
               >
                 <Trash2 size={18} />
                 ลบรายการนี้
@@ -304,13 +344,13 @@ export function TransactionDetail({
             initial={{ y: 300 }}
             animate={{ y: 0 }}
             exit={{ y: 300 }}
-            className="absolute inset-x-0 bottom-0 bg-slate-50 dark:bg-slate-900 p-4 pb-safe border-t border-border shadow-2xl z-30"
+            className="absolute inset-x-0 bottom-0 bg-slate-50 dark:bg-black/90 p-4 pb-safe border-t border-border dark:border-white/5 shadow-2xl z-30"
           >
             <div className="flex items-center justify-between mb-4 px-2">
               <span className="text-xs font-bold text-slate-400">แก้ไขจำนวนเงิน</span>
               <button
                 onClick={handleSave}
-                className="bg-primary text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20"
+                className="bg-primary text-white px-6 py-2 rounded-xl font-black shadow-lg shadow-primary/10"
               >
                 บันทึก
               </button>
@@ -321,7 +361,7 @@ export function TransactionDetail({
                   <button
                     key={key}
                     onClick={() => (key === 'delete' ? handleBackspace() : handleKeyPress(key))}
-                    className="h-12 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-lg font-bold text-slate-900 dark:text-white shadow-sm"
+                    className="h-12 rounded-xl bg-white dark:bg-white/5 flex items-center justify-center text-lg font-bold text-slate-900 dark:text-white shadow-sm border border-transparent dark:border-white/5"
                   >
                     {key === 'delete' ? <ChevronDown className="rotate-90" /> : key}
                   </button>
@@ -329,7 +369,7 @@ export function TransactionDetail({
               </div>
               <button
                 onClick={handleSave}
-                className="bg-primary text-white rounded-xl flex items-center justify-center shadow-lg"
+                className="bg-text-dark dark:bg-white text-white dark:text-black rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform"
               >
                 <Check size={28} />
               </button>
@@ -350,7 +390,7 @@ export function TransactionDetail({
             <motion.div
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
-              className="bg-white dark:bg-slate-900 w-full rounded-3xl p-6 shadow-2xl"
+              className="bg-white dark:bg-background-dark w-full rounded-3xl p-6 shadow-2xl border border-transparent dark:border-white/5"
             >
               <div className="size-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mb-4 mx-auto">
                 <AlertCircle size={28} />
@@ -362,7 +402,7 @@ export function TransactionDetail({
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold py-3 rounded-2xl"
+                  className="bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/80 font-bold py-3 rounded-2xl"
                 >
                   ยกเลิก
                 </button>

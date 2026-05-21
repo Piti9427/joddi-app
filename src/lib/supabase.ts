@@ -26,8 +26,8 @@ export function slugify(str: string) {
 }
 
 export function getAuthRedirectUrl() {
-  if (globalThis.window?.location) {
-    return globalThis.window.location.origin;
+  if (globalThis.location) {
+    return globalThis.location.origin;
   }
   const configuredRedirect = String(import.meta.env.VITE_AUTH_REDIRECT_URL || '').trim();
   if (configuredRedirect.length > 0) return configuredRedirect;
@@ -251,12 +251,12 @@ let dbPromise: Promise<IDBDatabase> | null = null;
 let syncInFlight: Promise<SyncResult> | null = null;
 
 function isIndexedDbAvailable() {
-  return typeof indexedDB !== 'undefined';
+  return typeof globalThis.indexedDB !== 'undefined';
 }
 
 function dispatchLocalEvent(name: string) {
-  if (globalThis.window !== undefined) {
-    globalThis.window.dispatchEvent(new Event(name));
+  if (typeof globalThis.dispatchEvent !== 'undefined') {
+    globalThis.dispatchEvent(new Event(name));
   }
 }
 
@@ -266,13 +266,13 @@ function nowIso() {
 
 // ฟังก์ชันสร้าง ID ฝั่ง Client เพื่อใช้ในการทำ Optimistic UI (บันทึกลงเครื่องทันทีไม่ต้องรอ Server)
 function newClientId() {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
+  if (typeof globalThis.crypto !== 'undefined' && 'randomUUID' in globalThis.crypto) {
+    return globalThis.crypto.randomUUID();
   }
 
   // Fallback สำหรับสภาพแวดล้อมที่ไม่มี randomUUID (ใช้ crypto.getRandomValues แทน Math.random เพื่อความปลอดภัย)
   return '10000000-1000-4000-8000-100000000000'.replaceAll(/[018]/g, (char) => {
-    const c = Number(char);
+    const c = Number.parseInt(char, 10);
     const randomByte = globalThis.crypto.getRandomValues(new Uint8Array(1))[0];
     return (c ^ (randomByte & (15 >> (c / 4)))).toString(16);
   });
@@ -366,9 +366,7 @@ async function getRawStore<T>(storeName: StoreName): Promise<T[]> {
 }
 
 function sortTransactions(transactions: LocalTransaction[]) {
-  return [...transactions]
-    .filter((transaction) => !transaction.deletedAt)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  return [...transactions].filter((transaction) => !transaction.deletedAt).sort((a, b) => b.date.localeCompare(a.date));
 }
 
 function sortCategories(categories: LocalCategory[]) {
@@ -382,9 +380,7 @@ function sortBudgets(budgets: LocalBudget[]) {
 }
 
 function sortReceiptDrafts(receipts: LocalReceiptDraft[]) {
-  return [...receipts]
-    .filter((receipt) => !receipt.deletedAt)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return [...receipts].filter((receipt) => !receipt.deletedAt).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 function buildLocalCategory(

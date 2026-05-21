@@ -14,10 +14,13 @@ import {
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { ViewState, Transaction } from '../App';
-import { ArrowUpRight, ArrowDownRight, BarChart3, BrainCircuit, LineChart, Sparkles } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, BarChart3, BrainCircuit, LineChart, Sparkles, ChevronLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { getLocalAiInsight } from '../lib/aiInsights';
 import { formatMoney } from '../lib/formatters';
+import { getDateRangeBoundaries } from '../lib/dateUtils';
+import { LocalCategory } from '../lib/supabase';
+import { isHex, getHexFromTailwind } from '../lib/categoryUtils';
 
 // Register Chart.js components
 ChartJS.register(
@@ -56,9 +59,15 @@ const CATEGORY_COLORS = [
 export function AnalyticsDashboard({
   onNavigate,
   transactions,
+  categories = [],
+  lang = 'th',
+  currency = 'THB',
 }: Readonly<{
   onNavigate: (v: ViewState, payload?: any) => void;
   transactions: Transaction[];
+  categories?: LocalCategory[];
+  lang?: 'th' | 'en';
+  currency?: string;
 }>) {
   const [timeRange, setTimeRange] = useState<'Week' | 'Month' | 'Year'>('Month');
   const [chartType, setChartType] = useState<ChartType>('Line');
@@ -74,6 +83,7 @@ export function AnalyticsDashboard({
   }, []);
 
   const { totalIncome, totalExpense, chartEntries, expenseByCategory, aiInsight } = useMemo(() => {
+    const boundaries = getDateRangeBoundaries();
     const now = new Date();
     let income = 0;
     let expense = 0;
@@ -84,8 +94,7 @@ export function AnalyticsDashboard({
 
     if (timeRange === 'Week') {
       for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
+        const d = new Date(boundaries.now - i * 24 * 60 * 60 * 1000);
         const key = d.toLocaleDateString('th-TH', { weekday: 'short' });
         orderedKeys.push(key);
         chartMap[key] = { income: 0, expense: 0 };
@@ -96,39 +105,25 @@ export function AnalyticsDashboard({
         chartMap[w] = { income: 0, expense: 0 };
       });
     } else if (timeRange === 'Year') {
-      const months = [
-        'ม.ค.',
-        'ก.พ.',
-        'มี.ค.',
-        'เม.ย.',
-        'พ.ค.',
-        'มิ.ย.',
-        'ก.ค.',
-        'ส.ค.',
-        'ก.ย.',
-        'ต.ค.',
-        'พ.ย.',
-        'ธ.ค.',
-      ];
-      months.forEach((m) => {
-        orderedKeys.push(m);
-        chartMap[m] = { income: 0, expense: 0 };
-      });
+      for (let m = 0; m < 12; m++) {
+        const d = new Date(now.getFullYear(), m, 1);
+        const key = d.toLocaleDateString('th-TH', { month: 'short' });
+        orderedKeys.push(key);
+        chartMap[key] = { income: 0, expense: 0 };
+      }
     }
 
     const filtered = transactions.filter((t) => {
-      const tDate = new Date(t.date);
+      const tTime = new Date(t.date).getTime();
       if (timeRange === 'Week') {
-        const weekAgo = new Date();
-        weekAgo.setHours(0, 0, 0, 0);
-        weekAgo.setDate(now.getDate() - 6);
-        return tDate >= weekAgo;
+        return tTime >= boundaries.rollingWeekStart;
       }
       if (timeRange === 'Month') {
-        return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+        return tTime >= boundaries.monthStart;
       }
       if (timeRange === 'Year') {
-        return tDate.getFullYear() === now.getFullYear();
+        const yearStart = new Date(now.getFullYear(), 0, 1).getTime();
+        return tTime >= yearStart;
       }
       return true;
     });
@@ -160,8 +155,23 @@ export function AnalyticsDashboard({
     });
 
     const entries = orderedKeys.map((k) => [k, chartMap[k]] as [string, { income: number; expense: number }]);
+
+    // Logic to use category colors
+    const colorMap = new Map<string, string>();
+    categories.forEach((cat) => {
+      if (isHex(cat.color)) {
+        colorMap.set(cat.name, cat.color);
+      } else {
+        colorMap.set(cat.name, getHexFromTailwind(cat.color));
+      }
+    });
+
     const expByCat = Object.entries(catMap)
-      .map(([name, amount], i) => ({ name, amount, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
+      .map(([name, amount], i) => ({
+        name,
+        amount,
+        color: colorMap.get(name) || CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+      }))
       .sort((a, b) => b.amount - a.amount);
 
     return {
@@ -171,7 +181,7 @@ export function AnalyticsDashboard({
       expenseByCategory: expByCat,
       aiInsight: getLocalAiInsight(filtered),
     };
-  }, [transactions, timeRange]);
+  }, [transactions, timeRange, categories]);
 
   const fmt = (val: number, maximumFractionDigits = 0) =>
     formatMoney(val, {
@@ -182,32 +192,34 @@ export function AnalyticsDashboard({
   return (
     <div className="flex flex-col min-h-full pb-5 relative bg-slate-50 dark:bg-background-dark">
       <header
-        className="bg-white dark:bg-surface-dark px-4 pb-4 sticky top-0 z-20 shadow-sm border-b border-border dark:border-slate-800"
+        className="bg-white dark:bg-surface-dark px-4 pb-4 sticky top-0 z-20 shadow-sm border-b border-border/50 dark:border-white/5"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
-        <div className="flex items-center justify-between h-12 mb-4">
-          <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Analytics</h1>
+        <div className="flex items-center gap-3 h-12 mb-4">
           <button
             onClick={() => onNavigate('dashboard')}
-            className="text-xs font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full text-slate-600 dark:text-slate-400"
+            className="size-10 flex items-center justify-center bg-slate-50 dark:bg-white/5 rounded-xl text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
           >
-            Done
+            <ChevronLeft size={24} />
           </button>
+          <h1 className="text-xl font-black tracking-tighter flex-1 text-center text-slate-900 dark:text-white mr-10 uppercase">
+            Analytics
+          </h1>
         </div>
 
-        <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
+        <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-transparent dark:border-white/5">
           {(['Week', 'Month', 'Year'] as const).map((r) => (
             <button
               key={r}
               onClick={() => setTimeRange(r)}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all relative ${
-                timeRange === r ? 'text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-lg transition-all relative ${
+                timeRange === r ? 'text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white/80'
               }`}
             >
               {timeRange === r && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute inset-0 bg-white dark:bg-slate-800 rounded-lg shadow-sm"
+                  className="absolute inset-0 bg-white dark:bg-white/10 rounded-lg shadow-sm"
                   transition={{ type: 'spring', duration: 0.5 }}
                 />
               )}
@@ -229,32 +241,35 @@ export function AnalyticsDashboard({
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-primary/10 to-violet-500/10 dark:from-primary/20 dark:to-violet-500/20 rounded-3xl p-5 border border-primary/20 relative overflow-hidden"
+            className="bg-gradient-to-br from-primary/5 to-violet-500/5 dark:from-white/5 dark:to-white/2 rounded-3xl p-5 border border-primary/10 dark:border-white/5 relative overflow-hidden"
           >
             <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 bg-primary/20 rounded-xl text-primary">
+              <div className="p-2 bg-primary/10 rounded-xl text-primary">
                 <BrainCircuit size={18} strokeWidth={1.5} />
               </div>
-              <span className="text-xs font-black uppercase tracking-wider text-primary">AI Insight</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">AI Insight</span>
             </div>
-            <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200">{aiInsight}</p>
-            <Sparkles className="absolute -right-2 -bottom-2 text-primary/10" size={80} />
+            <h4 className="text-sm font-black text-primary mb-1 tracking-tight">{aiInsight.title}</h4>
+            <p className="text-xs font-bold leading-relaxed text-slate-700 dark:text-white/60">{aiInsight.summary}</p>
+            <Sparkles className="absolute -right-2 -bottom-2 text-primary/5" size={80} />
           </motion.section>
         )}
 
         {/* Trends Chart */}
-        <section className="bg-white dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800">
+        <section className="bg-white dark:bg-surface-dark rounded-3xl p-5 border border-border dark:border-white/5">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Trends</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Income vs Expense</p>
+              <h3 className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">
+                Trends
+              </h3>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Income vs Expense</p>
             </div>
-            <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg">
+            <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-lg border border-transparent dark:border-white/5">
               <button
                 onClick={() => setChartType('Bar')}
                 className={`p-1.5 rounded-md transition-all ${
                   chartType === 'Bar'
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                    ? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm'
                     : 'text-slate-400'
                 }`}
               >
@@ -264,7 +279,7 @@ export function AnalyticsDashboard({
                 onClick={() => setChartType('Line')}
                 className={`p-1.5 rounded-md transition-all ${
                   chartType === 'Line'
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                    ? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm'
                     : 'text-slate-400'
                 }`}
               >
@@ -279,8 +294,8 @@ export function AnalyticsDashboard({
         </section>
 
         {/* Categories Breakdown */}
-        <section className="bg-white dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800">
-          <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight mb-6">
+        <section className="bg-white dark:bg-surface-dark rounded-3xl p-5 border border-border dark:border-white/5">
+          <h3 className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-6">
             Category Breakdown
           </h3>
 
@@ -294,12 +309,14 @@ export function AnalyticsDashboard({
                 expenseByCategory.slice(0, 5).map((cat) => (
                   <div key={cat.name} className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="size-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{cat.name}</span>
+                      <div className="size-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                      <span className="text-xs font-bold text-slate-700 dark:text-white/80">{cat.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-black text-slate-900 dark:text-white">{fmt(cat.amount)}</span>
-                      <span className="text-[10px] font-bold text-slate-400">
+                      <span className="text-xs font-black text-slate-900 dark:text-white tabular-nums tracking-tight">
+                        {fmt(cat.amount)}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400 tabular-nums">
                         {((cat.amount / totalExpense) * 100).toFixed(0)}%
                       </span>
                     </div>
@@ -307,7 +324,7 @@ export function AnalyticsDashboard({
                 ))
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-sm font-bold text-slate-400 italic">ไม่มีข้อมูลรายจ่ายในส่วนนี้</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No data available</p>
                 </div>
               )}
             </div>
@@ -318,28 +335,49 @@ export function AnalyticsDashboard({
   );
 }
 
-function StatCard({ label, value, type, icon }: any) {
+function StatCard({
+  label,
+  value,
+  type,
+  icon,
+}: Readonly<{
+  label: string;
+  value: string;
+  type: 'income' | 'expense';
+  icon: React.ReactElement;
+}>) {
   return (
-    <div className="bg-white dark:bg-surface-dark p-4 rounded-3xl shadow-sm border border-border dark:border-slate-800">
+    <div className="bg-white dark:bg-surface-dark p-4 rounded-3xl border border-border/50 dark:border-white/5 shadow-sm">
       <div
         className={`size-8 rounded-xl flex items-center justify-center mb-3 ${
           type === 'income'
-            ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20'
-            : 'bg-red-100 text-red-600 dark:bg-red-500/20'
+            ? 'bg-emerald-50 text-emerald-600 dark:bg-white/5'
+            : 'bg-red-50 text-red-600 dark:bg-white/5'
         }`}
       >
-        {React.cloneElement(icon, { strokeWidth: 1.5 })}
+        {React.cloneElement(icon, {
+          strokeWidth: 1.5,
+          className: type === 'income' ? 'text-emerald-500' : 'text-red-500',
+        })}
       </div>
-      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">{label}</p>
-      <p className="text-lg font-black text-slate-900 dark:text-white">{value}</p>
+      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{label}</p>
+      <p className="text-lg font-black text-slate-900 dark:text-white tabular-nums tracking-tighter">{value}</p>
     </div>
   );
 }
 
-function MainChart({ data, type, isDark }: any) {
-  const labels = data.map((d: any) => d[0]);
-  const incomeData = data.map((d: any) => d[1].income);
-  const expenseData = data.map((d: any) => d[1].expense);
+function MainChart({
+  data,
+  type,
+  isDark,
+}: Readonly<{
+  data: ReadonlyArray<[string, { income: number; expense: number }]>;
+  type: ChartType;
+  isDark: boolean;
+}>) {
+  const labels = data.map((d) => d[0]);
+  const incomeData = data.map((d) => d[1].income);
+  const expenseData = data.map((d) => d[1].expense);
 
   const chartData = {
     labels,
@@ -384,19 +422,26 @@ function MainChart({ data, type, isDark }: any) {
         borderWidth: 1,
         padding: 12,
         cornerRadius: 12,
+        displayColors: false,
+        callbacks: {
+          label: (context: any) => {
+            const val = context.parsed.y;
+            return `${context.dataset.label}: ${formatMoney(val)}`;
+          },
+        },
       },
     },
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: '#94a3b8', font: { size: 10, weight: '600' } },
+        ticks: { color: '#71717a', font: { size: 9, weight: '700' } },
       },
       y: {
-        grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', drawBorder: false },
+        grid: { color: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', drawBorder: false },
         ticks: {
-          color: '#94a3b8',
-          font: { size: 10, weight: '600' },
-          callback: (val: any) => formatMoney(val, { compact: true }),
+          color: '#71717a',
+          font: { size: 9, weight: '700' },
+          callback: (val: any) => formatMoney(Number(val), { compact: true }),
         },
       },
     },
@@ -405,13 +450,19 @@ function MainChart({ data, type, isDark }: any) {
   return type === 'Bar' ? <Bar data={chartData} options={options} /> : <Line data={chartData} options={options} />;
 }
 
-function DoughnutChart({ data, isDark }: any) {
+function DoughnutChart({
+  data,
+  isDark,
+}: Readonly<{
+  data: ReadonlyArray<{ name: string; amount: number; color: string }>;
+  isDark: boolean;
+}>) {
   const chartData = {
-    labels: data.map((d: any) => d.name),
+    labels: data.map((d) => d.name),
     datasets: [
       {
-        data: data.map((d: any) => d.amount),
-        backgroundColor: data.map((d: any) => d.color),
+        data: data.map((d) => d.amount),
+        backgroundColor: data.map((d) => d.color),
         borderWidth: 0,
       },
     ],
@@ -426,8 +477,16 @@ function DoughnutChart({ data, isDark }: any) {
       tooltip: {
         backgroundColor: isDark ? '#1e293b' : '#fff',
         titleColor: isDark ? '#fff' : '#0f172a',
+        bodyColor: isDark ? '#cbd5e1' : '#64748b',
         padding: 12,
         cornerRadius: 12,
+        displayColors: false,
+        callbacks: {
+          label: (context: any) => {
+            const val = context.parsed;
+            return ` ${formatMoney(val)}`;
+          },
+        },
       },
     },
   };
@@ -436,10 +495,10 @@ function DoughnutChart({ data, isDark }: any) {
     <div className="relative w-full h-full">
       <Doughnut data={chartData} options={options} />
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <span className="text-[10px] font-black text-slate-400 uppercase">รวม</span>
-        <span className="text-lg font-black text-slate-900 dark:text-white">
+        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Total</span>
+        <span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter">
           {formatMoney(
-            data.reduce((a: any, b: any) => a + b.amount, 0),
+            data.reduce((a, b) => a + b.amount, 0),
             { compact: true },
           )}
         </span>

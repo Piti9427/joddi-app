@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Session } from '@supabase/supabase-js';
 import { supabase, getAuthRedirectUrl, requireEmailVerification } from '../lib/supabase';
 import { Wallet, Mail, Lock, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 
 interface AuthScreenProps {
-  onAuthSuccess: (session?: any) => void;
+  onAuthSuccess: (session?: Session | null) => void;
   allowGuestReadOnly?: boolean;
   onContinueAsGuest?: () => void;
 }
@@ -103,9 +104,10 @@ export default function AuthScreen({
 
       // Final fallback
       onAuthSuccess(signUpData.session || undefined);
-    } catch (err: any) {
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
       setAuthPhase('error');
-      setErrorMsg(mapAuthError(err?.message || 'Authentication failed'));
+      setErrorMsg(mapAuthError(error.message || 'Authentication failed'));
     } finally {
       setLoading(false);
     }
@@ -125,8 +127,9 @@ export default function AuthScreen({
         redirectTo: getAuthRedirectUrl(),
       });
       if (error) throw error;
-    } catch (err: any) {
-      setErrorMsg(mapAuthError(err?.message || 'Unable to send reset email'));
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setErrorMsg(mapAuthError(error.message || 'Unable to send reset email'));
     } finally {
       setLoading(false);
     }
@@ -171,7 +174,7 @@ export default function AuthScreen({
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-text-dark dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-text-dark dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                 placeholder="อีเมล"
               />
             </div>
@@ -186,7 +189,7 @@ export default function AuthScreen({
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-text-dark dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-text-dark dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                 placeholder="รหัสผ่าน"
               />
             </div>
@@ -212,7 +215,7 @@ export default function AuthScreen({
               type="button"
               onClick={handleResetPassword}
               disabled={loading}
-              className="text-[11px] font-bold px-4 py-2 bg-slate-100 dark:bg-slate-800 text-secondary hover:text-text-dark dark:hover:text-white rounded-xl disabled:opacity-60 transition-colors"
+              className="text-[11px] font-bold px-4 py-2 bg-slate-100 dark:bg-white/5 text-secondary hover:text-text-dark dark:hover:text-white rounded-xl disabled:opacity-60 transition-colors border border-transparent dark:border-white/5"
             >
               ลืมรหัสผ่าน?
             </button>
@@ -293,7 +296,7 @@ export default function AuthScreen({
               onClick={() => {
                 if (onContinueAsGuest) onContinueAsGuest();
               }}
-              className="w-full bg-slate-100 dark:bg-slate-800 text-text-dark dark:text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2"
+              className="w-full bg-slate-100 dark:bg-white/5 text-text-dark dark:text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 border border-transparent dark:border-white/5"
             >
               ตกลง
             </button>

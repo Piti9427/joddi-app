@@ -7,10 +7,12 @@ import {
   createOptimisticTransaction,
   fetchRemoteTransactionsIntoLocal,
   getLocalTransactions,
+  getLocalCategories,
   saveLocalTransaction,
   supabase,
   syncPendingTransactions,
   type SyncStatus,
+  type LocalCategory,
 } from './lib/supabase';
 import { TransactionDetail } from './components/TransactionDetail';
 
@@ -117,6 +119,7 @@ export default function App() {
   const [baseView, setBaseView] = useState<ViewState>('dashboard');
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<LocalCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -230,7 +233,23 @@ export default function App() {
 
     initAuth();
 
-    return () => subscription.unsubscribe();
+    const fetchCategories = async () => {
+      try {
+        const localCats = await getLocalCategories();
+        setCategories(localCats);
+      } catch (err) {
+        console.error('JoddiApp: Error loading categories:', err);
+      }
+    };
+    fetchCategories();
+
+    const handleCategoriesChanged = () => fetchCategories();
+    globalThis.addEventListener('joddi:categories-changed', handleCategoriesChanged);
+
+    return () => {
+      subscription.unsubscribe();
+      globalThis.removeEventListener('joddi:categories-changed', handleCategoriesChanged);
+    };
   }, []);
 
   useEffect(() => {
@@ -287,16 +306,17 @@ export default function App() {
         })
         .then((localTransactions) => setTransactions(localTransactions))
         .catch((syncError) => console.error('Transaction background sync error:', syncError));
-    } catch (error: any) {
-      console.error('Error saving transaction locally:', error);
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('Error saving transaction locally:', err);
       // ถ้าบันทึกในเครื่องไม่สำเร็จ ให้เปลี่ยนสถานะเป็น 'failed' เพื่อให้ผู้ใช้รับทราบ
       const failedTransaction = {
         ...newTransaction,
         syncStatus: 'failed' as const,
-        syncError: error?.message || 'Failed to save transaction locally',
+        syncError: err.message || 'Failed to save transaction locally',
       };
       setTransactions((prev) => prev.map((item) => (item.id === newTransaction.id ? failedTransaction : item)));
-      showAccessMessage(mapMutationError(error?.message || 'Failed to save transaction locally'));
+      showAccessMessage(mapMutationError(err.message || 'Failed to save transaction locally'));
     }
   };
 
@@ -407,9 +427,25 @@ export default function App() {
           />
         );
       case 'transactions':
-        return <TransactionHistory onNavigate={navigate} transactions={transactions} lang={lang} currency={currency} />;
+        return (
+          <TransactionHistory
+            onNavigate={navigate}
+            transactions={transactions}
+            categories={categories}
+            lang={lang}
+            currency={currency}
+          />
+        );
       case 'analytics':
-        return <AnalyticsDashboard onNavigate={navigate} transactions={transactions} lang={lang} currency={currency} />;
+        return (
+          <AnalyticsDashboard
+            onNavigate={navigate}
+            transactions={transactions}
+            categories={categories}
+            lang={lang}
+            currency={currency}
+          />
+        );
       case 'budget':
         return <BudgetScreen onNavigate={navigate} transactions={transactions} lang={lang} currency={currency} />;
       case 'categories':
@@ -449,9 +485,11 @@ export default function App() {
             onNavigate={navigate}
             onAddTransaction={handleAddTransaction}
             transactions={transactions}
+            categories={categories}
             userName={userName}
             canCreateTransactions={canWrite}
             readOnlyMode={false}
+            lang={lang}
             currency={currency}
           />
         );
