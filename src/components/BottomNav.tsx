@@ -32,7 +32,7 @@ export function BottomNav({
   const activeView = currentView === 'add_transaction' ? 'add_transaction' : currentView;
 
   return (
-    <div className="shrink-0 border-t border-border/60 dark:border-slate-800 bg-white dark:bg-surface-dark safe-bottom">
+    <div className="shrink-0 border-t border-border/40 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg safe-bottom">
       <div className="grid grid-cols-5 h-[60px] items-center">
         <TabItem
           icon={<Home size={22} strokeWidth={activeView === 'dashboard' ? 2.2 : 1.6} />}
@@ -97,7 +97,7 @@ function TabItem({
         active ? 'text-primary' : 'text-slate-400 dark:text-slate-500'
       }`}
     >
-      <div className={`relative flex items-center justify-center ${active ? '' : ''}`}>
+      <div className="relative flex items-center justify-center">
         {active && <div className="absolute -inset-x-3 -inset-y-1 bg-primary/8 dark:bg-primary/15 rounded-lg" />}
         <span className="relative">{icon}</span>
       </div>

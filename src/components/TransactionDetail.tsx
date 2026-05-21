@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  X,
   Check,
   Trash2,
   Calendar,
@@ -318,13 +317,13 @@ export function TransactionDetail({
             <div className="pt-4 flex flex-col gap-3">
               <button
                 onClick={() => setIsEditing(true)}
-                className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 rounded-2xl shadow-lg shadow-blue-500/10 active:scale-95 transition-all border-none"
               >
                 แก้ไขรายการ
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="w-full bg-red-50 text-red-500 font-bold py-4 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                className="w-full bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 font-extrabold py-4 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2 border border-rose-100/50 dark:border-rose-900/30"
               >
                 <Trash2 size={18} />
                 ลบรายการนี้
@@ -347,7 +346,7 @@ export function TransactionDetail({
               <span className="text-xs font-bold text-slate-400">แก้ไขจำนวนเงิน</span>
               <button
                 onClick={handleSave}
-                className="bg-primary text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-blue-500/20"
               >
                 บันทึก
               </button>
@@ -366,7 +365,7 @@ export function TransactionDetail({
               </div>
               <button
                 onClick={handleSave}
-                className="bg-primary text-white rounded-xl flex items-center justify-center shadow-lg"
+                className="bg-gradient-to-b from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform"
               >
                 <Check size={28} />
               </button>

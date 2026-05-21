@@ -43,7 +43,7 @@ export function Settings({
   const currentLang = lang || 'th';
   const t = getTranslation(currentLang);
   const [darkMode, setDarkMode] = useState(() => {
-    if (typeof globalThis.localStorage !== 'undefined') {
+    if (globalThis.localStorage !== undefined) {
       return localStorage.getItem('theme') === 'dark';
     }
     return false;

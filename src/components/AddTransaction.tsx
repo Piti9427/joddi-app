@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  X,
   Check,
-  Coffee,
-  Utensils,
-  Car,
-  Receipt,
-  ShoppingBag,
   Banknote,
-  Gift,
-  Shield,
   ChevronDown,
   Calendar,
   Tag,
@@ -296,29 +288,35 @@ export function AddTransaction({
 
       {mode === 'ai' ? (
         /* AI Smart Input Mode */
-        <div className="flex-1 flex flex-col px-5 pt-6">
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <div className="size-16 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary mb-4">
+        <div className="flex-1 flex flex-col px-5 pt-6 justify-center">
+          <div className="w-full max-w-sm mx-auto flex flex-col items-center py-8 px-6 bg-slate-50/50 dark:bg-slate-900/30 backdrop-blur-md rounded-3xl border border-border/50 dark:border-slate-800/80 relative overflow-hidden shadow-sm">
+            {/* Soft glowing mesh background */}
+            <div className="absolute top-0 left-1/4 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="size-16 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20 mb-4 relative z-10 animate-pulse">
               <Sparkles size={28} />
             </div>
-            <h3 className="text-lg font-extrabold text-text-dark dark:text-white mb-1">เพิ่มด้วย AI</h3>
-            <p className="text-xs text-secondary font-medium mb-6">{aiHint}</p>
+            <h3 className="text-lg font-extrabold text-text-dark dark:text-white mb-1 relative z-10">
+              เพิ่มด้วย AI อัจฉริยะ
+            </h3>
+            <p className="text-xs text-secondary font-semibold mb-6 relative z-10">{aiHint}</p>
 
-            <form onSubmit={handleAiSubmit} className="w-full max-w-sm">
-              <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 rounded-2xl px-4 py-3 border border-border/60 dark:border-slate-700 focus-within:border-primary/40 transition-all">
+            <form onSubmit={handleAiSubmit} className="w-full relative z-10">
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-2xl px-4 py-3 border border-border/60 dark:border-slate-700 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all shadow-inner">
                 <Sparkles className="text-primary shrink-0" size={18} />
                 <input
                   value={aiText}
                   disabled={aiParsing}
                   onChange={(event) => setAiText(event.target.value)}
                   placeholder="เช่น กาแฟ 120 วันนี้ บัตรเครดิต"
-                  className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-text-dark dark:text-white outline-none placeholder:text-secondary/40"
+                  className="min-w-0 flex-1 bg-transparent text-[15px] font-bold text-text-dark dark:text-white outline-none placeholder:text-secondary/40"
                   autoFocus
                 />
                 <button
                   type="submit"
                   disabled={aiParsing || aiText.trim().length === 0}
-                  className="size-10 rounded-xl bg-primary text-white flex items-center justify-center disabled:opacity-40 active:scale-95 transition-all"
+                  className="size-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-center disabled:opacity-40 active:scale-95 transition-all shadow-md shadow-blue-500/15"
                   aria-label="บันทึกรายการด้วย AI"
                 >
                   {aiParsing ? (
@@ -450,7 +448,11 @@ export function AddTransaction({
               <button
                 onClick={handleSave}
                 disabled={Number.parseFloat(amount) === 0}
-                className={`flex items-center justify-center rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-30 ${type === 'Expense' ? 'bg-expense text-white shadow-expense/20' : 'bg-income text-white shadow-income/20'}`}
+                className={`flex items-center justify-center rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-30 ${
+                  type === 'Expense'
+                    ? 'bg-gradient-to-b from-rose-500 to-expense text-white shadow-expense/25'
+                    : 'bg-gradient-to-b from-emerald-500 to-income text-white shadow-income/25'
+                }`}
               >
                 <Check size={28} />
               </button>

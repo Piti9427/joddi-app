@@ -19,6 +19,8 @@ import { getTranslation } from '../lib/i18n';
 import { getDateRangeBoundaries } from '../lib/dateUtils';
 import { LocalCategory } from '../lib/supabase';
 import { ICONS, getCategoryColorStyles } from '../lib/categoryUtils';
+import { AiInsightCard } from './AiInsightCard';
+import { getLocalAiInsight } from '../lib/aiInsights';
 
 const QUICK_ADD_TYPE_KEY = 'quick_add_type';
 
@@ -120,6 +122,8 @@ export function Dashboard({
       locale,
     });
 
+  const aiInsight = useMemo(() => getLocalAiInsight(transactions), [transactions]);
+
   const openQuickAdd = (type: TransactionType) => {
     if (!canCreateTransactions) return;
     try {
@@ -174,46 +178,45 @@ export function Dashboard({
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-          className="bg-white dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border/60 dark:border-slate-800"
+          className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-700 dark:from-indigo-950 dark:via-slate-900 dark:to-blue-950 text-white rounded-3xl p-6 shadow-lg shadow-indigo-500/10 dark:shadow-black/40 border border-white/10 dark:border-slate-800/80"
         >
-          <div className="flex justify-between items-start mb-1">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none" />
+          <div className="absolute -bottom-8 -left-8 w-36 h-36 bg-blue-500/10 dark:bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="flex justify-between items-start mb-1 relative z-10">
             <div>
-              <p className="text-secondary text-xs font-semibold mb-1">{t.balance}</p>
+              <p className="text-blue-100 dark:text-slate-400 text-xs font-semibold mb-1">{t.balance}</p>
               <motion.h1
                 key={balance}
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="text-[2rem] leading-none font-black text-text-dark dark:text-white tabular-nums"
+                className="text-[2.2rem] leading-none font-black text-white tabular-nums tracking-tight"
               >
                 {formatCurrency(balance)}
               </motion.h1>
             </div>
-            <div className="size-11 rounded-2xl bg-primary/8 dark:bg-primary/15 flex items-center justify-center text-primary">
+            <div className="size-11 rounded-2xl bg-white/12 dark:bg-slate-800/80 border border-white/10 dark:border-slate-700/50 flex items-center justify-center text-white dark:text-blue-400 shadow-inner">
               <Wallet size={22} strokeWidth={1.5} />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border/50 dark:border-slate-700/50">
+          <div className="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-white/10 dark:border-slate-800/80 relative z-10">
             <div className="flex items-center gap-2.5">
-              <div className="size-8 rounded-xl bg-income-bg dark:bg-income/10 flex items-center justify-center text-income">
-                <ArrowUpRight size={16} strokeWidth={2} />
+              <div className="size-8.5 rounded-xl bg-white/10 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-300 dark:text-emerald-400 border border-white/5 dark:border-emerald-500/15">
+                <ArrowUpRight size={16} strokeWidth={2.5} />
               </div>
               <div>
-                <p className="text-secondary text-[10px] font-semibold">{t.income}</p>
-                <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
-                  {formatCurrency(totalIncome)}
-                </p>
+                <p className="text-blue-100 dark:text-slate-400 text-[10px] font-semibold">{t.income}</p>
+                <p className="text-sm font-black text-white tabular-nums">{formatCurrency(totalIncome)}</p>
               </div>
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="size-8 rounded-xl bg-expense-bg dark:bg-expense/10 flex items-center justify-center text-expense">
-                <ArrowDownRight size={16} strokeWidth={2} />
+              <div className="size-8.5 rounded-xl bg-white/10 dark:bg-rose-500/10 flex items-center justify-center text-rose-300 dark:text-rose-400 border border-white/5 dark:border-rose-500/15">
+                <ArrowDownRight size={16} strokeWidth={2.5} />
               </div>
               <div>
-                <p className="text-secondary text-[10px] font-semibold">{t.expense}</p>
-                <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
-                  {formatCurrency(totalExpense)}
-                </p>
+                <p className="text-blue-100 dark:text-slate-400 text-[10px] font-semibold">{t.expense}</p>
+                <p className="text-sm font-black text-white tabular-nums">{formatCurrency(totalExpense)}</p>
               </div>
             </div>
           </div>
@@ -226,14 +229,14 @@ export function Dashboard({
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.05 }}
-          className="bg-white dark:bg-surface-dark border border-border/60 dark:border-slate-800 p-3.5 rounded-2xl shadow-sm flex items-center gap-3"
+          className="bg-white dark:bg-surface-dark border border-border/50 dark:border-slate-800/80 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center gap-3.5"
         >
-          <div className="size-9 rounded-xl bg-income-bg/60 dark:bg-income/10 flex items-center justify-center text-income">
-            <TrendingUp size={16} strokeWidth={1.5} />
+          <div className="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-500/10">
+            <TrendingUp size={18} strokeWidth={2} />
           </div>
           <div>
             <p className="text-secondary text-[10px] font-semibold mb-0.5">รับวันนี้</p>
-            <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
+            <p className="text-base font-extrabold text-text-dark dark:text-white tabular-nums">
               {formatCurrency(todayIncome, 2)}
             </p>
           </div>
@@ -242,19 +245,22 @@ export function Dashboard({
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.05 }}
-          className="bg-white dark:bg-surface-dark border border-border/60 dark:border-slate-800 p-3.5 rounded-2xl shadow-sm flex items-center gap-3"
+          className="bg-white dark:bg-surface-dark border border-border/50 dark:border-slate-800/80 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center gap-3.5"
         >
-          <div className="size-9 rounded-xl bg-expense-bg/60 dark:bg-expense/10 flex items-center justify-center text-expense">
-            <TrendingDown size={16} strokeWidth={1.5} />
+          <div className="size-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400 border border-rose-100/50 dark:border-rose-500/10">
+            <TrendingDown size={18} strokeWidth={2} />
           </div>
           <div>
             <p className="text-secondary text-[10px] font-semibold mb-0.5">จ่ายวันนี้</p>
-            <p className="text-sm font-bold text-text-dark dark:text-white tabular-nums">
+            <p className="text-base font-extrabold text-text-dark dark:text-white tabular-nums">
               {formatCurrency(todayExpense, 2)}
             </p>
           </div>
         </motion.div>
       </section>
+
+      {/* AI Insight Card */}
+      <AiInsightCard insight={aiInsight} onNavigate={onNavigate} />
 
       {/* Quick Actions — semantic colors for clarity */}
       <section className="px-4 pt-4 grid grid-cols-4 gap-2.5">

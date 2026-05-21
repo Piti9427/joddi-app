@@ -315,26 +315,35 @@ export function TransactionHistory({
                   {currentLang === 'en' ? 'Date Range' : 'ช่วงเวลา'}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {['All', 'Today', 'Yesterday', 'Last7Days', 'Last30Days', 'ThisMonth', 'LastMonth', 'Custom'].map(
-                    (type) => (
-                      <motion.button
-                        key={type}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => {
-                          setDateFilter(type as DateFilterType);
-                          if (type === 'Custom') setShowDatePicker(true);
-                        }}
-                        className={`px-3 py-2 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all ${
-                          dateFilter === type
-                            ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                            : 'bg-slate-100 dark:bg-slate-800 text-secondary hover:bg-slate-200 dark:hover:bg-slate-700'
-                        }`}
-                      >
-                        <Calendar size={12} />
-                        {labels.date[type as keyof typeof labels.date]}
-                      </motion.button>
-                    ),
-                  )}
+                  {(
+                    [
+                      'All',
+                      'Today',
+                      'Yesterday',
+                      'Last7Days',
+                      'Last30Days',
+                      'ThisMonth',
+                      'LastMonth',
+                      'Custom',
+                    ] as const
+                  ).map((type) => (
+                    <motion.button
+                      key={type}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        setDateFilter(type);
+                        if (type === 'Custom') setShowDatePicker(true);
+                      }}
+                      className={`px-3 py-2 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all ${
+                        dateFilter === type
+                          ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                          : 'bg-slate-100 dark:bg-slate-800 text-secondary hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      <Calendar size={12} />
+                      {labels.date[type]}
+                    </motion.button>
+                  ))}
                 </div>
 
                 {dateFilter === 'Custom' && (customStartDate || customEndDate) && (
