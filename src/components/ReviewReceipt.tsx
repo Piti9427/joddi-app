@@ -104,16 +104,16 @@ export function ReviewReceipt({
   return (
     <div className="flex flex-col min-h-full pb-6 relative bg-background-light dark:bg-background-dark">
       <header
-        className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10"
+        className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-white/5 sticky top-0 z-10"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
         <button
           onClick={() => onNavigate('dashboard')}
-          className="size-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl text-secondary hover:text-text-dark transition-colors"
+          className="size-10 flex items-center justify-center bg-slate-100 dark:bg-white/5 rounded-xl text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
         >
           <ChevronLeft size={24} />
         </button>
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center pr-10 text-text-dark dark:text-white">
+        <h1 className="text-sm font-black leading-tight flex-1 text-center pr-10 text-text-dark dark:text-white uppercase tracking-[0.1em]">
           ตรวจสลิป
         </h1>
       </header>
@@ -123,7 +123,7 @@ export function ReviewReceipt({
           <h3 className="text-sm font-extrabold text-text-dark dark:text-white">ถ่ายสลิปแบบเร็ว</h3>
           <button
             onClick={handleCapture}
-            className="relative w-full bg-input-bg dark:bg-slate-800 rounded-[1.35rem] overflow-hidden shadow-sm border border-border aspect-[4/5] flex items-center justify-center"
+            className="relative w-full bg-input-bg dark:bg-white/5 rounded-[1.35rem] overflow-hidden shadow-sm border border-border dark:border-white/5 aspect-[4/5] flex items-center justify-center"
           >
             {receiptImage ? (
               <img className="w-full h-full object-cover" src={receiptImage} alt="รูปสลิป" />
@@ -142,7 +142,7 @@ export function ReviewReceipt({
             {receiptImage && (
               <button
                 onClick={handleAiScan}
-                className="text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md text-secondary hover:text-primary transition-colors"
+                className="text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md text-secondary hover:text-primary transition-colors border border-transparent dark:border-white/5"
               >
                 Scan with AI
               </button>
@@ -151,7 +151,7 @@ export function ReviewReceipt({
           {receiptDraft && (
             <button
               onClick={() => onNavigate('dashboard')}
-              className="w-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-bold py-3 rounded-2xl active:scale-[0.98] transition-all"
+              className="w-full bg-text-dark text-white dark:bg-white dark:text-black font-black py-3 rounded-2xl active:scale-[0.98] transition-all"
             >
               เสร็จแล้ว
             </button>
@@ -160,7 +160,7 @@ export function ReviewReceipt({
 
         <section className="space-y-4">
           <h3 className="text-sm font-extrabold text-text-dark dark:text-white">รายละเอียดสำหรับบันทึกเป็นรายการ</h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-5 shadow-sm border border-border dark:border-slate-800 space-y-5">
+          <div className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-5 shadow-sm border border-border dark:border-white/5 space-y-5">
             <EditableRow
               icon={<Store />}
               label="ร้านค้า"
@@ -214,7 +214,7 @@ function EditableRow({
 }>) {
   return (
     <label className="flex items-center gap-4">
-      <div className="size-12 bg-input-bg dark:bg-slate-800 rounded-2xl flex items-center justify-center text-secondary shrink-0">
+      <div className="size-12 bg-input-bg dark:bg-white/5 rounded-2xl flex items-center justify-center text-secondary shrink-0 border border-transparent dark:border-white/5">
         {React.cloneElement(icon, { size: 22, strokeWidth: 1.5 })}
       </div>
       <div className="flex-1">

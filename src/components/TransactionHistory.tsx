@@ -229,7 +229,7 @@ export function TransactionHistory({
   return (
     <div className="flex flex-col h-full min-h-0 relative bg-slate-50 dark:bg-background-dark">
       <header
-        className="flex flex-col bg-white dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 shrink-0 z-20"
+        className="flex flex-col bg-white dark:bg-surface-dark p-4 border-b border-border dark:border-white/5 shrink-0 z-20"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 16px)' }}
       >
         <div className="flex items-center gap-3 mb-6">
@@ -302,7 +302,7 @@ export function TransactionHistory({
                     className={`px-4 py-2 rounded-xl text-[11px] font-black whitespace-nowrap transition-all ${
                       filterType === type
                         ? 'bg-primary text-white shadow-md shadow-primary/20'
-                        : 'bg-slate-100 dark:bg-slate-800 text-secondary hover:bg-slate-200 dark:hover:bg-slate-700'
+                        : 'bg-slate-100 dark:bg-white/5 text-secondary hover:bg-slate-200 dark:hover:bg-white/10'
                     }`}
                   >
                     {labels.type[type as keyof typeof labels.type]}
@@ -337,7 +337,7 @@ export function TransactionHistory({
                       className={`px-3 py-2 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all ${
                         dateFilter === type
                           ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                          : 'bg-slate-100 dark:bg-slate-800 text-secondary hover:bg-slate-200 dark:hover:bg-slate-700'
+                          : 'bg-slate-100 dark:bg-white/5 text-secondary hover:bg-slate-200 dark:hover:bg-white/10'
                       }`}
                     >
                       <Calendar size={12} />
@@ -402,7 +402,7 @@ export function TransactionHistory({
             animate={{ scale: 1, opacity: 1 }}
             className="flex flex-col items-center justify-center py-20 text-center px-10"
           >
-            <div className="size-24 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-6 text-slate-300 dark:text-white/20 border border-transparent dark:border-white/5">
+            <div className="size-24 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-6 text-slate-300 dark:text-white/30 border border-transparent dark:border-white/5">
               <Search size={48} />
             </div>
             <h3 className="text-lg font-black text-text-dark dark:text-white mb-2">
@@ -504,7 +504,7 @@ function TransactionRow({
     <motion.div
       whileTap={{ scale: 0.98 }}
       onClick={() => onClick?.(transaction.id)}
-      className="mb-2 bg-white dark:bg-surface-dark p-4 rounded-[1.35rem] shadow-sm border border-border/40 dark:border-slate-800/40 flex items-center gap-4 hover:shadow-md transition-all group cursor-pointer"
+      className="mb-2 bg-white dark:bg-white/2 p-4 rounded-[1.35rem] shadow-sm border border-border/40 dark:border-white/5 flex items-center gap-4 hover:shadow-md transition-all group cursor-pointer"
     >
       <div
         className={`size-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors shadow-inner ${

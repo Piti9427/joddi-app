@@ -107,22 +107,24 @@ export function Settings({
   return (
     <div className="flex flex-col min-h-full pb-6 relative bg-background-light dark:bg-background-dark">
       <header
-        className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10"
+        className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-white/5 sticky top-0 z-10"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
         <button
           onClick={() => onNavigate('dashboard')}
-          className="size-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl text-secondary hover:text-text-dark transition-colors"
+          className="size-10 flex items-center justify-center bg-slate-100 dark:bg-white/5 rounded-xl text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
         >
           <ChevronLeft size={24} />
         </button>
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">ตั้งค่า</h1>
+        <h1 className="text-sm font-black leading-tight flex-1 text-center text-text-dark dark:text-white uppercase tracking-[0.1em]">
+          ตั้งค่า
+        </h1>
         <div className="size-10 shrink-0"></div>
       </header>
 
       <main className="p-4 flex flex-col flex-1 space-y-6">
-        <div className="bg-surface dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-slate-800 flex items-center gap-4">
-          <div className="size-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-black shadow-lg shadow-primary/20">
+        <div className="bg-surface dark:bg-surface-dark rounded-3xl p-5 shadow-sm border border-border dark:border-white/5 flex items-center gap-4">
+          <div className="size-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-black shadow-lg shadow-primary/10">
             {displayName ? displayName[0].toUpperCase() : 'G'}
           </div>
           <div className="flex-1">
@@ -132,25 +134,25 @@ export function Settings({
               onBlur={saveProfile}
               className="w-full bg-transparent text-lg font-black text-text-dark dark:text-white leading-tight outline-none"
             />
-            <p className="text-secondary text-sm font-bold opacity-80">
+            <p className="text-secondary text-[11px] font-bold opacity-80">
               {isAuthenticated && userEmail ? userEmail : 'เข้าสู่ระบบเพื่อซิงก์ข้อมูล'}
             </p>
           </div>
         </div>
 
         {statusMessage && (
-          <div className="rounded-2xl bg-primary/10 text-primary px-4 py-3 text-xs font-bold text-center">
+          <div className="rounded-2xl bg-primary/5 text-primary px-4 py-3 text-[11px] font-black text-center uppercase tracking-wide ring-1 ring-primary/10">
             {statusMessage}
           </div>
         )}
 
         <section className="space-y-3">
-          <h3 className="text-sm font-extrabold text-secondary pl-2">การใช้งาน</h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
+          <h3 className="text-[10px] font-black text-secondary pl-2 uppercase tracking-[0.2em]">การใช้งาน</h3>
+          <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-white/5 space-y-1">
             <SettingRow icon={<Moon />} label={t.dark_mode}>
               <button
                 onClick={toggleDarkMode}
-                className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${darkMode ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
+                className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${darkMode ? 'bg-primary' : 'bg-slate-300 dark:bg-white/10'}`}
               >
                 <div
                   className={`size-5 bg-white rounded-full shadow-sm absolute transition-transform duration-300 ${darkMode ? 'translate-x-6' : 'translate-x-1'}`}
@@ -186,8 +188,8 @@ export function Settings({
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-sm font-extrabold text-secondary pl-2">{t.account}</h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
+          <h3 className="text-[10px] font-black text-secondary pl-2 uppercase tracking-[0.2em]">{t.account}</h3>
+          <div className="bg-surface dark:bg-surface-dark rounded-3xl p-2 shadow-sm border border-border dark:border-white/5 space-y-1">
             <button onClick={syncNow} disabled={syncing} className="w-full text-left disabled:opacity-50">
               {(() => {
                 let syncValue = isAuthenticated ? 'Cloud' : 'Local';
@@ -208,16 +210,16 @@ export function Settings({
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-sm font-extrabold text-secondary pl-2">{t.help}</h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-[2rem] p-2 shadow-sm border border-border dark:border-slate-800">
+          <h3 className="text-[10px] font-black text-secondary pl-2 uppercase tracking-[0.2em]">{t.help}</h3>
+          <div className="bg-surface dark:bg-surface-dark rounded-[2rem] p-2 shadow-sm border border-border dark:border-white/5">
             <SettingRow icon={<HelpCircle />} label="ศูนย์ช่วยเหลือ" />
 
             {isAuthenticated ? (
               <button
                 onClick={onSignOut}
-                className="w-full flex items-center gap-4 p-4 hover:bg-input-bg dark:hover:bg-slate-800/50 rounded-2xl transition-colors text-left text-rose-500 group"
+                className="w-full flex items-center gap-4 p-4 hover:bg-input-bg dark:hover:bg-white/5 rounded-2xl transition-colors text-left text-rose-500 group"
               >
-                <div className="size-10 rounded-[1.2rem] bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center group-hover:bg-rose-100 transition-colors">
+                <div className="size-10 rounded-[1.2rem] bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center group-hover:bg-rose-100 transition-colors border border-transparent dark:border-rose-500/10">
                   <LogOut size={20} />
                 </div>
                 <div className="flex-1 font-bold">{t.sign_out}</div>
@@ -225,9 +227,9 @@ export function Settings({
             ) : (
               <button
                 onClick={onRequestSignIn}
-                className="w-full flex items-center gap-4 p-4 hover:bg-input-bg dark:hover:bg-slate-800/50 rounded-2xl transition-colors text-left text-primary group"
+                className="w-full flex items-center gap-4 p-4 hover:bg-input-bg dark:hover:bg-white/5 rounded-2xl transition-colors text-left text-primary group"
               >
-                <div className="size-10 rounded-[1.2rem] bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                <div className="size-10 rounded-[1.2rem] bg-blue-50 dark:bg-primary/10 flex items-center justify-center group-hover:bg-blue-100 transition-colors border border-transparent dark:border-primary/10">
                   <LogIn size={20} />
                 </div>
                 <div className="flex-1 font-bold">{t.sign_in}</div>
@@ -252,15 +254,15 @@ function SettingRow({
   children?: React.ReactNode;
 }>) {
   return (
-    <div className="flex items-center gap-4 group p-3 rounded-2xl hover:bg-input-bg dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
-      <div className="size-10 rounded-xl bg-input-bg dark:bg-slate-800 flex items-center justify-center text-secondary shrink-0">
+    <div className="flex items-center gap-4 group p-3 rounded-2xl hover:bg-input-bg dark:hover:bg-white/5 transition-colors cursor-pointer">
+      <div className="size-10 rounded-xl bg-input-bg dark:bg-white/5 flex items-center justify-center text-secondary shrink-0 border border-transparent dark:border-white/5">
         {React.cloneElement(icon, { size: 20 })}
       </div>
       <div className="flex-1">
-        <p className="text-text-dark dark:text-slate-100 font-bold text-[15px]">{label}</p>
+        <p className="text-text-dark dark:text-slate-100 font-black text-[14px] tracking-tight">{label}</p>
       </div>
       <div className="flex items-center gap-2">
-        {value && <span className="text-sm font-bold text-secondary">{value}</span>}
+        {value && <span className="text-[11px] font-black text-secondary uppercase tracking-wider">{value}</span>}
         {children ?? <ChevronRight className="text-secondary" size={20} />}
       </div>
     </div>

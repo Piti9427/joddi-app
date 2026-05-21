@@ -54,7 +54,7 @@ function CategoryRow({
       <div className="flex flex-col gap-4 p-5 rounded-2xl bg-highlight/40 dark:bg-white/5 border border-primary/30 mb-2 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center gap-3">
           <div
-            className={`size-12 rounded-2xl bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm ${editColorStyles.className}`}
+            className={`size-12 rounded-2xl bg-white dark:bg-white/10 flex items-center justify-center shrink-0 shadow-sm ${editColorStyles.className}`}
             style={editColorStyles.style}
           >
             {React.cloneElement((ICONS[editIcon] || <Receipt />) as React.ReactElement, { size: 24 })}
@@ -64,7 +64,7 @@ function CategoryRow({
             type="text"
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
-            className="flex-1 bg-white dark:bg-slate-900 border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/50 text-text-dark dark:text-white font-bold"
+            className="flex-1 bg-white dark:bg-white/5 border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/50 text-text-dark dark:text-white font-bold"
           />
         </div>
 
@@ -73,7 +73,7 @@ function CategoryRow({
             <button
               key={opt.name}
               onClick={() => setEditIcon(opt.name)}
-              className={`size-9 rounded-xl flex items-center justify-center transition-all ${editIcon === opt.name ? 'bg-primary text-white shadow-md' : 'bg-white dark:bg-slate-900 text-secondary'}`}
+              className={`size-9 rounded-xl flex items-center justify-center transition-all ${editIcon === opt.name ? 'bg-primary text-white shadow-md' : 'bg-white dark:bg-white/5 text-secondary'}`}
             >
               {React.cloneElement(opt.icon as React.ReactElement, { size: 16 })}
             </button>
@@ -106,7 +106,7 @@ function CategoryRow({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-slate-700">
+        <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-white/5">
           <button
             onClick={onSave}
             className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-primary/20"
@@ -121,7 +121,7 @@ function CategoryRow({
           </button>
           <button
             onClick={onCancel}
-            className="p-3 text-secondary bg-white dark:bg-slate-900 rounded-xl hover:bg-highlight transition-colors"
+            className="p-3 text-secondary bg-white dark:bg-white/5 rounded-xl hover:bg-highlight transition-colors"
           >
             <X size={18} />
           </button>
@@ -133,7 +133,7 @@ function CategoryRow({
   return (
     <button
       onClick={onEdit}
-      className="w-full text-left flex items-center gap-4 group cursor-pointer p-4 rounded-2xl hover:bg-highlight/50 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/50"
+      className="w-full text-left flex items-center gap-4 group cursor-pointer p-4 rounded-2xl hover:bg-highlight/50 dark:hover:bg-white/5 transition-all border border-transparent hover:border-border/50"
     >
       <div
         className={`size-12 rounded-2xl bg-input-bg dark:bg-white/5 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${colorStyles.className}`}
@@ -282,7 +282,7 @@ export function CategoriesManagement({
   return (
     <div className="flex flex-col min-h-full pb-6 relative bg-background-light dark:bg-background-dark">
       <header
-        className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-slate-800 sticky top-0 z-10"
+        className="flex items-center bg-surface dark:bg-surface-dark p-4 border-b border-border dark:border-white/5 sticky top-0 z-10"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
         <button
@@ -292,7 +292,9 @@ export function CategoriesManagement({
           {' '}
           <ChevronLeft size={24} />
         </button>
-        <h1 className="text-lg font-bold leading-tight flex-1 text-center text-text-dark dark:text-white">หมวดหมู่</h1>
+        <h1 className="text-sm font-black leading-tight flex-1 text-center text-text-dark dark:text-white uppercase tracking-[0.1em]">
+          หมวดหมู่
+        </h1>
         <button
           onClick={() => {
             setShowAddForm(!showAddForm);
@@ -305,7 +307,7 @@ export function CategoriesManagement({
       </header>
 
       <main className="p-4 flex flex-col flex-1 space-y-5">
-        <section className="ai-surface bg-surface dark:bg-surface-dark rounded-[1.35rem] p-4 border border-border dark:border-slate-800 shadow-sm">
+        <section className="ai-surface bg-surface dark:bg-surface-dark rounded-[1.35rem] p-4 border border-border dark:border-white/5 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="size-11 rounded-2xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center">
               <Sparkles size={20} />
@@ -414,8 +416,10 @@ export function CategoriesManagement({
 
         {/* Expenses */}
         <section className="space-y-3">
-          <h3 className="text-sm font-extrabold text-secondary pl-2">รายจ่าย ({expenses.length})</h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
+          <h3 className="text-[10px] font-black text-secondary pl-2 uppercase tracking-[0.2em]">
+            รายจ่าย ({expenses.length})
+          </h3>
+          <div className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-2 shadow-sm border border-border dark:border-white/5 space-y-1">
             {expenses.map((cat) => (
               <CategoryRow
                 key={cat.id}
@@ -439,8 +443,10 @@ export function CategoriesManagement({
 
         {/* Income */}
         <section className="space-y-3">
-          <h3 className="text-sm font-extrabold text-secondary pl-2">รายรับ ({incomes.length})</h3>
-          <div className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-2 shadow-sm border border-border dark:border-slate-800 space-y-1">
+          <h3 className="text-[10px] font-black text-secondary pl-2 uppercase tracking-[0.2em]">
+            รายรับ ({incomes.length})
+          </h3>
+          <div className="bg-surface dark:bg-surface-dark rounded-[1.35rem] p-2 shadow-sm border border-border dark:border-white/5 space-y-1">
             {incomes.map((cat) => (
               <CategoryRow
                 key={cat.id}

@@ -114,7 +114,7 @@ export function DateRangePicker({
           initial={{ y: '100%' }}
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
-          className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-[32px] overflow-hidden flex flex-col shadow-2xl border-t border-white/10"
+          className="bg-white dark:bg-background-dark w-full max-w-md rounded-t-[32px] overflow-hidden flex flex-col shadow-2xl border-t border-white/10 dark:border-white/5"
         >
           <div className="p-6 flex flex-col gap-6">
             <div className="flex items-center justify-between">
@@ -128,7 +128,7 @@ export function DateRangePicker({
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full transition-colors"
               >
                 <X size={20} className="text-slate-400" />
               </button>
@@ -137,7 +137,7 @@ export function DateRangePicker({
             {/* Display selected range */}
             <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5">
               <DateDisplay label={currentLang === 'th' ? 'เริ่มต้น' : 'Start'} date={startDate} lang={currentLang} />
-              <div className="w-px h-8 bg-slate-200 dark:bg-slate-700" />
+              <div className="w-px h-8 bg-slate-200 dark:bg-white/10" />
               <DateDisplay label={currentLang === 'th' ? 'สิ้นสุด' : 'End'} date={endDate} lang={currentLang} />
             </div>
 
@@ -150,13 +150,13 @@ export function DateRangePicker({
               <div className="flex gap-1">
                 <button
                   onClick={() => changeMonth(-1)}
-                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors"
                 >
                   <ChevronLeft size={20} />
                 </button>
                 <button
                   onClick={() => changeMonth(1)}
-                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors"
                 >
                   <ChevronRight size={20} />
                 </button>
