@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   User,
   Wallet,
@@ -11,13 +11,21 @@ import {
   ArrowDownRight,
   Landmark,
   Plus,
+  Bell,
+  Scan,
+  CreditCard,
+  Banknote,
+  PieChart,
+  Eye,
+  EyeOff,
+  Smartphone,
 } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
 import { motion } from 'motion/react';
 import { formatDateShort, formatMoney, getUserLocale } from '../lib/formatters';
 import { getTranslation } from '../lib/i18n';
 import { getDateRangeBoundaries } from '../lib/dateUtils';
-import { LocalCategory } from '../lib/supabase';
+import { LocalCategory, getLocalBudgets, type LocalBudget } from '../lib/supabase';
 import { ICONS, getCategoryColorStyles } from '../lib/categoryUtils';
 import { AiInsightCard } from './AiInsightCard';
 import { getLocalAiInsight } from '../lib/aiInsights';
@@ -48,6 +56,44 @@ export function Dashboard({
   const currentLang = lang || 'th';
   const t = getTranslation(currentLang);
   const locale = getUserLocale();
+
+  const [budgets, setBudgets] = useState<LocalBudget[]>([]);
+  const [showBalance, setShowBalance] = useState<boolean>(() => {
+    try {
+      return globalThis.localStorage.getItem('joddi_show_balance') !== 'false';
+    } catch {
+      return true;
+    }
+  });
+
+  // Load budgets on mount and listen to changes
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setBudgets(await getLocalBudgets());
+      } catch (error) {
+        console.error('Failed to load budgets', error);
+      }
+    };
+    load();
+    globalThis.addEventListener('joddi:budgets-changed', load);
+    return () => {
+      globalThis.removeEventListener('joddi:budgets-changed', load);
+    };
+  }, []);
+
+  const handleToggleBalance = () => {
+    setShowBalance((prev) => {
+      const next = !prev;
+      try {
+        globalThis.localStorage.setItem('joddi_show_balance', String(next));
+      } catch {
+        // Ignore storage write issues
+      }
+      return next;
+    });
+  };
+
   const {
     todayIncome,
     todayExpense,
@@ -114,6 +160,58 @@ export function Dashboard({
     };
   }, [transactions]);
 
+  // Compute balance for each payment method
+  const methodBalances = useMemo(() => {
+    const balances: Record<string, number> = {
+      cash: 0,
+      bank: 0,
+      card: 0,
+      ewallet: 0,
+      promptpay: 0,
+    };
+
+    transactions.forEach((tx) => {
+      const method = tx.paymentMethod || 'cash';
+      const key = balances[method] !== undefined ? method : 'cash';
+      if (tx.type === 'Income') {
+        balances[key] += tx.amount;
+      } else {
+        balances[key] -= tx.amount;
+      }
+    });
+
+    return balances;
+  }, [transactions]);
+
+  // Compute normalized monthly budget limit
+  const budgetData = useMemo(() => {
+    let totalLimit = 0;
+    budgets.forEach((b) => {
+      let monthlyLimit = b.limit;
+      if (b.period === 'daily') {
+        monthlyLimit = b.limit * 30;
+      } else if (b.period === 'weekly') {
+        monthlyLimit = b.limit * 4.33;
+      } else if (b.period === 'yearly') {
+        monthlyLimit = b.limit / 12;
+      }
+      totalLimit += monthlyLimit;
+    });
+    return {
+      totalLimit,
+      spent: monthExpense,
+    };
+  }, [budgets, monthExpense]);
+
+  const budgetRangeText = useMemo(() => {
+    const boundaries = getDateRangeBoundaries();
+    const start = new Date(boundaries.monthStart);
+    const end = new Date();
+    const lastDay = new Date(end.getFullYear(), end.getMonth() + 1, 0);
+    const fmt = (d: Date) => d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
+    return `${fmt(start)} - ${fmt(lastDay)}`;
+  }, [locale]);
+
   const formatCurrency = (value: number, maximumFractionDigits = 0) =>
     formatMoney(value, {
       maximumFractionDigits,
@@ -166,151 +264,267 @@ export function Dashboard({
     onNavigate('add_transaction');
   };
 
+  const CARDS_DATA = [
+    {
+      id: 'bank',
+      labelTh: 'โอนธนาคาร',
+      labelEn: 'Bank Account',
+      icon: <Landmark size={20} className="text-white" />,
+      gradient: 'from-[#7A36FF] to-[#4F46E5]',
+      brand: 'BANKING',
+      number: '•••• •••• •••• 4234',
+      holder: userName || 'User Account',
+    },
+    {
+      id: 'card',
+      labelTh: 'บัตรเครดิต',
+      labelEn: 'Credit Card',
+      icon: <CreditCard size={20} className="text-white" />,
+      gradient: 'from-[#1E1E2F] to-[#3B3B54]',
+      brand: 'VISA',
+      number: '•••• •••• •••• 9261',
+      holder: userName || 'User Card',
+    },
+    {
+      id: 'ewallet',
+      labelTh: 'วอลเล็ต',
+      labelEn: 'E-Wallet',
+      icon: <Wallet size={20} className="text-white" />,
+      gradient: 'from-[#06B6D4] to-[#0891B2]',
+      brand: 'WALLET',
+      number: '•••• •••• •••• 1093',
+      holder: userName || 'E-Wallet Wallet',
+    },
+    {
+      id: 'cash',
+      labelTh: 'เงินสด',
+      labelEn: 'Cash Wallet',
+      icon: <Banknote size={20} className="text-white" />,
+      gradient: 'from-[#10B981] to-[#059669]',
+      brand: 'CASH',
+      number: '•••• •••• •••• 5678',
+      holder: userName || 'Cash Balance',
+    },
+    {
+      id: 'promptpay',
+      labelTh: 'พร้อมเพย์',
+      labelEn: 'PromptPay',
+      icon: <Smartphone size={20} className="text-white" />,
+      gradient: 'from-[#004A7F] to-[#007FAD]',
+      brand: 'PROMPTPAY',
+      number: '•••• •••• •••• 0098',
+      holder: userName || 'PromptPay',
+    },
+  ];
+
   return (
-    <div className="flex flex-col min-h-full pb-5 relative bg-slate-50 dark:bg-background-dark">
+    <div className="flex flex-col min-h-full pb-32 relative bg-slate-50 dark:bg-background-dark">
       {/* Header */}
       <header
-        className="flex items-center bg-white dark:bg-surface-dark px-5 pb-3 justify-between sticky top-0 z-20 border-b border-border/50 dark:border-white/5"
+        className="flex items-center justify-between px-5 pb-3 sticky top-0 z-20 bg-slate-50/85 dark:bg-background-dark/85 backdrop-blur-md border-b border-border/10 dark:border-white/5"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
       >
         <div className="flex items-center gap-3">
-          <div className="size-10 shrink-0 overflow-hidden rounded-full ring-2 ring-primary/10 bg-primary/5 flex items-center justify-center">
-            <User className="text-primary" size={20} strokeWidth={1.5} />
+          <div className="size-10 shrink-0 rounded-full bg-[#0F0F15] dark:bg-white text-white dark:text-black flex items-center justify-center font-black text-sm uppercase ring-2 ring-primary/10 shadow-sm">
+            {userName ? userName.charAt(0) : 'J'}
           </div>
           <div>
-            <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">
-              {new Date().toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}
-            </p>
-            <h2 className="text-text-dark dark:text-slate-100 text-base font-black tracking-tight leading-tight">
-              {userName || (currentLang === 'th' ? 'จดดี' : 'Joddi')}
+            <h2 className="text-text-dark dark:text-slate-100 text-sm font-black tracking-tight leading-tight">
+              Hi, {userName || (currentLang === 'th' ? 'จดดี' : 'Joddi')}
             </h2>
+            <p className="text-secondary text-[10px] font-bold opacity-60 uppercase tracking-wider">
+              {currentLang === 'th' ? 'ยินดีต้อนรับกลับมา!' : 'Welcome back!'}
+            </p>
           </div>
         </div>
-        <motion.button
-          aria-label="Settings"
-          whileTap={{ scale: 0.9 }}
-          onClick={() => onNavigate('settings')}
-          className="flex items-center justify-center rounded-full h-10 w-10 bg-input-bg dark:bg-white/5 text-secondary hover:text-primary transition-colors border border-transparent dark:border-white/5"
-        >
-          <Settings size={20} strokeWidth={1.5} />
-        </motion.button>
+        <div className="flex items-center gap-2">
+          {/* Notification Bell */}
+          <motion.button
+            aria-label="Notifications"
+            whileTap={{ scale: 0.9 }}
+            className="relative flex items-center justify-center rounded-full h-10 w-10 bg-white dark:bg-white/5 text-secondary hover:text-primary transition-colors border border-border/40 dark:border-white/5 shadow-sm"
+          >
+            <Bell size={20} strokeWidth={1.5} />
+            <span className="absolute top-2.5 right-2.5 size-2 bg-rose-500 rounded-full ring-2 ring-white dark:ring-background-dark" />
+          </motion.button>
+
+          {/* Settings */}
+          <motion.button
+            aria-label="Settings"
+            whileTap={{ scale: 0.9 }}
+            onClick={() => onNavigate('settings')}
+            className="flex items-center justify-center rounded-full h-10 w-10 bg-white dark:bg-white/5 text-secondary hover:text-primary transition-colors border border-border/40 dark:border-white/5 shadow-sm"
+          >
+            <Settings size={20} strokeWidth={1.5} />
+          </motion.button>
+        </div>
       </header>
 
       {readOnlyMode && (
-        <section className="px-4 pt-3">
+        <section className="px-5 pt-3">
           <div className="rounded-2xl bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-200 text-[11px] font-black tracking-[0.1em] uppercase px-4 py-2.5 text-center ring-1 ring-amber-500/20">
             โหมดทดลองอ่านอย่างเดียว: เข้าสู่ระบบก่อนเพิ่มหรือแก้ไขข้อมูล
           </div>
         </section>
       )}
 
-      {/* Balance Card — primary focus */}
-      <section className="px-4 pt-4">
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-          className="relative overflow-hidden bg-[#1E1E2F] text-white rounded-[24px] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-white/5 ring-1 ring-white/5"
-        >
-          <svg
-            className="absolute inset-0 w-full h-full opacity-10 pointer-events-none"
-            viewBox="0 0 350 150"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+      {/* Balance Section */}
+      <section className="px-5 pt-5 flex flex-col gap-4">
+        <div>
+          <div className="flex items-center gap-1.5 text-secondary text-[11px] font-black uppercase tracking-[0.2em] mb-1.5">
+            <span>{currentLang === 'th' ? 'ยอดคงเหลือทั้งหมด' : 'Your Balance'}</span>
+            <button
+              onClick={handleToggleBalance}
+              className="text-secondary/70 hover:text-primary p-1 rounded transition-colors"
+            >
+              {showBalance ? <Eye size={14} /> : <EyeOff size={14} />}
+            </button>
+          </div>
+          <h1 className="text-[2.4rem] font-black text-text-dark dark:text-white tabular-nums tracking-tighter leading-none">
+            {showBalance ? formatCurrency(balance, 2) : '••••••'}
+          </h1>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mt-1">
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => openQuickAdd('Expense')}
+            disabled={!canCreateTransactions}
+            className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-[#0F0F15] dark:bg-white text-white dark:text-background-dark font-black text-xs uppercase tracking-wider shadow-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
           >
-            <path
-              d="M-20,100 C100,60 150,140 250,80 C350,20 400,80 450,40 L450,180 L-20,180 Z"
-              fill="rgba(255,255,255,0.06)"
-            />
-            <path
-              d="M-20,110 C80,80 180,120 280,60 C380,0 400,100 450,70 L450,180 L-20,180 Z"
-              fill="rgba(255,255,255,0.04)"
-            />
-          </svg>
-
-          <div className="flex justify-between items-start mb-1 relative z-10">
-            <div>
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1.5">{t.balance}</p>
-              <motion.h1
-                key={balance}
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="text-[2.4rem] leading-none font-black text-white tabular-nums tracking-tighter"
-              >
-                {formatCurrency(balance)}
-              </motion.h1>
-            </div>
-            <div className="size-11 rounded-[16px] bg-white/10 dark:bg-white/5 border border-white/10 dark:border-white/5 flex items-center justify-center text-white dark:text-white/60 shadow-inner">
-              <Wallet size={22} strokeWidth={1.5} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-white/5 relative z-10">
-            <div className="flex items-center gap-2.5">
-              <div className="size-[34px] rounded-[12px] bg-white/10 dark:bg-white/5 flex items-center justify-center text-white/80 dark:text-white/80 border border-white/5 dark:border-white/5">
-                <ArrowUpRight size={16} strokeWidth={2.5} />
-              </div>
-              <div>
-                <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">{t.income}</p>
-                <p className="text-sm font-black text-white tabular-nums tracking-tight">
-                  {formatCurrency(totalIncome)}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <div className="size-[34px] rounded-[12px] bg-white/10 dark:bg-white/5 flex items-center justify-center text-white/80 dark:text-white/80 border border-white/5 dark:border-white/5">
-                <ArrowDownRight size={16} strokeWidth={2.5} />
-              </div>
-              <div>
-                <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">{t.expense}</p>
-                <p className="text-sm font-black text-white tabular-nums tracking-tight">
-                  {formatCurrency(totalExpense)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+            <Plus size={16} strokeWidth={2.5} />
+            <span>{currentLang === 'th' ? 'เพิ่มรายการ' : 'Add / Deposit'}</span>
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => onNavigate('review_receipt')}
+            disabled={!canCreateTransactions}
+            className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-white dark:bg-white/5 text-text-dark dark:text-white border border-border dark:border-white/5 font-black text-xs uppercase tracking-wider shadow-sm hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 transition-all disabled:opacity-50"
+          >
+            <Scan size={16} strokeWidth={2} />
+            <span>{currentLang === 'th' ? 'สแกนสลิป' : 'Scan Receipt'}</span>
+          </motion.button>
+        </div>
       </section>
 
-      {/* Today Summary */}
-      <section className="px-4 pt-3 grid grid-cols-2 gap-3">
-        <motion.div
-          initial={{ x: -20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.05 }}
-          className="bg-white dark:bg-surface-dark border border-border/50 dark:border-white/5 p-4 rounded-2xl shadow-sm hover:ring-1 ring-primary/20 transition-all flex items-center gap-3.5"
-        >
-          <div className="size-10 rounded-xl bg-emerald-50 dark:bg-white/5 flex items-center justify-center text-emerald-600 dark:text-emerald-500 border border-emerald-100/50 dark:border-white/5">
-            <TrendingUp size={18} strokeWidth={2} />
+      {/* Wallets Row */}
+      <section className="pt-6">
+        <div className="flex justify-between items-center px-5 mb-3.5">
+          <h3 className="text-[11px] font-black text-text-dark dark:text-white uppercase tracking-[0.2em]">
+            {currentLang === 'th' ? 'กระเป๋าเงิน' : 'My Wallets'}
+          </h3>
+        </div>
+
+        <div className="flex gap-4 overflow-x-auto no-scrollbar px-5 py-1.5 scroll-smooth snap-x snap-mandatory">
+          {CARDS_DATA.map((card) => {
+            const cardBalance = methodBalances[card.id] || 0;
+            return (
+              <motion.div
+                key={card.id}
+                whileTap={{ scale: 0.98 }}
+                className={`snap-center flex-shrink-0 w-64 rounded-3xl p-5 text-white bg-gradient-to-br ${card.gradient} shadow-[0_8px_20px_rgba(0,0,0,0.06)] relative overflow-hidden flex flex-col justify-between aspect-[1.58/1]`}
+              >
+                {/* Decorative background pattern */}
+                <div className="absolute inset-0 opacity-10 pointer-events-none">
+                  <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
+                    <circle cx="90" cy="10" r="40" fill="white" />
+                    <circle cx="10" cy="90" r="30" fill="white" />
+                  </svg>
+                </div>
+
+                <div className="flex justify-between items-start z-10">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.15em] opacity-70">
+                      {currentLang === 'th' ? card.labelTh : card.labelEn}
+                    </p>
+                    <p className="text-2xl font-black tabular-nums tracking-tighter mt-1">
+                      {showBalance ? formatCurrency(cardBalance) : '••••••'}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/15">{card.icon}</div>
+                </div>
+
+                <div className="z-10 mt-4">
+                  <p className="text-[10px] font-mono tracking-widest opacity-80 mb-2">{card.number}</p>
+                  <div className="flex justify-between items-center">
+                    <p className="text-[9px] font-black uppercase tracking-wider opacity-70 truncate max-w-[120px]">
+                      {card.holder}
+                    </p>
+                    <span className="text-[10px] font-black italic tracking-widest">{card.brand}</span>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Today Income & Expense Summary */}
+      <section className="px-5 pt-5 grid grid-cols-2 gap-3">
+        <div className="bg-white dark:bg-white/2 border border-border/40 dark:border-white/5 p-4 rounded-3xl shadow-[0_4px_15px_rgba(0,0,0,0.02)] flex items-center gap-3.5">
+          <div className="size-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/5 flex items-center justify-center text-emerald-500 shrink-0 border border-transparent dark:border-emerald-500/10">
+            <ArrowUpRight size={18} strokeWidth={2.5} />
           </div>
           <div>
-            <p className="text-secondary text-[10px] font-black uppercase tracking-[0.2em] mb-0.5">รับวันนี้</p>
-            <p className="text-base font-black text-text-dark dark:text-white tabular-nums tracking-tight">
+            <p className="text-secondary text-[9px] font-black uppercase tracking-wider">
+              {currentLang === 'th' ? 'รับวันนี้' : 'Today Income'}
+            </p>
+            <p className="text-base font-black text-text-dark dark:text-white tabular-nums tracking-tight mt-0.5">
               {formatCurrency(todayIncome, 2)}
             </p>
           </div>
-        </motion.div>
-        <motion.div
-          initial={{ x: 20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.05 }}
-          className="bg-white dark:bg-surface-dark border border-border/50 dark:border-white/5 p-4 rounded-2xl shadow-sm hover:ring-1 ring-primary/20 transition-all flex items-center gap-3.5"
-        >
-          <div className="size-10 rounded-xl bg-rose-50 dark:bg-white/5 flex items-center justify-center text-rose-600 dark:text-rose-500 border border-rose-100/50 dark:border-white/5">
-            <TrendingDown size={18} strokeWidth={2} />
+        </div>
+        <div className="bg-white dark:bg-white/2 border border-border/40 dark:border-white/5 p-4 rounded-3xl shadow-[0_4px_15px_rgba(0,0,0,0.02)] flex items-center gap-3.5">
+          <div className="size-9 rounded-xl bg-rose-500/10 dark:bg-[#ff6a39]/5 flex items-center justify-center text-[#ff6a39] shrink-0 border border-transparent dark:border-expense/10">
+            <ArrowDownRight size={18} strokeWidth={2.5} />
           </div>
           <div>
-            <p className="text-secondary text-[10px] font-black uppercase tracking-[0.2em] mb-0.5">จ่ายวันนี้</p>
-            <p className="text-base font-black text-text-dark dark:text-white tabular-nums tracking-tight">
+            <p className="text-secondary text-[9px] font-black uppercase tracking-wider">
+              {currentLang === 'th' ? 'จ่ายวันนี้' : 'Today Expense'}
+            </p>
+            <p className="text-base font-black text-text-dark dark:text-white tabular-nums tracking-tight mt-0.5">
               {formatCurrency(todayExpense, 2)}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Week/Monthly Budget Status Card */}
+      <section className="px-5 pt-4">
+        <motion.div
+          whileTap={{ scale: 0.98 }}
+          onClick={() => onNavigate('budget')}
+          className="bg-white dark:bg-white/2 border border-border/40 dark:border-white/5 rounded-3xl p-4 shadow-[0_4px_15px_rgba(0,0,0,0.03)] flex items-center justify-between cursor-pointer hover:border-primary/20 dark:hover:border-white/10 transition-all"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-full bg-primary/10 dark:bg-white/5 flex items-center justify-center text-primary dark:text-[#9B66FF] shrink-0 border border-transparent dark:border-white/5">
+              <PieChart size={20} strokeWidth={2} />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-text-dark dark:text-white uppercase tracking-wider">
+                {currentLang === 'th' ? 'งบประมาณเดือนนี้' : 'This Month Budget'}
+              </h4>
+              <p className="text-[10px] font-bold text-secondary opacity-60 mt-0.5">{budgetRangeText}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-base font-black text-text-dark dark:text-white tabular-nums tracking-tight">
+              {formatCurrency(monthExpense)}
+            </p>
+            <p className="text-[9px] font-bold text-secondary uppercase tracking-widest mt-0.5">
+              {budgetData.totalLimit > 0
+                ? `${currentLang === 'th' ? 'จาก' : 'of'} ${formatCurrency(budgetData.totalLimit)}`
+                : currentLang === 'th'
+                  ? 'ยังไม่ได้ตั้งค่า'
+                  : 'No Limit'}
             </p>
           </div>
         </motion.div>
       </section>
 
       {/* Analytics Chart Section */}
-      <section className="px-4 pt-4 animate-slide-up">
-        <div className="bg-white dark:bg-surface-dark border border-border/50 dark:border-white/5 rounded-[24px] p-5 shadow-[0_4px_15px_rgba(0,0,0,0.05)] transition-all">
+      <section className="px-5 pt-5 animate-slide-up">
+        <div className="bg-white dark:bg-white/2 border border-border/40 dark:border-white/5 rounded-[24px] p-5 shadow-[0_4px_15px_rgba(0,0,0,0.03)] transition-all">
           <div className="flex justify-between items-center mb-4">
             <div>
               <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">
@@ -325,7 +539,7 @@ export function Dashboard({
                 <span className="text-[9px] font-bold text-secondary uppercase tracking-widest block">
                   {last7DaysData[activeBarIndex].label}
                 </span>
-                <span className="text-xs font-black text-[#7A36FF] tabular-nums tracking-tight">
+                <span className="text-xs font-black text-[#7A36FF] dark:text-[#9B66FF] tabular-nums tracking-tight">
                   {formatCurrency(last7DaysData[activeBarIndex].amount, 2)}
                 </span>
               </div>
@@ -340,7 +554,7 @@ export function Dashboard({
 
               return (
                 <div
-                  key={index}
+                  key={d.label + index}
                   className="flex flex-col items-center flex-1 group cursor-pointer relative"
                   onMouseEnter={() => setActiveBarIndex(index)}
                   onMouseLeave={() => setActiveBarIndex(null)}
@@ -360,7 +574,7 @@ export function Dashboard({
                       animate={{ height: `${Math.max(heightPct, 6)}%` }}
                       transition={{ type: 'spring', stiffness: 100, damping: 15 }}
                       className={`w-3.5 rounded-full transition-colors duration-200 ${
-                        isActive ? 'bg-[#7A36FF]' : 'bg-[#E5E7EB] dark:bg-white/10'
+                        isActive ? 'bg-[#7A36FF] dark:bg-[#9B66FF]' : 'bg-[#E5E7EB] dark:bg-white/10'
                       }`}
                     />
                   </div>
@@ -368,7 +582,7 @@ export function Dashboard({
                   {/* Label */}
                   <span
                     className={`text-[9px] mt-2 font-bold uppercase tracking-wider ${
-                      isActive ? 'text-[#7A36FF]' : 'text-secondary/60'
+                      isActive ? 'text-[#7A36FF] dark:text-[#9B66FF]' : 'text-secondary/60'
                     }`}
                   >
                     {d.label}
@@ -383,80 +597,23 @@ export function Dashboard({
       {/* AI Insight Card */}
       <AiInsightCard insight={aiInsight} onNavigate={onNavigate} />
 
-      {/* Quick Actions — semantic colors for clarity */}
-      <section className="px-4 pt-4 grid grid-cols-4 gap-2.5">
-        <QuickActionCard
-          icon={<Plus size={20} />}
-          label="จ่าย"
-          onClick={() => openQuickAdd('Expense')}
-          disabled={!canCreateTransactions}
-          colorClass="bg-expense/5 text-expense border-expense/10"
-        />
-        <QuickActionCard
-          icon={<TrendingUp size={20} />}
-          label="รายรับ"
-          onClick={() => openQuickAdd('Income')}
-          disabled={!canCreateTransactions}
-          colorClass="bg-income/5 text-income border-income/10"
-        />
-        <QuickActionCard
-          icon={<Receipt size={20} />}
-          label="สลิป"
-          onClick={() => onNavigate('review_receipt')}
-          disabled={!canCreateTransactions}
-          colorClass="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-border/40 dark:border-white/5"
-        />
-        <QuickActionCard
-          icon={<Landmark size={20} />}
-          label="งบประมาณ"
-          onClick={() => onNavigate('budget')}
-          colorClass="bg-primary/5 text-primary border-primary/10"
-        />
-      </section>
-
-      {/* Monthly Budget Summary — compact */}
-      <section className="px-4 pt-4">
-        <div className="bg-white dark:bg-surface-dark border border-border/60 dark:border-white/5 rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-0.5">Budget Status</p>
-              <h3 className="text-lg font-black text-text-dark dark:text-white tabular-nums tracking-tighter">
-                {formatCurrency(monthNet)}
-              </h3>
-            </div>
-            <button
-              onClick={() => onNavigate('budget')}
-              className="rounded-xl bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-white/60 px-3 py-2 text-[10px] font-black uppercase tracking-wider hover:bg-slate-100 dark:hover:bg-white/10 transition-colors border border-transparent dark:border-white/5"
-            >
-              Manage
-            </button>
-          </div>
-
-          <div className="space-y-1.5 pt-2 border-t border-border/40 dark:border-white/5">
-            <MetricRow label="รายรับ" value={formatCurrency(monthIncome)} positive />
-            <MetricRow label="รายจ่าย" value={formatCurrency(monthExpense)} />
-            <MetricRow label="ใช้เทียบรายรับ" value={`${monthSpendRate.toFixed(0)}%`} warning={monthSpendRate > 80} />
-          </div>
-        </div>
-      </section>
-
       {/* Recent Transactions */}
-      <section className="flex flex-col px-4 mt-6">
+      <section className="flex flex-col px-5 mt-6">
         <div className="flex items-center justify-between mb-4 px-1">
-          <h3 className="text-[10px] font-black text-text-dark dark:text-white uppercase tracking-[0.2em]">
-            Latest Entries
+          <h3 className="text-[11px] font-black text-text-dark dark:text-white uppercase tracking-[0.2em]">
+            {currentLang === 'th' ? 'รายการล่าสุด' : 'Latest Entries'}
           </h3>
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={() => onNavigate('transactions')}
-            className="flex items-center gap-1 text-primary text-[10px] font-black uppercase tracking-[0.1em] transition-all"
+            className="flex items-center gap-1 text-primary dark:text-[#9B66FF] text-[10px] font-black uppercase tracking-[0.1em] transition-all"
           >
             {currentLang === 'th' ? 'ดูทั้งหมด' : 'View All'}
             <ChevronRight size={14} />
           </motion.button>
         </div>
 
-        <div className="space-y-2 pb-4">
+        <div className="space-y-2.5 pb-4">
           {recentTransactions.length === 0 ? (
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -466,13 +623,25 @@ export function Dashboard({
               <div className="size-14 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-4 text-slate-300 dark:text-white/60 border border-transparent dark:border-white/5">
                 <Receipt size={28} strokeWidth={1} />
               </div>
-              <p className="text-secondary text-[11px] font-black uppercase tracking-[0.2em]">No entries yet</p>
+              <p className="text-secondary text-[11px] font-black uppercase tracking-[0.2em]">
+                {currentLang === 'th' ? 'ไม่มีรายการชำระเงิน' : 'No entries yet'}
+              </p>
               <button
                 disabled={!canCreateTransactions}
                 onClick={() => onNavigate('add_transaction')}
-                className={`mt-4 text-[10px] font-black uppercase tracking-widest ${canCreateTransactions ? 'text-primary' : 'text-secondary opacity-60 cursor-not-allowed'}`}
+                className={`mt-4 text-[10px] font-black uppercase tracking-widest ${
+                  canCreateTransactions
+                    ? 'text-primary dark:text-[#9B66FF]'
+                    : 'text-secondary opacity-60 cursor-not-allowed'
+                }`}
               >
-                {canCreateTransactions ? 'Add First Transaction' : 'Login to Start'}
+                {canCreateTransactions
+                  ? currentLang === 'th'
+                    ? 'เพิ่มรายการแรกเลย'
+                    : 'Add First Transaction'
+                  : currentLang === 'th'
+                    ? 'เข้าสู่ระบบเพื่อเริ่มต้น'
+                    : 'Login to Start'}
               </button>
             </motion.div>
           ) : (
@@ -488,6 +657,7 @@ export function Dashboard({
                 amount={transaction.amount}
                 categories={categories}
                 onClick={(id) => onNavigate('transaction_detail', id)}
+                currentLang={currentLang}
               />
             ))
           )}
@@ -495,66 +665,6 @@ export function Dashboard({
       </section>
 
       <div className="h-3" />
-    </div>
-  );
-}
-
-function QuickActionCard({
-  icon,
-  label,
-  onClick,
-  disabled = false,
-  colorClass = '',
-}: Readonly<{
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  colorClass?: string;
-  key?: React.Key;
-}>) {
-  const baseClasses = colorClass
-    ? `${colorClass} border`
-    : 'bg-white dark:bg-white/2 border border-border/60 dark:border-white/5 text-text-dark dark:text-white shadow-sm';
-
-  return (
-    <motion.button
-      whileTap={disabled ? undefined : { scale: 0.95 }}
-      onClick={onClick}
-      disabled={disabled}
-      className={`rounded-2xl py-4 px-2 flex flex-col items-center justify-center gap-1.5 min-h-[80px] transition-all ${baseClasses} ${
-        disabled ? 'opacity-50 cursor-not-allowed' : ''
-      }`}
-    >
-      <span>{React.cloneElement(icon as React.ReactElement, { strokeWidth: 1.5 })}</span>
-      <span className="text-[10px] font-black uppercase tracking-[0.1em] leading-none">{label}</span>
-    </motion.button>
-  );
-}
-
-function MetricRow({
-  label,
-  value,
-  positive,
-  warning,
-}: Readonly<{
-  label: string;
-  value: string;
-  positive?: boolean;
-  warning?: boolean;
-  key?: React.Key;
-}>) {
-  const getTextStyle = () => {
-    if (warning) return 'text-amber-600 dark:text-amber-400';
-    if (positive) return 'text-income dark:text-income';
-    return 'text-text-dark dark:text-white';
-  };
-  const textStyle = getTextStyle();
-
-  return (
-    <div className="flex items-center justify-between text-[11px] gap-3 py-1">
-      <span className="text-secondary font-bold uppercase tracking-[0.05em]">{label}</span>
-      <span className={`font-black tabular-nums tracking-tight ${textStyle}`}>{value}</span>
     </div>
   );
 }
@@ -569,6 +679,7 @@ function TransactionItem({
   index,
   categories = [],
   onClick,
+  currentLang,
 }: Readonly<{
   id: string;
   type: TransactionType;
@@ -579,6 +690,7 @@ function TransactionItem({
   index: number;
   categories?: LocalCategory[];
   onClick?: (id: string) => void;
+  currentLang: 'th' | 'en';
   key?: React.Key;
 }>) {
   const isExpense = type === 'Expense';
@@ -614,13 +726,15 @@ function TransactionItem({
             <span className="text-[9px] font-black text-secondary uppercase tracking-widest">{categoryName}</span>
             <span className="size-0.5 bg-slate-200 dark:bg-white/10 rounded-full"></span>
             <span className="text-[9px] font-bold text-secondary opacity-60 uppercase tracking-wider">
-              {formatDateShort(date, 'th-TH')}
+              {formatDateShort(date, currentLang === 'th' ? 'th-TH' : 'en-US')}
             </span>
           </div>
         </div>
         <div className="text-right shrink-0">
           <p
-            className={`${isExpense ? 'text-text-dark dark:text-white' : 'text-emerald-500'} font-black text-[15px] tabular-nums tracking-tighter`}
+            className={`${
+              isExpense ? 'text-text-dark dark:text-white' : 'text-emerald-500'
+            } font-black text-[15px] tabular-nums tracking-tighter`}
           >
             {isExpense ? '-' : '+'}
             {formatMoney(amount, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}

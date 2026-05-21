@@ -613,7 +613,7 @@ export function TransactionHistory({
             className="relative mx-4"
             style={{
               height: `${rowVirtualizer.getTotalSize() - headerHeight}px`,
-              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)',
             }}
           >
             {rowVirtualizer.getVirtualItems().map((virtualItem) => {

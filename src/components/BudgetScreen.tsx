@@ -152,7 +152,7 @@ export function BudgetScreen({
   const periodLabel = PERIOD_LABELS[viewPeriod];
 
   return (
-    <div className="flex flex-col min-h-full pb-6 relative bg-background-light dark:bg-background-dark">
+    <div className="flex flex-col min-h-full pb-32 relative bg-background-light dark:bg-background-dark">
       <header
         className="flex items-center bg-white dark:bg-surface-dark p-4 border-b border-border/50 dark:border-white/5 sticky top-0 z-10 shadow-sm"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}

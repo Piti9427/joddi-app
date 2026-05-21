@@ -32,50 +32,48 @@ export function BottomNav({
   const activeView = currentView === 'add_transaction' ? 'add_transaction' : currentView;
 
   return (
-    <div className="shrink-0 border-t border-border/40 dark:border-white/5 bg-white/80 dark:bg-black/80 backdrop-blur-lg safe-bottom">
-      <div className="grid grid-cols-5 h-[60px] items-center">
-        <TabItem
-          icon={<Home size={22} strokeWidth={activeView === 'dashboard' ? 2.2 : 1.6} />}
-          label="หน้าแรก"
-          active={activeView === 'dashboard'}
-          onClick={() => onNavigate('dashboard')}
-        />
-        <TabItem
-          icon={<Receipt size={22} strokeWidth={activeView === 'transactions' ? 2.2 : 1.6} />}
-          label="รายการ"
-          active={activeView === 'transactions'}
-          onClick={() => onNavigate('transactions')}
-        />
+    <div className="fixed bottom-[calc(12px+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-[420px] h-[66px] bg-[#0F0F15]/90 dark:bg-black/90 backdrop-blur-xl rounded-[28px] border border-white/5 shadow-[0_10px_30px_rgba(0,0,0,0.3)] flex items-center justify-between px-3.5">
+      <TabItem
+        icon={<Home size={20} strokeWidth={activeView === 'dashboard' ? 2.2 : 1.6} />}
+        label="หน้าแรก"
+        active={activeView === 'dashboard'}
+        onClick={() => onNavigate('dashboard')}
+      />
+      <TabItem
+        icon={<Receipt size={20} strokeWidth={activeView === 'transactions' ? 2.2 : 1.6} />}
+        label="รายการ"
+        active={activeView === 'transactions'}
+        onClick={() => onNavigate('transactions')}
+      />
 
-        {/* Center FAB */}
-        <div className="flex justify-center items-center relative h-full">
-          <button
-            onClick={() => canCreate && onNavigate('add_transaction')}
-            disabled={!canCreate}
-            className={`w-14 h-14 rounded-full border-none flex items-center justify-center transition-all active:scale-90 absolute -top-5 z-30 ${
-              canCreate
-                ? 'bg-[#FF6A39] text-white shadow-lg shadow-[#FF6A39]/30'
-                : 'bg-slate-300 dark:bg-white/10 text-white cursor-default'
-            }`}
-            aria-label="Add Transaction"
-          >
-            <Plus size={26} strokeWidth={2.5} />
-          </button>
-        </div>
-
-        <TabItem
-          icon={<PieChart size={22} strokeWidth={activeView === 'analytics' ? 2.2 : 1.6} />}
-          label="วิเคราะห์"
-          active={activeView === 'analytics'}
-          onClick={() => onNavigate('analytics')}
-        />
-        <TabItem
-          icon={<Landmark size={22} strokeWidth={activeView === 'budget' ? 2.2 : 1.6} />}
-          label="งบ"
-          active={activeView === 'budget'}
-          onClick={() => onNavigate('budget')}
-        />
+      {/* Center FAB Button */}
+      <div className="flex justify-center items-center px-1 shrink-0">
+        <button
+          onClick={() => canCreate && onNavigate('add_transaction')}
+          disabled={!canCreate}
+          className={`w-11 h-11 rounded-full border-none flex items-center justify-center transition-all active:scale-90 ${
+            canCreate
+              ? 'bg-[#FF6A39] text-white shadow-lg shadow-[#FF6A39]/30 hover:bg-[#ff7b4d]'
+              : 'bg-slate-300 dark:bg-white/10 text-white cursor-default'
+          }`}
+          aria-label="Add Transaction"
+        >
+          <Plus size={22} strokeWidth={2.5} />
+        </button>
       </div>
+
+      <TabItem
+        icon={<PieChart size={20} strokeWidth={activeView === 'analytics' ? 2.2 : 1.6} />}
+        label="วิเคราะห์"
+        active={activeView === 'analytics'}
+        onClick={() => onNavigate('analytics')}
+      />
+      <TabItem
+        icon={<Landmark size={20} strokeWidth={activeView === 'budget' ? 2.2 : 1.6} />}
+        label="งบประมาณ"
+        active={activeView === 'budget'}
+        onClick={() => onNavigate('budget')}
+      />
     </div>
   );
 }
@@ -94,17 +92,14 @@ function TabItem({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center justify-center gap-1 w-full h-full border-none bg-transparent cursor-pointer p-0 transition-colors ${
-        active ? 'text-primary' : 'text-slate-400 dark:text-white/30'
+      className={`flex items-center justify-center transition-all duration-300 border-none bg-transparent cursor-pointer p-0 shrink-0 ${
+        active
+          ? 'bg-white/10 text-[#7a36ff] dark:text-[#9b66ff] rounded-full px-3 py-2 gap-1.5'
+          : 'text-slate-400 dark:text-white/40 hover:text-white px-2.5 py-2'
       }`}
     >
-      <div className="relative flex items-center justify-center">
-        {active && <div className="absolute -inset-x-3 -inset-y-1 bg-primary/8 dark:bg-primary/10 rounded-lg" />}
-        <span className="relative">{icon}</span>
-      </div>
-      <span className={`text-[10px] leading-none tracking-[0.05em] ${active ? 'font-black' : 'font-bold'}`}>
-        {label}
-      </span>
+      <span>{icon}</span>
+      {active && <span className="text-[10px] font-black tracking-wide whitespace-nowrap">{label}</span>}
     </button>
   );
 }

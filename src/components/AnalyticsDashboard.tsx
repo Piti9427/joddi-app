@@ -190,7 +190,7 @@ export function AnalyticsDashboard({
     });
 
   return (
-    <div className="flex flex-col min-h-full pb-5 relative bg-slate-50 dark:bg-background-dark">
+    <div className="flex flex-col min-h-full pb-32 relative bg-slate-50 dark:bg-background-dark">
       <header
         className="bg-white dark:bg-surface-dark px-4 pb-4 sticky top-0 z-20 shadow-sm border-b border-border/50 dark:border-white/5"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 8px)' }}
