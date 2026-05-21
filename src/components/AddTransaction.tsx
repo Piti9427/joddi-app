@@ -488,10 +488,7 @@ function CategoryChip({
           : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary hover:border-slate-200'
       }`}
     >
-      <span 
-        className={selected ? '' : 'opacity-70'} 
-        style={colorStyles.style}
-      >
+      <span className={selected ? '' : 'opacity-70'} style={colorStyles.style}>
         {React.cloneElement(iconNode as React.ReactElement, { size: 16 })}
       </span>
       <span className="text-[13px] font-extrabold">{label}</span>

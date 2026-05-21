@@ -201,12 +201,15 @@ export function TransactionDetail({
                           : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary'
                       }`}
                     >
-                      <div 
+                      <div
                         className={`size-4 rounded-full flex items-center justify-center ${isSelected ? '' : 'opacity-60'}`}
                         style={catColorStyles.style}
                       >
                         <span className={catColorStyles.className}>
-                          {React.cloneElement((ICONS[cat.iconName] || <Tag />) as React.ReactElement, { size: 10, strokeWidth: 2.5 })}
+                          {React.cloneElement((ICONS[cat.iconName] || <Tag />) as React.ReactElement, {
+                            size: 10,
+                            strokeWidth: 2.5,
+                          })}
                         </span>
                       </div>
                       {cat.name}
@@ -217,12 +220,14 @@ export function TransactionDetail({
             ) : (
               <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl">
                 {(() => {
-                  const catObj = userCategories.find(c => c.name === category);
-                  const colorStyles = catObj ? getCategoryColorStyles(catObj.color) : { style: {}, className: 'text-slate-500' };
+                  const catObj = userCategories.find((c) => c.name === category);
+                  const colorStyles = catObj
+                    ? getCategoryColorStyles(catObj.color)
+                    : { style: {}, className: 'text-slate-500' };
                   const iconNode = (catObj && ICONS[catObj.iconName]) || <Tag size={18} />;
                   return (
                     <>
-                      <div 
+                      <div
                         className="size-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-sm"
                         style={colorStyles.style}
                       >

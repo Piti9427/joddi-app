@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { Moon, Globe, LogOut, ChevronRight, HelpCircle, LogIn, RefreshCw, Trash2, Banknote, ChevronLeft } from 'lucide-react';
+import {
+  Moon,
+  Globe,
+  LogOut,
+  ChevronRight,
+  HelpCircle,
+  LogIn,
+  RefreshCw,
+  Trash2,
+  Banknote,
+  ChevronLeft,
+} from 'lucide-react';
 import { ViewState } from '../App';
 import { saveLocalProfile, syncAllOfflineData } from '../lib/supabase';
 import { getTranslation } from '../lib/i18n';
@@ -32,7 +43,7 @@ export function Settings({
   const currentLang = lang || 'th';
   const t = getTranslation(currentLang);
   const [darkMode, setDarkMode] = useState(() => {
-    if (globalThis.window !== undefined) {
+    if (typeof globalThis.localStorage !== 'undefined') {
       return localStorage.getItem('theme') === 'dark';
     }
     return false;

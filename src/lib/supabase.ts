@@ -26,8 +26,8 @@ export function slugify(str: string) {
 }
 
 export function getAuthRedirectUrl() {
-  if (globalThis.window?.location) {
-    return globalThis.window.location.origin;
+  if (globalThis.location) {
+    return globalThis.location.origin;
   }
   const configuredRedirect = String(import.meta.env.VITE_AUTH_REDIRECT_URL || '').trim();
   if (configuredRedirect.length > 0) return configuredRedirect;
@@ -255,8 +255,8 @@ function isIndexedDbAvailable() {
 }
 
 function dispatchLocalEvent(name: string) {
-  if (globalThis.window !== undefined) {
-    globalThis.window.dispatchEvent(new Event(name));
+  if (typeof globalThis.dispatchEvent !== 'undefined') {
+    globalThis.dispatchEvent(new Event(name));
   }
 }
 
@@ -366,9 +366,7 @@ async function getRawStore<T>(storeName: StoreName): Promise<T[]> {
 }
 
 function sortTransactions(transactions: LocalTransaction[]) {
-  return [...transactions]
-    .filter((transaction) => !transaction.deletedAt)
-    .sort((a, b) => b.date.localeCompare(a.date));
+  return [...transactions].filter((transaction) => !transaction.deletedAt).sort((a, b) => b.date.localeCompare(a.date));
 }
 
 function sortCategories(categories: LocalCategory[]) {
@@ -382,9 +380,7 @@ function sortBudgets(budgets: LocalBudget[]) {
 }
 
 function sortReceiptDrafts(receipts: LocalReceiptDraft[]) {
-  return [...receipts]
-    .filter((receipt) => !receipt.deletedAt)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return [...receipts].filter((receipt) => !receipt.deletedAt).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 function buildLocalCategory(

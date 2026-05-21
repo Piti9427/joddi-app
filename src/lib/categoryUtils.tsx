@@ -1,10 +1,43 @@
 import React from 'react';
 import {
-  Coffee, Utensils, Car, Bus, Home, PlugZap, Receipt, ShoppingBag, ShoppingCart,
-  Shirt, Wallet, Banknote, CircleDollarSign, HandCoins, TrendingUp, Briefcase,
-  Shield, Gift, Gamepad2, Music, Plane, Camera, Trophy, Star, HeartPulse,
-  Activity, GraduationCap, Baby, Dog, Users, Smartphone, Wifi, Zap, Key,
-  Hammer, Scissors, Tag, Sparkles
+  Coffee,
+  Utensils,
+  Car,
+  Bus,
+  Home,
+  PlugZap,
+  Receipt,
+  ShoppingBag,
+  ShoppingCart,
+  Shirt,
+  Wallet,
+  Banknote,
+  CircleDollarSign,
+  HandCoins,
+  TrendingUp,
+  Briefcase,
+  Shield,
+  Gift,
+  Gamepad2,
+  Music,
+  Plane,
+  Camera,
+  Trophy,
+  Star,
+  HeartPulse,
+  Activity,
+  GraduationCap,
+  Baby,
+  Dog,
+  Users,
+  Smartphone,
+  Wifi,
+  Zap,
+  Key,
+  Hammer,
+  Scissors,
+  Tag,
+  Sparkles,
 } from 'lucide-react';
 
 export const ICON_OPTIONS = [
@@ -76,6 +109,59 @@ export const COLOR_OPTIONS = [
 ];
 
 export const isHex = (c: string) => c && c.startsWith('#');
+
+/**
+ * Maps common Tailwind color classes used in the app to their hex equivalents.
+ * Useful for Chart.js or other non-CSS environments.
+ */
+export const TAILWIND_HEX_MAP: Record<string, string> = {
+  'rose-500': '#f43f5e',
+  'rose-400': '#fb7185',
+  'pink-500': '#ec4899',
+  'pink-400': '#f472b6',
+  'fuchsia-500': '#d946ef',
+  'fuchsia-400': '#e879f9',
+  'purple-500': '#a855f7',
+  'purple-400': '#c084fc',
+  'violet-500': '#8b5cf6',
+  'violet-400': '#a78bfa',
+  'indigo-500': '#6366f1',
+  'indigo-400': '#818cf8',
+  'blue-500': '#3b82f6',
+  'blue-400': '#60a5fa',
+  'sky-500': '#0ea5e9',
+  'sky-400': '#38bdf8',
+  'cyan-500': '#06b6d4',
+  'cyan-400': '#22d3ee',
+  'teal-500': '#14b8a6',
+  'teal-400': '#2dd4bf',
+  'emerald-500': '#10b981',
+  'emerald-400': '#34d399',
+  'green-500': '#22c55e',
+  'green-400': '#4ade80',
+  'lime-500': '#84cc16',
+  'lime-400': '#a3e635',
+  'yellow-500': '#eab308',
+  'yellow-400': '#facc15',
+  'amber-600': '#d97706',
+  'amber-500': '#f59e0b',
+  'amber-400': '#fbbf24',
+  'orange-500': '#f97316',
+  'orange-400': '#fb923c',
+  'red-500': '#ef4444',
+  'red-400': '#f87171',
+  primary: '#3b82f6',
+  secondary: '#64748b',
+};
+
+export function getHexFromTailwind(twClass: string): string {
+  const colorRegex = /(?:text|bg)-([a-z0-9-]+)/;
+  const match = colorRegex.exec(twClass);
+  if (match) {
+    return TAILWIND_HEX_MAP[match[1]] || '#94a3b8';
+  }
+  return '#94a3b8';
+}
 
 export function getCategoryColorStyles(color: string) {
   if (isHex(color)) {

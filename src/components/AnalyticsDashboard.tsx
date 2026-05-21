@@ -20,7 +20,7 @@ import { getLocalAiInsight } from '../lib/aiInsights';
 import { formatMoney } from '../lib/formatters';
 import { getDateRangeBoundaries } from '../lib/dateUtils';
 import { LocalCategory } from '../lib/supabase';
-import { isHex } from '../lib/categoryUtils';
+import { isHex, getHexFromTailwind } from '../lib/categoryUtils';
 
 // Register Chart.js components
 ChartJS.register(
@@ -155,35 +155,22 @@ export function AnalyticsDashboard({
     });
 
     const entries = orderedKeys.map((k) => [k, chartMap[k]] as [string, { income: number; expense: number }]);
-    
+
     // Logic to use category colors
     const colorMap = new Map<string, string>();
-    categories.forEach(cat => {
+    categories.forEach((cat) => {
       if (isHex(cat.color)) {
         colorMap.set(cat.name, cat.color);
       } else {
-        const colorRegex = /text-([a-z0-9-]+)/;
-        const match = colorRegex.exec(cat.color);
-        if (match) {
-          const twColors: Record<string, string> = {
-            'rose-500': '#f43f5e', 'rose-400': '#fb7185',
-            'amber-600': '#d97706', 'amber-500': '#f59e0b',
-            'blue-500': '#3b82f6', 'blue-400': '#60a5fa',
-            'emerald-500': '#10b981', 'emerald-400': '#34d399',
-            'primary': '#3b82f6', 'secondary': '#64748b',
-            'pink-500': '#ec4899', 'purple-500': '#a855f7',
-            'indigo-500': '#6366f1', 'orange-500': '#f97316'
-          };
-          colorMap.set(cat.name, twColors[match[1]] || '#94a3b8');
-        }
+        colorMap.set(cat.name, getHexFromTailwind(cat.color));
       }
     });
 
     const expByCat = Object.entries(catMap)
-      .map(([name, amount], i) => ({ 
-        name, 
-        amount, 
-        color: colorMap.get(name) || CATEGORY_COLORS[i % CATEGORY_COLORS.length] 
+      .map(([name, amount], i) => ({
+        name,
+        amount,
+        color: colorMap.get(name) || CATEGORY_COLORS[i % CATEGORY_COLORS.length],
       }))
       .sort((a, b) => b.amount - a.amount);
 
@@ -215,7 +202,9 @@ export function AnalyticsDashboard({
           >
             <ChevronLeft size={24} />
           </button>
-          <h1 className="text-xl font-black tracking-tight flex-1 text-center text-slate-900 dark:text-white mr-10">Analytics</h1>
+          <h1 className="text-xl font-black tracking-tight flex-1 text-center text-slate-900 dark:text-white mr-10">
+            Analytics
+          </h1>
         </div>
 
         <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">

@@ -244,11 +244,11 @@ export default function App() {
     fetchCategories();
 
     const handleCategoriesChanged = () => fetchCategories();
-    globalThis.window.addEventListener('joddi:categories-changed', handleCategoriesChanged);
+    globalThis.addEventListener('joddi:categories-changed', handleCategoriesChanged);
 
     return () => {
       subscription.unsubscribe();
-      globalThis.window.removeEventListener('joddi:categories-changed', handleCategoriesChanged);
+      globalThis.removeEventListener('joddi:categories-changed', handleCategoriesChanged);
     };
   }, []);
 

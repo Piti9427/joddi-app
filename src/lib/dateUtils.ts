@@ -18,11 +18,7 @@ export function parseLocalDate(dateStr: string): Date {
 export function isToday(date: string | Date): boolean {
   const d = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();
-  return (
-    d.getDate() === now.getDate() &&
-    d.getMonth() === now.getMonth() &&
-    d.getFullYear() === now.getFullYear()
-  );
+  return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
 }
 
 /**
@@ -31,19 +27,19 @@ export function isToday(date: string | Date): boolean {
  */
 export function getDateRangeBoundaries() {
   const now = new Date();
-  
+
   // Today start
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  
+
   // This Week (Starting Sunday)
   const tempWeek = new Date(now);
   const sunday = new Date(tempWeek.setDate(tempWeek.getDate() - tempWeek.getDay()));
   sunday.setHours(0, 0, 0, 0);
   const weekStart = sunday.getTime();
-  
+
   // This Month start
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-  
+
   // Last 7 days (rolling)
   const rollingWeekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).getTime();
 
@@ -52,7 +48,7 @@ export function getDateRangeBoundaries() {
     weekStart,
     monthStart,
     rollingWeekStart,
-    now: now.getTime()
+    now: now.getTime(),
   };
 }
 
@@ -62,17 +58,17 @@ export function getDateRangeBoundaries() {
  */
 export function isInCustomRange(dateIso: string, startStr?: string, endStr?: string): boolean {
   const tTime = new Date(dateIso).getTime();
-  
+
   if (startStr) {
     const start = parseLocalDate(startStr).getTime();
     if (tTime < start) return false;
   }
-  
+
   if (endStr) {
     const end = parseLocalDate(endStr);
     end.setHours(23, 59, 59, 999);
     if (tTime > end.getTime()) return false;
   }
-  
+
   return true;
 }

@@ -176,9 +176,7 @@ export function TransactionHistory({
   };
 
   const toggleCategory = (catName: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(catName) ? prev.filter((c) => c !== catName) : [...prev, catName]
-    );
+    setSelectedCategories((prev) => (prev.includes(catName) ? prev.filter((c) => c !== catName) : [...prev, catName]));
   };
 
   const clearAllFilters = () => {
@@ -311,33 +309,26 @@ export function TransactionHistory({
                   {currentLang === 'en' ? 'Date Range' : 'ช่วงเวลา'}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    'All',
-                    'Today',
-                    'Yesterday',
-                    'Last7Days',
-                    'Last30Days',
-                    'ThisMonth',
-                    'LastMonth',
-                    'Custom',
-                  ].map((type) => (
-                    <motion.button
-                      key={type}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        setDateFilter(type as DateFilterType);
-                        if (type === 'Custom') setShowDatePicker(true);
-                      }}
-                      className={`px-3 py-2 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all ${
-                        dateFilter === type
-                          ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                          : 'bg-slate-100 dark:bg-slate-800 text-secondary hover:bg-slate-200 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      <Calendar size={12} />
-                      {labels.date[type as keyof typeof labels.date]}
-                    </motion.button>
-                  ))}
+                  {['All', 'Today', 'Yesterday', 'Last7Days', 'Last30Days', 'ThisMonth', 'LastMonth', 'Custom'].map(
+                    (type) => (
+                      <motion.button
+                        key={type}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setDateFilter(type as DateFilterType);
+                          if (type === 'Custom') setShowDatePicker(true);
+                        }}
+                        className={`px-3 py-2 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all ${
+                          dateFilter === type
+                            ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                            : 'bg-slate-100 dark:bg-slate-800 text-secondary hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <Calendar size={12} />
+                        {labels.date[type as keyof typeof labels.date]}
+                      </motion.button>
+                    ),
+                  )}
                 </div>
 
                 {dateFilter === 'Custom' && (customStartDate || customEndDate) && (
@@ -365,7 +356,7 @@ export function TransactionHistory({
                   {currentLang === 'en' ? 'Categories' : 'หมวดหมู่'}
                 </p>
                 <div className="flex gap-2 pb-2 overflow-x-auto no-scrollbar">
-                  {categories
+                  {localCategories
                     .filter((c) => filterType === 'All' || c.type === filterType)
                     .map((cat) => (
                       <motion.button
@@ -481,7 +472,9 @@ function TransactionRow({
   const isExpense = transaction.type === 'Expense';
   const categoryObj = categories.find((c) => c.name === transaction.category);
   const iconNode = (categoryObj && ICONS[categoryObj.iconName]) || <Receipt size={22} />;
-  const colorStyles = categoryObj ? getCategoryColorStyles(categoryObj.color) : { style: {}, className: isExpense ? 'text-expense' : 'text-income' };
+  const colorStyles = categoryObj
+    ? getCategoryColorStyles(categoryObj.color)
+    : { style: {}, className: isExpense ? 'text-expense' : 'text-income' };
 
   const getSyncLabel = (status: string) => {
     if (status === 'pending') return 'รอซิงก์';

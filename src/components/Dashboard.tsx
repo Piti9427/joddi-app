@@ -463,7 +463,9 @@ function TransactionItem({
   const isExpense = type === 'Expense';
   const categoryObj = categories.find((c) => c.name === categoryName);
   const iconNode = (categoryObj && ICONS[categoryObj.iconName]) || <Receipt size={20} />;
-  const colorStyles = categoryObj ? getCategoryColorStyles(categoryObj.color) : { style: {}, className: 'text-slate-500' };
+  const colorStyles = categoryObj
+    ? getCategoryColorStyles(categoryObj.color)
+    : { style: {}, className: 'text-slate-500' };
 
   return (
     <motion.div
@@ -474,7 +476,7 @@ function TransactionItem({
       onClick={() => onClick?.(id)}
       className="flex items-center gap-3.5 bg-white dark:bg-surface-dark p-3.5 rounded-2xl border border-border/40 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer shadow-sm"
     >
-      <div 
+      <div
         className="size-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 bg-slate-50 dark:bg-slate-800/50 shadow-inner"
         style={colorStyles.style}
       >
@@ -484,7 +486,9 @@ function TransactionItem({
       </div>
       <div className="flex-1 flex justify-between items-center overflow-hidden">
         <div className="overflow-hidden">
-          <p className="text-text-dark dark:text-slate-100 font-bold text-[14px] truncate">{merchant || categoryName}</p>
+          <p className="text-text-dark dark:text-slate-100 font-bold text-[14px] truncate">
+            {merchant || categoryName}
+          </p>
           <div className="flex items-center gap-1 mt-0.5">
             <span className="text-[10px] font-semibold text-secondary">{categoryName}</span>
             <span className="size-1 bg-slate-200 dark:bg-slate-700 rounded-full"></span>

@@ -40,7 +40,13 @@ const EN_MONTHS = [
   'December',
 ];
 
-export function DateRangePicker({ isOpen, onClose, onSelect, initialStart, initialEnd }: Readonly<DateRangePickerProps>) {
+export function DateRangePicker({
+  isOpen,
+  onClose,
+  onSelect,
+  initialStart,
+  initialEnd,
+}: Readonly<DateRangePickerProps>) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [startDate, setStartDate] = useState<Date | null>(initialStart ? new Date(initialStart) : null);
   const [endDate, setEndDate] = useState<Date | null>(initialEnd ? new Date(initialEnd) : null);
@@ -55,7 +61,7 @@ export function DateRangePicker({ isOpen, onClose, onSelect, initialStart, initi
   const handleDateClick = (day: number, month: number, year: number) => {
     const selected = new Date(year, month, day);
     const shouldReset = !startDate || (startDate && endDate);
-    
+
     if (shouldReset) {
       setStartDate(selected);
       setEndDate(null);
@@ -160,7 +166,10 @@ export function DateRangePicker({ isOpen, onClose, onSelect, initialStart, initi
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-1">
               {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                <div key={`${day}-${i}`} className="h-8 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                <div
+                  key={`${day}-${i}`}
+                  className="h-8 flex items-center justify-center text-[10px] font-bold text-slate-400"
+                >
                   {day}
                 </div>
               ))}
@@ -201,7 +210,7 @@ export function DateRangePicker({ isOpen, onClose, onSelect, initialStart, initi
 function DateDisplay({ label, date, lang }: Readonly<{ label: string; date: Date | null; lang: 'th' | 'en' }>) {
   const locale = lang === 'th' ? 'th-TH' : 'en-US';
   const dateString = date ? date.toLocaleDateString(locale) : '-';
-  
+
   return (
     <div className="flex-1">
       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{label}</p>

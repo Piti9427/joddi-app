@@ -2,18 +2,18 @@ const FALLBACK_LOCALE = 'en-US';
 const FALLBACK_CURRENCY = 'USD';
 
 function getStoredCurrency() {
-  if (globalThis.window === undefined) return null;
+  if (typeof globalThis.localStorage === 'undefined') return null;
   const stored = globalThis.localStorage.getItem('currency');
   return stored?.length === 3 ? stored.toUpperCase() : null;
 }
 
 export function getUserLocale() {
-  if (globalThis.window === undefined) return FALLBACK_LOCALE;
+  if (typeof globalThis.localStorage === 'undefined') return FALLBACK_LOCALE;
   const storedLang = globalThis.localStorage.getItem('language');
   if (storedLang === 'th') return 'th-TH';
   if (storedLang === 'en') return 'en-US';
 
-  if (globalThis.navigator === undefined) return FALLBACK_LOCALE;
+  if (typeof globalThis.navigator === 'undefined') return FALLBACK_LOCALE;
   return globalThis.navigator.language || FALLBACK_LOCALE;
 }
 

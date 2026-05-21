@@ -1,15 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import {
-  Plus,
-  MoreHorizontal,
-  X,
-  Trash,
-  Check,
-  Pipette,
-  ChevronLeft,
-  Receipt,
-  Sparkles,
-} from 'lucide-react';
+import { Plus, MoreHorizontal, X, Trash, Check, Pipette, ChevronLeft, Receipt, Sparkles } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import {
   createLocalCategory,
@@ -19,28 +9,12 @@ import {
   syncAllOfflineData,
   type LocalCategory,
 } from '../lib/supabase';
-import { 
-  ICON_OPTIONS, 
-  ICONS, 
-  COLOR_OPTIONS, 
-  getCategoryColorStyles,
-  isHex
-} from '../lib/categoryUtils';
+import { ICON_OPTIONS, ICONS, COLOR_OPTIONS, getCategoryColorStyles, isHex } from '../lib/categoryUtils';
 
 export type Category = LocalCategory;
 
-
-
-
-
-
-
-
-
-
-
 interface CategoryRowProps {
-  key?: string | number;
+  key?: string;
   category: LocalCategory;
   count: number;
   editing: boolean;
@@ -204,7 +178,7 @@ export function CategoriesManagement({
     name: '',
     type: 'Expense' as 'Expense' | 'Income',
     icon: 'Receipt',
-    color: COLOR_OPTIONS[0].text
+    color: COLOR_OPTIONS[0].text,
   });
 
   const loadCategories = async () => {
@@ -490,6 +464,3 @@ export function CategoriesManagement({
     </div>
   );
 }
-
-;
-
