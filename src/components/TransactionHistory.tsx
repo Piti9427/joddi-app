@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Search, Filter, Calendar, Check, Receipt, ChevronLeft } from 'lucide-react';
+import { Search, Filter, Calendar, Check, Receipt, ChevronLeft, TrendingUp, TrendingDown } from 'lucide-react';
 import { ViewState, Transaction } from '../App';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatMoney, getUserLocale } from '../lib/formatters';
@@ -94,6 +94,9 @@ export function TransactionHistory({
   const [showFilters, setShowFilters] = useState(false);
   const [localCategories, setLocalCategories] = useState<LocalCategory[]>(categories || []);
   const scrollParentRef = useRef<HTMLDivElement | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const headerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (categories && categories.length > 0) {
@@ -119,9 +122,28 @@ export function TransactionHistory({
       locale: getUserLocale(),
     });
 
-  const virtualRows = useMemo<VirtualRow[]>(() => {
-    const rows: VirtualRow[] = [];
-    let currentDate = '';
+  const calendarDays = useMemo(() => {
+    const days = [];
+    const now = Date.now();
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(now - i * 24 * 60 * 60 * 1000);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const date = String(d.getDate()).padStart(2, '0');
+      const fullDate = `${year}-${month}-${date}`;
+      days.push({
+        dateStr: d.toDateString(),
+        dayNum: d.getDate(),
+        dayName: d.toLocaleDateString(currentLang === 'en' ? 'en-US' : 'th-TH', { weekday: 'short' }),
+        fullDate,
+      });
+    }
+    return days;
+  }, [currentLang]);
+
+  const filteredTotals = useMemo(() => {
+    let income = 0;
+    let expense = 0;
 
     const boundaries = getDateRangeBoundaries();
     const customStart = dateFilter === 'Custom' && customStartDate ? parseLocalDate(customStartDate).getTime() : 0;
@@ -138,9 +160,70 @@ export function TransactionHistory({
       customEnd,
     });
 
-    filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const calendarFiltered = selectedDate
+      ? filtered.filter((t) => {
+          const d = new Date(t.date);
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const date = String(d.getDate()).padStart(2, '0');
+          const fullDate = `${year}-${month}-${date}`;
+          return fullDate === selectedDate;
+        })
+      : filtered;
 
-    filtered.forEach((transaction) => {
+    calendarFiltered.forEach((t) => {
+      if (t.type === 'Income') {
+        income += t.amount;
+      } else {
+        expense += t.amount;
+      }
+    });
+
+    return { income, expense, list: calendarFiltered };
+  }, [transactions, search, filterType, selectedCategories, dateFilter, customStartDate, customEndDate, selectedDate]);
+
+  const categorySummary = useMemo(() => {
+    const map: Record<string, number> = {};
+    let totalExpense = 0;
+
+    filteredTotals.list.forEach((t) => {
+      if (t.type === 'Expense') {
+        map[t.category] = (map[t.category] || 0) + t.amount;
+        totalExpense += t.amount;
+      }
+    });
+
+    return Object.entries(map)
+      .map(([name, amount]) => {
+        const pct = totalExpense > 0 ? (amount / totalExpense) * 100 : 0;
+        const categoryObj = localCategories.find((c) => c.name === name);
+        const icon = categoryObj?.iconName ?? 'Food';
+        const color = categoryObj?.color ?? '#FF6A39';
+        return {
+          name,
+          amount,
+          percent: pct,
+          icon,
+          color,
+        };
+      })
+      .sort((a, b) => b.amount - a.amount);
+  }, [filteredTotals.list, localCategories]);
+
+  useEffect(() => {
+    if (headerRef.current) {
+      setHeaderHeight(headerRef.current.offsetHeight);
+    }
+  }, [calendarDays, filteredTotals, categorySummary]);
+
+  const virtualRows = useMemo<VirtualRow[]>(() => {
+    const rows: VirtualRow[] = [];
+    let currentDate = '';
+
+    const list = [...filteredTotals.list];
+    list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    list.forEach((transaction) => {
       const dateString = new Date(transaction.date).toDateString();
       if (dateString !== currentDate) {
         currentDate = dateString;
@@ -154,13 +237,14 @@ export function TransactionHistory({
     });
 
     return rows;
-  }, [transactions, search, filterType, selectedCategories, dateFilter, customStartDate, customEndDate]);
+  }, [filteredTotals]);
 
   const rowVirtualizer = useVirtualizer({
     count: virtualRows.length,
     getScrollElement: () => scrollParentRef.current,
     estimateSize: (index) => (virtualRows[index]?.type === 'dateHeader' ? 44 : 88),
     overscan: 10,
+    scrollMargin: headerHeight,
     getItemKey: (index) => {
       const row = virtualRows[index];
       if (!row) return index;
@@ -227,7 +311,7 @@ export function TransactionHistory({
   );
 
   return (
-    <div className="flex flex-col h-full min-h-0 relative bg-slate-50 dark:bg-background-dark">
+    <div className="flex flex-col h-full min-h-0 relative bg-background-light dark:bg-background-dark">
       <header
         className="flex flex-col bg-white dark:bg-surface-dark p-4 border-b border-border dark:border-white/5 shrink-0 z-20"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 16px)' }}
@@ -396,6 +480,118 @@ export function TransactionHistory({
       </header>
 
       <main ref={scrollParentRef} className="flex-1 min-h-0 overflow-y-auto ios-scroll">
+        <div ref={headerRef} className="flex flex-col gap-4 px-4 py-2 shrink-0">
+          {/* Horizontal Calendar */}
+          <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-2 shrink-0">
+            {calendarDays.map((day) => {
+              const isActive = selectedDate === day.fullDate;
+              return (
+                <motion.button
+                  key={day.fullDate}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setSelectedDate(isActive ? null : day.fullDate)}
+                  className={`flex flex-col items-center justify-center w-12 h-16 shrink-0 rounded-2xl transition-all border ${
+                    isActive
+                      ? 'bg-[#FF6A39] text-white border-[#FF6A39] shadow-[0_4px_15px_rgba(255,106,57,0.3)]'
+                      : 'bg-white dark:bg-white/2 border-border/40 dark:border-white/5 text-text-dark dark:text-slate-300 shadow-[0_4px_15px_rgba(0,0,0,0.03)]'
+                  }`}
+                >
+                  <span
+                    className={`text-[9px] font-black uppercase tracking-wider ${isActive ? 'text-white/70' : 'text-secondary/60'}`}
+                  >
+                    {day.dayName}
+                  </span>
+                  <span className="text-base font-black tracking-tight mt-0.5">{day.dayNum}</span>
+                </motion.button>
+              );
+            })}
+          </div>
+
+          {/* Stat Cards */}
+          <div className="grid grid-cols-2 gap-3.5">
+            {/* Income Card (Purple) */}
+            <div className="bg-[#7A36FF] text-white p-4 rounded-[20px] shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-[#7A36FF]/10 relative overflow-hidden flex flex-col justify-between min-h-[96px]">
+              <div className="absolute -right-4 -bottom-4 opacity-10">
+                <TrendingUp size={80} />
+              </div>
+              <div className="relative z-10">
+                <p className="text-white/75 text-[9px] font-black uppercase tracking-[0.2em] mb-1">
+                  {currentLang === 'en' ? 'Income' : 'รายรับ'}
+                </p>
+                <h4 className="text-lg font-black tracking-tight leading-tight tabular-nums">
+                  {formatCurrency(filteredTotals.income)}
+                </h4>
+              </div>
+            </div>
+
+            {/* Expense Card (Orange) */}
+            <div className="bg-[#FF6A39] text-white p-4 rounded-[20px] shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-[#FF6A39]/10 relative overflow-hidden flex flex-col justify-between min-h-[96px]">
+              <div className="absolute -right-4 -bottom-4 opacity-10">
+                <TrendingDown size={80} />
+              </div>
+              <div className="relative z-10">
+                <p className="text-white/75 text-[9px] font-black uppercase tracking-[0.2em] mb-1">
+                  {currentLang === 'en' ? 'Expense' : 'รายจ่าย'}
+                </p>
+                <h4 className="text-lg font-black tracking-tight leading-tight tabular-nums">
+                  {formatCurrency(filteredTotals.expense)}
+                </h4>
+              </div>
+            </div>
+          </div>
+
+          {/* Budget Progress (Spend by Category) */}
+          {categorySummary.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] pl-1">
+                {currentLang === 'en' ? 'Budget & Spend by Category' : 'การใช้จ่ายตามหมวดหมู่'}
+              </p>
+              <div className="grid grid-cols-1 gap-2.5">
+                {categorySummary.map((item) => {
+                  const iconNode = ICONS[item.icon] || <Receipt size={18} />;
+                  const categoryColor = item.color;
+                  return (
+                    <div
+                      key={item.name}
+                      className="bg-white dark:bg-white/2 p-3.5 rounded-[20px] shadow-[0_4px_15px_rgba(0,0,0,0.03)] border border-border/40 dark:border-white/5 flex items-center gap-3.5 hover:shadow-md transition-all"
+                    >
+                      <div
+                        className="size-10 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: `${categoryColor}15`, color: categoryColor }}
+                      >
+                        {React.cloneElement(iconNode as React.ReactElement, { size: 18, strokeWidth: 2 })}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-xs font-black text-text-dark dark:text-white truncate">
+                            {item.name}
+                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-xs font-black text-text-dark dark:text-white tabular-nums">
+                              {formatCurrency(item.amount)}
+                            </span>
+                            <span className="text-[9px] font-bold text-secondary">{item.percent.toFixed(0)}%</span>
+                          </div>
+                        </div>
+                        {/* Custom CSS Progress Bar */}
+                        <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${item.percent}%`,
+                              backgroundColor: categoryColor,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
         {virtualRows.length === 0 ? (
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -414,9 +610,9 @@ export function TransactionHistory({
           </motion.div>
         ) : (
           <div
-            className="relative mx-4 mt-2"
+            className="relative mx-4"
             style={{
-              height: `${rowVirtualizer.getTotalSize()}px`,
+              height: `${rowVirtualizer.getTotalSize() - headerHeight}px`,
               paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
             }}
           >
@@ -430,7 +626,7 @@ export function TransactionHistory({
                   ref={rowVirtualizer.measureElement}
                   data-index={virtualItem.index}
                   className="absolute left-0 top-0 w-full"
-                  style={{ transform: `translateY(${virtualItem.start}px)` }}
+                  style={{ transform: `translateY(${virtualItem.start - headerHeight}px)` }}
                 >
                   {row.type === 'dateHeader' ? (
                     <DateHeader label={formatDateHeader(row.date)} />
@@ -504,7 +700,7 @@ function TransactionRow({
     <motion.div
       whileTap={{ scale: 0.98 }}
       onClick={() => onClick?.(transaction.id)}
-      className="mb-2 bg-white dark:bg-white/2 p-4 rounded-[1.35rem] shadow-sm border border-border/40 dark:border-white/5 flex items-center gap-4 hover:shadow-md transition-all group cursor-pointer"
+      className="mb-2 bg-white dark:bg-white/2 p-4 rounded-[20px] shadow-[0_4px_15px_rgba(0,0,0,0.03)] border border-border/40 dark:border-white/5 flex items-center gap-4 hover:shadow-md transition-all group cursor-pointer"
     >
       <div
         className={`size-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors shadow-inner ${

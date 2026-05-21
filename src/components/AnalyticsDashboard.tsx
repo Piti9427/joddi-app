@@ -44,16 +44,16 @@ const RANGE_LABELS = {
 } as const;
 
 const CATEGORY_COLORS = [
-  '#10b981', // Emerald 500
-  '#3b82f6', // Blue 500
-  '#ef4444', // Red 500
-  '#f59e0b', // Amber 500
-  '#8b5cf6', // Violet 500
-  '#ec4899', // Pink 500
-  '#06b6d4', // Cyan 500
-  '#84cc16', // Lime 500
-  '#f97316', // Orange 500
-  '#6366f1', // Indigo 500
+  '#7A36FF', // Purple
+  '#FF6A39', // Orange
+  '#1E1E2F', // Navy
+  '#06b6d4', // Cyan
+  '#f59e0b', // Amber
+  '#10b981', // Emerald
+  '#ec4899', // Pink
+  '#84cc16', // Lime
+  '#ef4444', // Red
+  '#6366f1', // Indigo
 ];
 
 export function AnalyticsDashboard({
@@ -495,11 +495,13 @@ function DoughnutChart({
     <div className="relative w-full h-full">
       <Doughnut data={chartData} options={options} />
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Total</span>
-        <span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter">
+        <span className="text-[10px] font-black text-slate-400 dark:text-white/40 uppercase tracking-[0.2em]">
+          Total
+        </span>
+        <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-0.5 tabular-nums">
           {formatMoney(
             data.reduce((a, b) => a + b.amount, 0),
-            { compact: true },
+            { compact: false },
           )}
         </span>
       </div>

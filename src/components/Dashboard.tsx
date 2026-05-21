@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   User,
   Wallet,
@@ -124,6 +124,38 @@ export function Dashboard({
 
   const aiInsight = useMemo(() => getLocalAiInsight(transactions), [transactions]);
 
+  const [activeBarIndex, setActiveBarIndex] = useState<number | null>(null);
+
+  const last7DaysData = useMemo(() => {
+    const days = [];
+    const now = Date.now();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now - i * 24 * 60 * 60 * 1000);
+      days.push({
+        date: d,
+        label: d.toLocaleDateString(locale, { weekday: 'short' }),
+        amount: 0,
+      });
+    }
+
+    transactions.forEach((t) => {
+      if (t.type === 'Expense') {
+        const tDateStr = new Date(t.date).toDateString();
+        const found = days.find((day) => day.date.toDateString() === tDateStr);
+        if (found) {
+          found.amount += t.amount;
+        }
+      }
+    });
+
+    return days;
+  }, [transactions, locale]);
+
+  const maxAmount = useMemo(() => {
+    const max = Math.max(...last7DaysData.map((d) => d.amount));
+    return max > 0 ? max : 100;
+  }, [last7DaysData]);
+
   const openQuickAdd = (type: TransactionType) => {
     if (!canCreateTransactions) return;
     try {
@@ -178,16 +210,27 @@ export function Dashboard({
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-          className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-700 dark:from-black dark:via-black dark:to-black text-white rounded-3xl p-6 shadow-lg shadow-indigo-500/5 dark:shadow-none border border-white/10 dark:border-white/10 ring-1 ring-white/5"
+          className="relative overflow-hidden bg-[#1E1E2F] text-white rounded-[24px] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-white/5 ring-1 ring-white/5"
         >
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none" />
-          <div className="absolute -bottom-8 -left-8 w-36 h-36 bg-blue-500/5 dark:bg-white/2 rounded-full blur-2xl pointer-events-none" />
+          <svg
+            className="absolute inset-0 w-full h-full opacity-10 pointer-events-none"
+            viewBox="0 0 350 150"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M-20,100 C100,60 150,140 250,80 C350,20 400,80 450,40 L450,180 L-20,180 Z"
+              fill="rgba(255,255,255,0.06)"
+            />
+            <path
+              d="M-20,110 C80,80 180,120 280,60 C380,0 400,100 450,70 L450,180 L-20,180 Z"
+              fill="rgba(255,255,255,0.04)"
+            />
+          </svg>
 
           <div className="flex justify-between items-start mb-1 relative z-10">
             <div>
-              <p className="text-blue-100 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1.5">
-                {t.balance}
-              </p>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1.5">{t.balance}</p>
               <motion.h1
                 key={balance}
                 initial={{ scale: 0.95, opacity: 0 }}
@@ -197,33 +240,29 @@ export function Dashboard({
                 {formatCurrency(balance)}
               </motion.h1>
             </div>
-            <div className="size-11 rounded-2xl bg-white/10 dark:bg-white/5 border border-white/10 dark:border-white/5 flex items-center justify-center text-white dark:text-white/60 shadow-inner">
+            <div className="size-11 rounded-[16px] bg-white/10 dark:bg-white/5 border border-white/10 dark:border-white/5 flex items-center justify-center text-white dark:text-white/60 shadow-inner">
               <Wallet size={22} strokeWidth={1.5} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-white/5 relative z-10">
             <div className="flex items-center gap-2.5">
-              <div className="size-[34px] rounded-xl bg-white/10 dark:bg-white/5 flex items-center justify-center text-white/80 dark:text-white/80 border border-white/5 dark:border-white/5">
+              <div className="size-[34px] rounded-[12px] bg-white/10 dark:bg-white/5 flex items-center justify-center text-white/80 dark:text-white/80 border border-white/5 dark:border-white/5">
                 <ArrowUpRight size={16} strokeWidth={2.5} />
               </div>
               <div>
-                <p className="text-blue-100 dark:text-white/60 text-[9px] font-black uppercase tracking-[0.2em]">
-                  {t.income}
-                </p>
+                <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">{t.income}</p>
                 <p className="text-sm font-black text-white tabular-nums tracking-tight">
                   {formatCurrency(totalIncome)}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="size-[34px] rounded-xl bg-white/10 dark:bg-white/5 flex items-center justify-center text-white/80 dark:text-white/80 border border-white/5 dark:border-white/5">
+              <div className="size-[34px] rounded-[12px] bg-white/10 dark:bg-white/5 flex items-center justify-center text-white/80 dark:text-white/80 border border-white/5 dark:border-white/5">
                 <ArrowDownRight size={16} strokeWidth={2.5} />
               </div>
               <div>
-                <p className="text-blue-100 dark:text-white/60 text-[9px] font-black uppercase tracking-[0.2em]">
-                  {t.expense}
-                </p>
+                <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">{t.expense}</p>
                 <p className="text-sm font-black text-white tabular-nums tracking-tight">
                   {formatCurrency(totalExpense)}
                 </p>
@@ -267,6 +306,78 @@ export function Dashboard({
             </p>
           </div>
         </motion.div>
+      </section>
+
+      {/* Analytics Chart Section */}
+      <section className="px-4 pt-4 animate-slide-up">
+        <div className="bg-white dark:bg-surface-dark border border-border/50 dark:border-white/5 rounded-[24px] p-5 shadow-[0_4px_15px_rgba(0,0,0,0.05)] transition-all">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">
+                {currentLang === 'th' ? 'สถิติรายจ่าย 7 วันล่าสุด' : 'Last 7 Days Expenses'}
+              </p>
+              <h3 className="text-sm font-black text-text-dark dark:text-white tracking-tight leading-tight">
+                {currentLang === 'th' ? 'การใช้จ่ายสะสม' : 'Weekly Expenses'}
+              </h3>
+            </div>
+            {activeBarIndex !== null && last7DaysData[activeBarIndex].amount > 0 && (
+              <div className="text-right">
+                <span className="text-[9px] font-bold text-secondary uppercase tracking-widest block">
+                  {last7DaysData[activeBarIndex].label}
+                </span>
+                <span className="text-xs font-black text-[#7A36FF] tabular-nums tracking-tight">
+                  {formatCurrency(last7DaysData[activeBarIndex].amount, 2)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Bar Chart Bars */}
+          <div className="flex justify-between items-end h-28 pt-6 px-2 relative">
+            {last7DaysData.map((d, index) => {
+              const heightPct = maxAmount > 0 ? (d.amount / maxAmount) * 100 : 0;
+              const isActive = activeBarIndex === index;
+
+              return (
+                <div
+                  key={index}
+                  className="flex flex-col items-center flex-1 group cursor-pointer relative"
+                  onMouseEnter={() => setActiveBarIndex(index)}
+                  onMouseLeave={() => setActiveBarIndex(null)}
+                  onClick={() => setActiveBarIndex(isActive ? null : index)}
+                >
+                  {/* Tooltip absolutely positioned overlaying the bar */}
+                  {isActive && d.amount > 0 && (
+                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-black py-1 px-1.5 rounded-[6px] whitespace-nowrap shadow-md z-20 transition-all pointer-events-none">
+                      {formatCurrency(d.amount)}
+                    </div>
+                  )}
+
+                  {/* Vertical Bar */}
+                  <div className="w-full h-20 flex items-end justify-center relative">
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: `${Math.max(heightPct, 6)}%` }}
+                      transition={{ type: 'spring', stiffness: 100, damping: 15 }}
+                      className={`w-3.5 rounded-full transition-colors duration-200 ${
+                        isActive ? 'bg-[#7A36FF]' : 'bg-[#E5E7EB] dark:bg-white/10'
+                      }`}
+                    />
+                  </div>
+
+                  {/* Label */}
+                  <span
+                    className={`text-[9px] mt-2 font-bold uppercase tracking-wider ${
+                      isActive ? 'text-[#7A36FF]' : 'text-secondary/60'
+                    }`}
+                  >
+                    {d.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
       {/* AI Insight Card */}
