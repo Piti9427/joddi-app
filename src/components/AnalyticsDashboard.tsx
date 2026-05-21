@@ -44,16 +44,16 @@ const RANGE_LABELS = {
 } as const;
 
 const CATEGORY_COLORS = [
-  '#7A36FF', // Purple
-  '#FF6A39', // Orange
-  '#1E1E2F', // Navy
-  '#06b6d4', // Cyan
-  '#f59e0b', // Amber
-  '#10b981', // Emerald
-  '#ec4899', // Pink
-  '#84cc16', // Lime
-  '#ef4444', // Red
-  '#6366f1', // Indigo
+  '#7A36FF', // Brand Purple
+  '#FF6A39', // Brand Orange
+  '#6366F1', // Indigo
+  '#06B6D4', // Cyan
+  '#10B981', // Emerald
+  '#F59E0B', // Amber
+  '#3B82F6', // Blue
+  '#EC4899', // Pink
+  '#8B5CF6', // Violet
+  '#14B8A6', // Teal
 ];
 
 export function AnalyticsDashboard({

@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { ViewState, Transaction, TransactionType } from '../App';
 import { motion } from 'motion/react';
-import { formatDateShort, formatMoney, getUserLocale } from '../lib/formatters';
+import { formatDateShort, formatMoney, getUserLocale, getCurrencySymbol } from '../lib/formatters';
 import { getTranslation } from '../lib/i18n';
 import { getDateRangeBoundaries } from '../lib/dateUtils';
 import { LocalCategory, getLocalBudgets, type LocalBudget } from '../lib/supabase';
@@ -364,7 +364,7 @@ export function Dashboard({
           </button>
         </div>
         <div className="flex items-start justify-center gap-1">
-          <span className="text-xl font-black text-slate-400 mt-2 tracking-tight">$</span>
+          <span className="text-xl font-black text-slate-400 mt-2 tracking-tight">{getCurrencySymbol(locale, currency)}</span>
           <h1 className="text-[3.5rem] font-black text-text-dark dark:text-white tabular-nums tracking-tighter leading-none">
             {showBalance ? formatMoney(balance, { compact: false, currency: '' }).split('.')[0] : '••••'}
           </h1>
@@ -697,7 +697,7 @@ function TransactionItem({
             } font-black text-[15px] tabular-nums tracking-tighter`}
           >
             {isTransfer ? '' : isExpense ? '-' : '+'}
-            {formatMoney(amount, { maximumFractionDigits: 2, minimumFractionDigits: 2, currency: '' })}
+            {formatMoney(amount, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
           </p>
         </div>
       </div>
