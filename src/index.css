@@ -21,26 +21,26 @@
 }
 
 :root {
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
+  --primary: #7a36ff;
+  --primary-dark: #6022e0;
   --secondary: #64748b;
-  --background-light: #f8fafc;
+  --background-light: #f7f7f9;
   --background-dark: #0f172a;
   --surface: #ffffff;
   --surface-dark: #1e293b;
   --text-dark: #1e293b;
   --text-secondary: #64748b;
-  --income: #16a34a;
-  --income-bg: #f0fdf4;
-  --expense: #dc2626;
-  --expense-bg: #fef2f2;
+  --income: #7a36ff;
+  --income-bg: rgba(122, 54, 255, 0.05);
+  --expense: #ff6a39;
+  --expense-bg: rgba(255, 106, 57, 0.05);
   --highlight: #eff6ff;
   --input-bg: #f1f5f9;
   --border: #e2e8f0;
   --ai-ink: #1e293b;
-  --ai-accent-a: #2563eb;
+  --ai-accent-a: #7a36ff;
   --ai-accent-b: #6366f1;
-  --ai-accent-c: #dc2626;
+  --ai-accent-c: #ff6a39;
 
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
