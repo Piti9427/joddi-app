@@ -251,7 +251,7 @@ let dbPromise: Promise<IDBDatabase> | null = null;
 let syncInFlight: Promise<SyncResult> | null = null;
 
 function isIndexedDbAvailable() {
-  return typeof indexedDB !== 'undefined';
+  return typeof globalThis.indexedDB !== 'undefined';
 }
 
 function dispatchLocalEvent(name: string) {
@@ -266,8 +266,8 @@ function nowIso() {
 
 // ฟังก์ชันสร้าง ID ฝั่ง Client เพื่อใช้ในการทำ Optimistic UI (บันทึกลงเครื่องทันทีไม่ต้องรอ Server)
 function newClientId() {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
+  if (typeof globalThis.crypto !== 'undefined' && 'randomUUID' in globalThis.crypto) {
+    return globalThis.crypto.randomUUID();
   }
 
   // Fallback สำหรับสภาพแวดล้อมที่ไม่มี randomUUID (ใช้ crypto.getRandomValues แทน Math.random เพื่อความปลอดภัย)
