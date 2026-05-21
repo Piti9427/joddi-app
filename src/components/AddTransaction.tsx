@@ -363,7 +363,7 @@ export function AddTransaction({
               <p className="text-secondary text-[10px] font-black uppercase tracking-[0.2em] mb-2.5 opacity-70">
                 {t.amount_placeholder}
               </p>
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-baseline justify-center gap-1.5">
                 <span
                   className={`text-3xl font-black ${
                     type === 'Expense'
@@ -375,7 +375,7 @@ export function AddTransaction({
                 >
                   {currencySymbol}
                 </span>
-                <span className="text-6xl font-black tracking-tighter text-text-dark dark:text-white transition-all tabular-nums whitespace-nowrap overflow-hidden max-w-full">
+                <span className="text-6xl font-black tracking-tighter text-text-dark dark:text-white transition-all tabular-nums whitespace-nowrap overflow-hidden max-w-full leading-none">
                   {displayAmount}
                 </span>
               </div>

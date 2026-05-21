@@ -167,7 +167,7 @@ export function TransactionDetail({
           }`}
         >
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">ยอดเงิน</p>
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-baseline justify-center gap-1.5">
             <span
               className={`text-2xl font-black ${
                 type === 'Expense'
@@ -179,7 +179,7 @@ export function TransactionDetail({
             >
               {currencySymbol}
             </span>
-            <span className="text-5xl font-black tracking-tighter text-slate-900 dark:text-white tabular-nums">
+            <span className="text-6xl font-black tracking-tighter text-slate-900 dark:text-white tabular-nums leading-none">
               {displayAmount}
             </span>
           </div>

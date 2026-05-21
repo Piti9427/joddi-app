@@ -363,12 +363,12 @@ export function Dashboard({
             {showBalance ? <Eye size={14} /> : <EyeOff size={14} />}
           </button>
         </div>
-        <div className="flex items-start justify-center gap-1">
-          <span className="text-xl font-black text-slate-400 mt-2 tracking-tight">{getCurrencySymbol(locale, currency)}</span>
-          <h1 className="text-[3.5rem] font-black text-text-dark dark:text-white tabular-nums tracking-tighter leading-none">
+        <div className="flex items-baseline justify-center gap-1">
+          <span className="text-3xl font-black text-slate-400 tracking-tighter">{getCurrencySymbol(locale, currency)}</span>
+          <h1 className="text-[4rem] font-black text-text-dark dark:text-white tabular-nums tracking-tighter leading-none">
             {showBalance ? formatMoney(balance, { compact: false, currency: '' }).split('.')[0] : '••••'}
           </h1>
-          <span className="text-xl font-black text-slate-400 mt-2 tabular-nums">
+          <span className="text-3xl font-black text-slate-400 tabular-nums">
             .{showBalance ? formatMoney(balance, { compact: false, currency: '' }).split('.')[1] || '00' : '••'}
           </span>
         </div>
