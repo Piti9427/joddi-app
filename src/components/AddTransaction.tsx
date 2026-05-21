@@ -230,28 +230,28 @@ export function AddTransaction({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-background-dark rounded-t-[2rem] shadow-2xl overflow-hidden border-t border-border dark:border-slate-800">
+    <div className="flex flex-col h-full bg-white dark:bg-background-dark rounded-t-[2rem] shadow-2xl overflow-hidden border-t border-border dark:border-white/5">
       {/* Header with close & mode toggle */}
-      <div className="pt-5 px-4 pb-3 safe-top bg-slate-50 dark:bg-slate-900/50">
+      <div className="pt-5 px-4 pb-3 safe-top bg-slate-50 dark:bg-white/2">
         <div className="flex justify-between items-center mb-4 px-1">
           <button
             onClick={closePanel}
-            className="size-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-xl shadow-sm text-secondary hover:text-text-dark transition-colors"
+            className="size-10 flex items-center justify-center bg-white dark:bg-white/5 rounded-xl shadow-sm text-secondary hover:text-text-dark transition-colors border border-transparent dark:border-white/5"
           >
             <ChevronLeft size={24} />
           </button>
 
           {/* Mode Toggle: Manual / AI */}
-          <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl border border-border/60 dark:border-slate-700">
+          <div className="flex bg-white dark:bg-white/5 p-1 rounded-xl border border-border/60 dark:border-white/5">
             <button
               onClick={() => setMode('manual')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === 'manual' ? 'bg-primary text-white shadow-sm' : 'text-secondary'}`}
+              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-[0.1em] transition-all ${mode === 'manual' ? 'bg-primary text-white shadow-sm' : 'text-secondary'}`}
             >
               กรอกเอง
             </button>
             <button
               onClick={() => setMode('ai')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${mode === 'ai' ? 'bg-primary text-white shadow-sm' : 'text-secondary'}`}
+              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-1 ${mode === 'ai' ? 'bg-primary text-white shadow-sm' : 'text-secondary'}`}
             >
               <Wand2 size={12} />
               AI
@@ -260,7 +260,7 @@ export function AddTransaction({
 
           <button
             onClick={() => onNavigate('review_receipt')}
-            className="size-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow-sm text-primary hover:text-primary-dark transition-colors"
+            className="size-10 flex items-center justify-center bg-white dark:bg-white/5 rounded-full shadow-sm text-primary hover:text-primary-dark transition-colors border border-transparent dark:border-white/5"
             aria-label="สแกนสลิป"
           >
             <Camera size={20} />
@@ -269,16 +269,16 @@ export function AddTransaction({
 
         {/* Type Toggle */}
         <div className="flex justify-center">
-          <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl border border-border/60 dark:border-slate-700">
+          <div className="flex bg-white dark:bg-white/5 p-1 rounded-xl border border-border/60 dark:border-white/5">
             <button
               onClick={() => setType('Expense')}
-              className={`px-5 py-2 rounded-lg text-xs font-extrabold transition-all duration-200 ${type === 'Expense' ? 'bg-expense text-white shadow-sm' : 'text-secondary hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+              className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200 ${type === 'Expense' ? 'bg-expense text-white shadow-sm' : 'text-secondary hover:bg-slate-50 dark:hover:bg-white/5'}`}
             >
               รายจ่าย
             </button>
             <button
               onClick={() => setType('Income')}
-              className={`px-5 py-2 rounded-lg text-xs font-extrabold transition-all duration-200 ${type === 'Income' ? 'bg-income text-white shadow-sm' : 'text-secondary hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+              className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200 ${type === 'Income' ? 'bg-income text-white shadow-sm' : 'text-secondary hover:bg-slate-50 dark:hover:bg-white/5'}`}
             >
               รายรับ
             </button>
@@ -289,21 +289,23 @@ export function AddTransaction({
       {mode === 'ai' ? (
         /* AI Smart Input Mode */
         <div className="flex-1 flex flex-col px-5 pt-6 justify-center">
-          <div className="w-full max-w-sm mx-auto flex flex-col items-center py-8 px-6 bg-slate-50/50 dark:bg-slate-900/30 backdrop-blur-md rounded-3xl border border-border/50 dark:border-slate-800/80 relative overflow-hidden shadow-sm">
+          <div className="w-full max-w-sm mx-auto flex flex-col items-center py-10 px-6 bg-white dark:bg-white/2 rounded-3xl border border-border/50 dark:border-white/5 relative overflow-hidden shadow-sm">
             {/* Soft glowing mesh background */}
-            <div className="absolute top-0 left-1/4 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
-            <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute top-0 left-1/4 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="size-16 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20 mb-4 relative z-10 animate-pulse">
+            <div className="size-16 rounded-2xl bg-white dark:bg-white/5 text-primary flex items-center justify-center border border-transparent dark:border-white/5 mb-6 relative z-10 animate-pulse">
               <Sparkles size={28} />
             </div>
-            <h3 className="text-lg font-extrabold text-text-dark dark:text-white mb-1 relative z-10">
+            <h3 className="text-lg font-black text-text-dark dark:text-white mb-1 relative z-10 tracking-tight">
               เพิ่มด้วย AI อัจฉริยะ
             </h3>
-            <p className="text-xs text-secondary font-semibold mb-6 relative z-10">{aiHint}</p>
+            <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-8 relative z-10">
+              {aiHint}
+            </p>
 
             <form onSubmit={handleAiSubmit} className="w-full relative z-10">
-              <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-2xl px-4 py-3 border border-border/60 dark:border-slate-700 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all shadow-inner">
+              <div className="flex items-center gap-2 bg-slate-50 dark:bg-white/5 rounded-2xl px-4 py-3 border border-border/60 dark:border-white/5 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
                 <Sparkles className="text-primary shrink-0" size={18} />
                 <input
                   value={aiText}
@@ -316,7 +318,7 @@ export function AddTransaction({
                 <button
                   type="submit"
                   disabled={aiParsing || aiText.trim().length === 0}
-                  className="size-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-center disabled:opacity-40 active:scale-95 transition-all shadow-md shadow-blue-500/15"
+                  className="size-10 rounded-xl bg-primary text-white flex items-center justify-center disabled:opacity-40 active:scale-95 transition-all shadow-md shadow-primary/10"
                   aria-label="บันทึกรายการด้วย AI"
                 >
                   {aiParsing ? (
@@ -334,28 +336,32 @@ export function AddTransaction({
         <>
           {/* Amount Display */}
           <div
-            className={`px-4 py-6 transition-colors duration-300 ${type === 'Expense' ? 'bg-expense/5 dark:bg-expense/10' : 'bg-income/5 dark:bg-income/10'}`}
+            className={`px-4 py-8 transition-colors duration-300 ${type === 'Expense' ? 'bg-expense/5 dark:bg-white/2' : 'bg-income/5 dark:bg-white/2'}`}
           >
             <div className="text-center">
-              <p className="text-secondary text-xs font-semibold mb-2 opacity-70">{t.amount_placeholder}</p>
+              <p className="text-secondary text-[10px] font-black uppercase tracking-[0.2em] mb-2.5 opacity-70">
+                {t.amount_placeholder}
+              </p>
               <div className="flex items-center justify-center gap-2">
-                <span className={`text-3xl font-black ${type === 'Expense' ? 'text-expense' : 'text-income'}`}>
+                <span
+                  className={`text-3xl font-black ${type === 'Expense' ? 'text-text-dark dark:text-white' : 'text-emerald-500'}`}
+                >
                   {currencySymbol}
                 </span>
-                <span className="text-5xl font-black tracking-tighter text-text-dark dark:text-white transition-all tabular-nums whitespace-nowrap overflow-hidden max-w-full">
+                <span className="text-6xl font-black tracking-tighter text-text-dark dark:text-white transition-all tabular-nums whitespace-nowrap overflow-hidden max-w-full">
                   {displayAmount}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-5 space-y-6 bg-white dark:bg-background-dark pt-5">
+          <div className="flex-1 overflow-y-auto px-5 space-y-6 bg-white dark:bg-background-dark pt-6">
             <section>
-              <div className="flex justify-between items-center mb-3 px-1">
-                <p className="text-[11px] text-secondary font-semibold">{t.category}</p>
+              <div className="flex justify-between items-center mb-3.5 px-1">
+                <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">{t.category}</p>
                 <button
                   onClick={() => onNavigate('categories')}
-                  className="text-primary hover:text-text-dark transition-colors"
+                  className="text-primary hover:text-text-dark transition-colors p-1"
                 >
                   <Plus size={18} />
                 </button>
@@ -375,13 +381,13 @@ export function AddTransaction({
             </section>
 
             <div className="grid grid-cols-1 gap-4 pb-16">
-              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl group border border-transparent focus-within:border-primary/20 transition-all">
+              <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl group border border-transparent focus-within:border-primary/20 transition-all">
                 <Calendar
                   className="text-secondary group-focus-within:text-primary transition-colors shrink-0"
                   size={18}
                 />
                 <div className="flex-1">
-                  <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-0.5 opacity-50">
+                  <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-0.5 opacity-50">
                     {t.date}
                   </p>
                   <input
@@ -393,10 +399,10 @@ export function AddTransaction({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl group border border-transparent focus-within:border-primary/20 transition-all">
+              <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl group border border-transparent focus-within:border-primary/20 transition-all">
                 <Tag className="text-secondary group-focus-within:text-primary transition-colors shrink-0" size={18} />
                 <div className="flex-1">
-                  <p className="text-[10px] text-secondary font-bold uppercase tracking-widest mb-0.5 opacity-50">
+                  <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-0.5 opacity-50">
                     {t.note}
                   </p>
                   <input
@@ -409,20 +415,20 @@ export function AddTransaction({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <p className="text-[11px] text-secondary font-semibold px-1">วิธีชำระเงิน</p>
+              <div className="flex flex-col gap-2.5">
+                <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] px-1">วิธีชำระเงิน</p>
                 <div className="flex flex-wrap gap-2">
                   {PAYMENT_METHODS.map((method) => (
                     <button
                       key={method.id}
                       onClick={() => setPaymentMethod(method.id)}
-                      className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition-all border active:scale-95 ${
+                      className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all border active:scale-95 ${
                         paymentMethod === method.id
-                          ? 'bg-primary/10 border-primary/30 text-primary shadow-sm'
-                          : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary hover:border-slate-200'
+                          ? 'bg-white dark:bg-white/10 border-primary/40 text-primary shadow-sm ring-1 ring-primary/10'
+                          : 'bg-slate-50 dark:bg-white/5 border-transparent text-secondary hover:border-slate-200 dark:hover:border-white/10'
                       }`}
                     >
-                      {method.icon}
+                      {React.cloneElement(method.icon as React.ReactElement, { size: 16 })}
                       {method.label}
                     </button>
                   ))}
@@ -432,14 +438,14 @@ export function AddTransaction({
           </div>
 
           {/* Numeric Keypad & Submit */}
-          <div className="bg-slate-50 dark:bg-slate-900/80 backdrop-blur-md p-4 safe-bottom border-t border-border/60 dark:border-slate-800">
+          <div className="bg-slate-50 dark:bg-black/90 backdrop-blur-md p-4 safe-bottom border-t border-border/60 dark:border-white/5">
             <div className="grid grid-cols-4 gap-2.5 max-w-sm mx-auto">
               <div className="col-span-3 grid grid-cols-3 gap-2.5">
                 {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'delete'].map((key) => (
                   <button
                     key={key}
                     onClick={() => (key === 'delete' ? handleDelete() : handleKeyPress(key))}
-                    className="h-12 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-lg font-bold text-text-dark dark:text-white shadow-sm hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-90 transition-all transition-transform duration-100"
+                    className="h-12 rounded-xl bg-white dark:bg-white/5 flex items-center justify-center text-lg font-bold text-text-dark dark:text-white shadow-sm border border-transparent dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10 active:scale-90 transition-all duration-100"
                   >
                     {key === 'delete' ? <ChevronDown className="rotate-90" /> : key}
                   </button>
@@ -448,13 +454,13 @@ export function AddTransaction({
               <button
                 onClick={handleSave}
                 disabled={Number.parseFloat(amount) === 0}
-                className={`flex items-center justify-center rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-30 ${
+                className={`flex items-center justify-center rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-30 border border-transparent dark:border-white/10 ${
                   type === 'Expense'
-                    ? 'bg-gradient-to-b from-rose-500 to-expense text-white shadow-expense/25'
-                    : 'bg-gradient-to-b from-emerald-500 to-income text-white shadow-income/25'
+                    ? 'bg-text-dark dark:bg-white text-white dark:text-black shadow-black/10'
+                    : 'bg-emerald-500 text-white shadow-emerald-500/10'
                 }`}
               >
-                <Check size={28} />
+                <Check size={28} strokeWidth={3} />
               </button>
             </div>
           </div>
@@ -486,14 +492,18 @@ function CategoryChip({
       onClick={onClick}
       className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all border whitespace-nowrap active:scale-95 ${
         selected
-          ? `bg-white dark:bg-slate-800 border-primary shadow-md shadow-primary/10 ring-1 ring-primary/20`
-          : 'bg-slate-50 dark:bg-slate-800/40 border-transparent text-secondary hover:border-slate-200'
+          ? `bg-white dark:bg-white/10 border-primary/50 shadow-md shadow-primary/5 ring-1 ring-primary/20`
+          : 'bg-slate-50 dark:bg-white/5 border-transparent text-secondary hover:border-slate-200 dark:hover:border-white/10'
       }`}
     >
       <span className={selected ? '' : 'opacity-70'} style={colorStyles.style}>
-        {React.cloneElement(iconNode as React.ReactElement, { size: 16 })}
+        {React.cloneElement(iconNode as React.ReactElement, { size: 16, strokeWidth: selected ? 2 : 1.5 })}
       </span>
-      <span className="text-[13px] font-extrabold">{label}</span>
+      <span
+        className={`text-[11px] font-black uppercase tracking-wider ${selected ? 'text-text-dark dark:text-white' : 'text-secondary'}`}
+      >
+        {label}
+      </span>
     </button>
   );
 }
