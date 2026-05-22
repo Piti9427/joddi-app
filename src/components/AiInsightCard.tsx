@@ -19,9 +19,9 @@ const TONE_STYLES = {
   },
   neutral: {
     shell:
-      'from-sky-500/16 via-indigo-500/10 to-slate-900/5 dark:from-sky-400/16 dark:via-indigo-400/10 dark:to-white/5',
-    icon: 'bg-sky-500 text-white',
-    badge: 'text-sky-700 bg-sky-50 dark:text-sky-300 dark:bg-sky-400/10',
+      'from-indigo-500/16 via-primary/10 to-slate-900/5 dark:from-indigo-400/16 dark:via-primary/10 dark:to-white/5',
+    icon: 'bg-primary text-white',
+    badge: 'text-primary-dark bg-primary/10 dark:text-white dark:bg-primary/20',
   },
 } as const;
 

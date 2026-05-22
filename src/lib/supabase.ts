@@ -9,7 +9,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export type AuthAccessMode = 'strict' | 'guest_readonly';
 export type SyncStatus = 'synced' | 'pending' | 'failed';
 export type BudgetPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
-export type TransactionType = 'Income' | 'Expense';
+export type TransactionType = 'Income' | 'Expense' | 'Transfer';
 
 // กำหนดโหมดการเข้าถึง (Strict คือต้อง Login, Guest คือดูได้อย่างเดียว)
 const configuredMode = String(import.meta.env.VITE_AUTH_ACCESS_MODE || 'strict').toLowerCase();
@@ -108,6 +108,7 @@ type TransactionPayload = {
   date: string;
   merchant?: string;
   payment_method?: string;
+  to_payment_method?: string;
   created_at?: string;
   updated_at?: string;
   deleted_at?: string;
@@ -417,6 +418,7 @@ function toLocalTransaction(
 ): LocalTransaction {
   const remote = transaction as Transaction & {
     payment_method?: string;
+    to_payment_method?: string;
     created_at?: string;
     updated_at?: string;
     deleted_at?: string;
@@ -425,6 +427,7 @@ function toLocalTransaction(
   return {
     ...transaction,
     paymentMethod: transaction.paymentMethod ?? remote.payment_method ?? 'cash',
+    toPaymentMethod: transaction.toPaymentMethod ?? remote.to_payment_method,
     createdAt: transaction.createdAt ?? remote.created_at,
     updatedAt: transaction.updatedAt ?? remote.updated_at ?? nowIso(),
     deletedAt: transaction.deletedAt ?? remote.deleted_at,
@@ -444,6 +447,7 @@ function toSupabaseTransactionPayload(transaction: LocalTransaction): Transactio
     date: transaction.date,
     merchant: transaction.merchant,
     payment_method: transaction.paymentMethod ?? 'cash',
+    to_payment_method: transaction.toPaymentMethod,
     created_at: transaction.createdAt,
     updated_at: transaction.updatedAt,
     deleted_at: transaction.deletedAt,

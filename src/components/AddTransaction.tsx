@@ -57,6 +57,7 @@ export function AddTransaction({
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [toPaymentMethod, setToPaymentMethod] = useState('bank');
   const [userCategories, setUserCategories] = useState<LocalCategory[]>([]);
   const currencySymbol = getCurrencySymbol(undefined, currency);
 
@@ -165,14 +166,22 @@ export function AddTransaction({
     // Standardize to local ISO string
     const isoDate = parseLocalDate(date).toISOString();
 
+    const isTransfer = type === 'Transfer';
+    const finalCategory = isTransfer
+      ? lang === 'en'
+        ? 'Transfer'
+        : 'โอนเงิน'
+      : category || (type === 'Expense' ? 'อื่น ๆ' : 'รายรับ');
+
     await onAddTransaction({
       type,
       amount: val,
-      category: category || (type === 'Expense' ? 'อื่น ๆ' : 'รายรับ'),
+      category: finalCategory,
       note,
       date: isoDate,
-      merchant: note || category,
+      merchant: isTransfer ? (lang === 'en' ? 'Transfer' : 'โอนเงิน') : note || category,
       paymentMethod,
+      ...(isTransfer ? { toPaymentMethod } : {}),
     });
     try {
       globalThis.sessionStorage.removeItem(QUICK_ADD_TYPE_KEY);
@@ -230,9 +239,9 @@ export function AddTransaction({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-background-dark rounded-t-[2rem] shadow-2xl overflow-hidden border-t border-border dark:border-white/5">
+    <div className="flex flex-col h-full bg-background-light dark:bg-background-dark rounded-t-[2rem] shadow-2xl overflow-hidden border-t border-border dark:border-white/5">
       {/* Header with close & mode toggle */}
-      <div className="pt-5 px-4 pb-3 safe-top bg-slate-50 dark:bg-white/2">
+      <div className="pt-5 px-4 pb-3 safe-top bg-background-light dark:bg-background-dark/50">
         <div className="flex justify-between items-center mb-4 px-1">
           <button
             onClick={closePanel}
@@ -272,15 +281,21 @@ export function AddTransaction({
           <div className="flex bg-white dark:bg-white/5 p-1 rounded-xl border border-border/60 dark:border-white/5">
             <button
               onClick={() => setType('Expense')}
-              className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200 ${type === 'Expense' ? 'bg-expense text-white shadow-sm' : 'text-secondary hover:bg-slate-50 dark:hover:bg-white/5'}`}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200 ${type === 'Expense' ? 'bg-expense text-white shadow-sm' : 'text-secondary hover:bg-background-light dark:hover:bg-white/5'}`}
             >
               รายจ่าย
             </button>
             <button
               onClick={() => setType('Income')}
-              className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200 ${type === 'Income' ? 'bg-income text-white shadow-sm' : 'text-secondary hover:bg-slate-50 dark:hover:bg-white/5'}`}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200 ${type === 'Income' ? 'bg-income text-white shadow-sm' : 'text-secondary hover:bg-background-light dark:hover:bg-white/5'}`}
             >
               รายรับ
+            </button>
+            <button
+              onClick={() => setType('Transfer')}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200 ${type === 'Transfer' ? 'bg-blue-500 text-white shadow-sm' : 'text-secondary hover:bg-background-light dark:hover:bg-white/5'}`}
+            >
+              โอนเงิน
             </button>
           </div>
         </div>
@@ -305,7 +320,7 @@ export function AddTransaction({
             </p>
 
             <form onSubmit={handleAiSubmit} className="w-full relative z-10">
-              <div className="flex items-center gap-2 bg-slate-50 dark:bg-white/5 rounded-2xl px-4 py-3 border border-border/60 dark:border-white/5 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+              <div className="flex items-center gap-2 bg-white dark:bg-white/5 rounded-2xl px-4 py-3 border border-border/40 dark:border-white/5 shadow-sm focus-within:ring-2 focus-within:ring-primary/10 transition-all">
                 <Sparkles className="text-primary shrink-0" size={18} />
                 <input
                   value={aiText}
@@ -336,52 +351,66 @@ export function AddTransaction({
         <>
           {/* Amount Display */}
           <div
-            className={`px-4 py-8 transition-colors duration-300 ${type === 'Expense' ? 'bg-expense/5 dark:bg-white/2' : 'bg-income/5 dark:bg-white/2'}`}
+            className={`px-4 py-8 transition-colors duration-300 ${
+              type === 'Expense'
+                ? 'bg-expense/5 dark:bg-white/2'
+                : type === 'Transfer'
+                  ? 'bg-blue-500/5 dark:bg-white/2'
+                  : 'bg-income/5 dark:bg-white/2'
+            }`}
           >
             <div className="text-center">
               <p className="text-secondary text-[10px] font-black uppercase tracking-[0.2em] mb-2.5 opacity-70">
                 {t.amount_placeholder}
               </p>
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-baseline justify-center gap-1.5">
                 <span
-                  className={`text-3xl font-black ${type === 'Expense' ? 'text-text-dark dark:text-white' : 'text-emerald-500'}`}
+                  className={`text-3xl font-black ${
+                    type === 'Expense'
+                      ? 'text-text-dark dark:text-white'
+                      : type === 'Transfer'
+                        ? 'text-blue-500'
+                        : 'text-emerald-500'
+                  }`}
                 >
                   {currencySymbol}
                 </span>
-                <span className="text-6xl font-black tracking-tighter text-text-dark dark:text-white transition-all tabular-nums whitespace-nowrap overflow-hidden max-w-full">
+                <span className="text-6xl font-black tracking-tighter text-text-dark dark:text-white transition-all tabular-nums whitespace-nowrap overflow-hidden max-w-full leading-none">
                   {displayAmount}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-5 space-y-6 bg-white dark:bg-background-dark pt-6">
-            <section>
-              <div className="flex justify-between items-center mb-3.5 px-1">
-                <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">{t.category}</p>
-                <button
-                  onClick={() => onNavigate('categories')}
-                  className="text-primary hover:text-text-dark transition-colors p-1"
-                >
-                  <Plus size={18} />
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {filteredCategories.map((cat) => (
-                  <CategoryChip
-                    key={cat.id}
-                    icon={cat.iconName}
-                    label={cat.name}
-                    color={cat.color}
-                    selected={category === cat.name}
-                    onClick={() => setCategory(cat.name)}
-                  />
-                ))}
-              </div>
-            </section>
+          <div className="flex-1 overflow-y-auto px-5 space-y-6 bg-background-light dark:bg-background-dark pt-6">
+            {type !== 'Transfer' && (
+              <section>
+                <div className="flex justify-between items-center mb-3.5 px-1">
+                  <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">{t.category}</p>
+                  <button
+                    onClick={() => onNavigate('categories')}
+                    className="text-primary hover:text-text-dark transition-colors p-1"
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {filteredCategories.map((cat) => (
+                    <CategoryChip
+                      key={cat.id}
+                      icon={cat.iconName}
+                      label={cat.name}
+                      color={cat.color}
+                      selected={category === cat.name}
+                      onClick={() => setCategory(cat.name)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
             <div className="grid grid-cols-1 gap-4 pb-16">
-              <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl group border border-transparent focus-within:border-primary/20 transition-all">
+              <div className="flex items-center gap-3 bg-white dark:bg-white/5 p-3.5 rounded-2xl group border border-border/40 dark:border-white/5 shadow-sm focus-within:border-primary/20 transition-all">
                 <Calendar
                   className="text-secondary group-focus-within:text-primary transition-colors shrink-0"
                   size={18}
@@ -399,7 +428,7 @@ export function AddTransaction({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 p-3.5 rounded-2xl group border border-transparent focus-within:border-primary/20 transition-all">
+              <div className="flex items-center gap-3 bg-white dark:bg-white/5 p-3.5 rounded-2xl group border border-border/40 dark:border-white/5 shadow-sm focus-within:border-primary/20 transition-all">
                 <Tag className="text-secondary group-focus-within:text-primary transition-colors shrink-0" size={18} />
                 <div className="flex-1">
                   <p className="text-[9px] text-secondary font-black uppercase tracking-[0.2em] mb-0.5 opacity-50">
@@ -415,30 +444,93 @@ export function AddTransaction({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2.5">
-                <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] px-1">วิธีชำระเงิน</p>
-                <div className="flex flex-wrap gap-2">
-                  {PAYMENT_METHODS.map((method) => (
-                    <button
-                      key={method.id}
-                      onClick={() => setPaymentMethod(method.id)}
-                      className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all border active:scale-95 ${
-                        paymentMethod === method.id
-                          ? 'bg-white dark:bg-white/10 border-primary/40 text-primary shadow-sm ring-1 ring-primary/10'
-                          : 'bg-slate-50 dark:bg-white/5 border-transparent text-secondary hover:border-slate-200 dark:hover:border-white/10'
-                      }`}
-                    >
-                      {React.cloneElement(method.icon as React.ReactElement, { size: 16 })}
-                      {method.label}
-                    </button>
-                  ))}
+              {type === 'Transfer' ? (
+                <>
+                  <div className="flex flex-col gap-2.5">
+                    <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] px-1">
+                      โอนจาก (ต้นทาง)
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {PAYMENT_METHODS.map((method) => (
+                        <button
+                          key={`from-${method.id}`}
+                          type="button"
+                          onClick={() => {
+                            setPaymentMethod(method.id);
+                            if (toPaymentMethod === method.id) {
+                              const next = PAYMENT_METHODS.find((m) => m.id !== method.id);
+                              if (next) setToPaymentMethod(next.id);
+                            }
+                          }}
+                          className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all border active:scale-95 ${
+                            paymentMethod === method.id
+                              ? 'bg-white dark:bg-white/10 border-blue-500/40 text-blue-500 shadow-sm ring-1 ring-blue-500/10'
+                              : 'bg-white dark:bg-white/5 border-border/40 text-secondary hover:border-slate-200 dark:hover:border-white/10'
+                          }`}
+                        >
+                          {React.cloneElement(method.icon as React.ReactElement, { size: 16 })}
+                          {method.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2.5">
+                    <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] px-1">
+                      โอนไปที่ (ปลายทาง)
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {PAYMENT_METHODS.map((method) => {
+                        const isSource = paymentMethod === method.id;
+                        return (
+                          <button
+                            key={`to-${method.id}`}
+                            type="button"
+                            disabled={isSource}
+                            onClick={() => setToPaymentMethod(method.id)}
+                            className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all border active:scale-95 ${
+                              isSource
+                                ? 'opacity-30 cursor-not-allowed bg-slate-100 dark:bg-slate-900 border-transparent text-slate-400'
+                                : toPaymentMethod === method.id
+                                  ? 'bg-white dark:bg-white/10 border-emerald-500/40 text-emerald-500 shadow-sm ring-1 ring-emerald-500/10'
+                                  : 'bg-white dark:bg-white/5 border-border/40 text-secondary hover:border-slate-200 dark:hover:border-white/10'
+                            }`}
+                          >
+                            {React.cloneElement(method.icon as React.ReactElement, { size: 16 })}
+                            {method.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] px-1">วิธีชำระเงิน</p>
+                  <div className="flex flex-wrap gap-2">
+                    {PAYMENT_METHODS.map((method) => (
+                      <button
+                        key={method.id}
+                        type="button"
+                        onClick={() => setPaymentMethod(method.id)}
+                        className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all border active:scale-95 ${
+                          paymentMethod === method.id
+                            ? 'bg-white dark:bg-white/10 border-primary/40 text-primary shadow-sm ring-1 ring-primary/10'
+                            : 'bg-white dark:bg-white/5 border-border/40 text-secondary hover:border-slate-200 dark:hover:border-white/10'
+                        }`}
+                      >
+                        {React.cloneElement(method.icon as React.ReactElement, { size: 16 })}
+                        {method.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
           {/* Numeric Keypad & Submit */}
-          <div className="bg-slate-50 dark:bg-black/90 backdrop-blur-md p-4 safe-bottom border-t border-border/60 dark:border-white/5">
+          <div className="bg-background-light dark:bg-black/90 backdrop-blur-md p-4 safe-bottom border-t border-border/60 dark:border-white/5">
             <div className="grid grid-cols-4 gap-2.5 max-w-sm mx-auto">
               <div className="col-span-3 grid grid-cols-3 gap-2.5">
                 {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'delete'].map((key) => (
@@ -457,7 +549,9 @@ export function AddTransaction({
                 className={`flex items-center justify-center rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-30 border border-transparent dark:border-white/10 ${
                   type === 'Expense'
                     ? 'bg-text-dark dark:bg-white text-white dark:text-black shadow-black/10'
-                    : 'bg-emerald-500 text-white shadow-emerald-500/10'
+                    : type === 'Transfer'
+                      ? 'bg-blue-500 text-white shadow-blue-500/10'
+                      : 'bg-emerald-500 text-white shadow-emerald-500/10'
                 }`}
               >
                 <Check size={28} strokeWidth={3} />
@@ -493,7 +587,7 @@ function CategoryChip({
       className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all border whitespace-nowrap active:scale-95 ${
         selected
           ? `bg-white dark:bg-white/10 border-primary/50 shadow-md shadow-primary/5 ring-1 ring-primary/20`
-          : 'bg-slate-50 dark:bg-white/5 border-transparent text-secondary hover:border-slate-200 dark:hover:border-white/10'
+          : 'bg-white dark:bg-white/5 border-border/40 text-secondary hover:border-slate-200 dark:hover:border-white/10'
       }`}
     >
       <span className={selected ? '' : 'opacity-70'} style={colorStyles.style}>

@@ -20,9 +20,11 @@ function json(body: unknown, status = 200) {
 }
 
 function extractJson(text: string) {
-  const fenced = text.match(/```json\s*([\s\S]*?)```/i);
+  const fencedRegex = /```json\s*([\s\S]*?)```/i;
+  const fenced = fencedRegex.exec(text);
   const raw = fenced?.[1] ?? text;
-  const objectMatch = raw.match(/\{[\s\S]*\}/);
+  const objectRegex = /\{[\s\S]*\}/;
+  const objectMatch = objectRegex.exec(raw);
   if (!objectMatch) throw new Error('Gemini response did not contain JSON');
   return JSON.parse(objectMatch[0]);
 }

@@ -135,7 +135,7 @@ export function DateRangePicker({
             </div>
 
             {/* Display selected range */}
-            <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+            <div className="flex items-center gap-3 bg-background-light dark:bg-white/5 p-4 rounded-2xl border border-border/40 dark:border-white/5">
               <DateDisplay label={currentLang === 'th' ? 'เริ่มต้น' : 'Start'} date={startDate} lang={currentLang} />
               <div className="w-px h-8 bg-slate-200 dark:bg-white/10" />
               <DateDisplay label={currentLang === 'th' ? 'สิ้นสุด' : 'End'} date={endDate} lang={currentLang} />

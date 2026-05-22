@@ -21,26 +21,26 @@
 }
 
 :root {
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
+  --primary: #7a36ff;
+  --primary-dark: #6022e0;
   --secondary: #64748b;
   --background-light: #f8fafc;
-  --background-dark: #0f172a;
+  --background-dark: #09090b;
   --surface: #ffffff;
-  --surface-dark: #1e293b;
-  --text-dark: #1e293b;
+  --surface-dark: #121214;
+  --text-dark: #0f172a;
   --text-secondary: #64748b;
-  --income: #16a34a;
-  --income-bg: #f0fdf4;
-  --expense: #dc2626;
-  --expense-bg: #fef2f2;
+  --income: #10b981;
+  --income-bg: rgba(16, 185, 129, 0.05);
+  --expense: #ff6a39;
+  --expense-bg: rgba(255, 106, 57, 0.05);
   --highlight: #eff6ff;
   --input-bg: #f1f5f9;
   --border: #e2e8f0;
   --ai-ink: #1e293b;
-  --ai-accent-a: #2563eb;
+  --ai-accent-a: #7a36ff;
   --ai-accent-b: #6366f1;
-  --ai-accent-c: #dc2626;
+  --ai-accent-c: #ff6a39;
 
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
@@ -48,26 +48,26 @@
 }
 
 .dark {
-  --primary: #ffffff;
-  --primary-dark: #e4e4e7;
-  --secondary: #a1a1aa;
+  --primary: #7a36ff;
+  --primary-dark: #9b66ff;
+  --secondary: #94a3b8;
   --background-light: #000000;
   --background-dark: #000000;
-  --surface: #09090b;
-  --surface-dark: #09090b;
-  --text-dark: #fafafa;
-  --text-secondary: #a1a1aa;
-  --income: #22c55e;
-  --income-bg: rgba(34, 197, 94, 0.05);
-  --expense: #ef4444;
-  --expense-bg: rgba(239, 68, 68, 0.05);
-  --highlight: #18181b;
-  --input-bg: #18181b;
-  --border: rgba(255, 255, 255, 0.08);
+  --surface: #0a0a0b;
+  --surface-dark: #121214;
+  --text-dark: #ffffff;
+  --text-secondary: #94a3b8;
+  --income: #34d399;
+  --income-bg: rgba(52, 211, 153, 0.05);
+  --expense: #ff6a39;
+  --expense-bg: rgba(255, 106, 57, 0.05);
+  --highlight: #121214;
+  --input-bg: #121214;
+  --border: rgba(255, 255, 255, 0.06);
   --ai-ink: #fafafa;
   --ai-accent-a: #ffffff;
-  --ai-accent-b: #a1a1aa;
-  --ai-accent-c: #ef4444;
+  --ai-accent-b: #94a3b8;
+  --ai-accent-c: #ff6a39;
 }
 
 /* ── Base ── */
@@ -92,8 +92,8 @@ body {
     background-color 0.3s,
     color 0.3s;
   font-family:
+    'Inter',
     'Noto Sans Thai',
-    'Outfit',
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
