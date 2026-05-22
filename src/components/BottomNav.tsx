@@ -30,7 +30,7 @@ export function BottomNav({
   ];
   if (!navVisibleViews.includes(currentView)) return null;
 
-  const activeView = currentView === 'add_transaction' ? 'add_transaction' : currentView;
+  const activeView = currentView;
 
   return (
     <div className="fixed bottom-[calc(12px+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-[420px] h-[72px] bg-white/10 dark:bg-black/35 backdrop-blur-2xl rounded-[32px] border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.25)] flex items-center justify-between px-4">
