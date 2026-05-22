@@ -70,6 +70,9 @@ ON public.transactions FOR ALL USING (auth.uid() = user_id);
 -- 5. REPAIR TRIGGER: Function and Trigger setup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
+DECLARE
+    type_expense TEXT := 'Expense';
+    type_income TEXT := 'Income';
 BEGIN
   -- 1. Insert into public.users
   INSERT INTO public.users (id, email)
@@ -79,10 +82,10 @@ BEGIN
   -- 2. Create default categories
   INSERT INTO public.categories (user_id, name, type, color, icon)
   VALUES
-    (NEW.id, 'Food & Dining', 'Expense', '#f43f5e', 'utensils'),
-    (NEW.id, 'Transportation', 'Expense', '#f59e0b', 'car'),
-    (NEW.id, 'Shopping', 'Expense', '#3b82f6', 'shopping-bag'),
-    (NEW.id, 'Salary', 'Income', '#10b981', 'banknote')
+    (NEW.id, 'Food & Dining', type_expense, '#f43f5e', 'utensils'),
+    (NEW.id, 'Transportation', type_expense, '#f59e0b', 'car'),
+    (NEW.id, 'Shopping', type_expense, '#3b82f6', 'shopping-bag'),
+    (NEW.id, 'Salary', type_income, '#10b981', 'banknote')
   ON CONFLICT DO NOTHING;
     
   RETURN NEW;
@@ -96,15 +99,21 @@ CREATE TRIGGER on_auth_user_created
 
 -- 6. EMERGENCY FIX: Manually sync existing users in auth.users to public.users
 -- In case you signed up BEFORE running this script successfully.
-INSERT INTO public.users (id, email)
-SELECT id, email FROM auth.users
-ON CONFLICT (id) DO NOTHING;
+DO $$
+DECLARE
+    type_expense TEXT := 'Expense';
+    type_income TEXT := 'Income';
+BEGIN
+    INSERT INTO public.users (id, email)
+    SELECT id, email FROM auth.users
+    ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO public.categories (user_id, name, type, color, icon)
-SELECT id, 'Food & Dining', 'Expense', '#f43f5e', 'utensils' FROM auth.users ON CONFLICT DO NOTHING;
-INSERT INTO public.categories (user_id, name, type, color, icon)
-SELECT id, 'Transportation', 'Expense', '#f59e0b', 'car' FROM auth.users ON CONFLICT DO NOTHING;
-INSERT INTO public.categories (user_id, name, type, color, icon)
-SELECT id, 'Shopping', 'Expense', '#3b82f6', 'shopping-bag' FROM auth.users ON CONFLICT DO NOTHING;
-INSERT INTO public.categories (user_id, name, type, color, icon)
-SELECT id, 'Salary', 'Income', '#10b981', 'banknote' FROM auth.users ON CONFLICT DO NOTHING;
+    INSERT INTO public.categories (user_id, name, type, color, icon)
+    SELECT id, 'Food & Dining', type_expense, '#f43f5e', 'utensils' FROM auth.users ON CONFLICT DO NOTHING;
+    INSERT INTO public.categories (user_id, name, type, color, icon)
+    SELECT id, 'Transportation', type_expense, '#f59e0b', 'car' FROM auth.users ON CONFLICT DO NOTHING;
+    INSERT INTO public.categories (user_id, name, type, color, icon)
+    SELECT id, 'Shopping', type_expense, '#3b82f6', 'shopping-bag' FROM auth.users ON CONFLICT DO NOTHING;
+    INSERT INTO public.categories (user_id, name, type, color, icon)
+    SELECT id, 'Salary', type_income, '#10b981', 'banknote' FROM auth.users ON CONFLICT DO NOTHING;
+END $$;

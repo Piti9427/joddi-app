@@ -58,21 +58,20 @@ DROP POLICY IF EXISTS "Users can manage their own receipts" ON public.receipts;
 CREATE POLICY "Users can manage their own receipts"
 ON public.receipts FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('receipts', 'receipts', false)
-ON CONFLICT (id) DO NOTHING;
+DO $$
+DECLARE
+    bucket_name TEXT := 'receipts';
+BEGIN
+    INSERT INTO storage.buckets (id, name, public)
+    VALUES (bucket_name, bucket_name, false)
+    ON CONFLICT (id) DO NOTHING;
 
-DROP POLICY IF EXISTS "Users can read their own receipt images" ON storage.objects;
-CREATE POLICY "Users can read their own receipt images"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'receipts' AND auth.uid()::text = (storage.foldername(name))[1]);
+    EXECUTE format('DROP POLICY IF EXISTS "Users can read their own receipt images" ON storage.objects');
+    EXECUTE format('CREATE POLICY "Users can read their own receipt images" ON storage.objects FOR SELECT USING (bucket_id = %L AND auth.uid()::text = (storage.foldername(name))[1])', bucket_name);
 
-DROP POLICY IF EXISTS "Users can upload their own receipt images" ON storage.objects;
-CREATE POLICY "Users can upload their own receipt images"
-ON storage.objects FOR INSERT
-WITH CHECK (bucket_id = 'receipts' AND auth.uid()::text = (storage.foldername(name))[1]);
+    EXECUTE format('DROP POLICY IF EXISTS "Users can upload their own receipt images" ON storage.objects');
+    EXECUTE format('CREATE POLICY "Users can upload their own receipt images" ON storage.objects FOR INSERT WITH CHECK (bucket_id = %L AND auth.uid()::text = (storage.foldername(name))[1])', bucket_name);
 
-DROP POLICY IF EXISTS "Users can delete their own receipt images" ON storage.objects;
-CREATE POLICY "Users can delete their own receipt images"
-ON storage.objects FOR DELETE
-USING (bucket_id = 'receipts' AND auth.uid()::text = (storage.foldername(name))[1]);
+    EXECUTE format('DROP POLICY IF EXISTS "Users can delete their own receipt images" ON storage.objects');
+    EXECUTE format('CREATE POLICY "Users can delete their own receipt images" ON storage.objects FOR DELETE USING (bucket_id = %L AND auth.uid()::text = (storage.foldername(name))[1])', bucket_name);
+END $$;

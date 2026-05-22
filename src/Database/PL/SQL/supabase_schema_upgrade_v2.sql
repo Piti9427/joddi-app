@@ -31,6 +31,9 @@ ON public.users FOR ALL USING (auth.uid() = id);
 -- ----------------------------------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
+DECLARE
+    type_expense TEXT := 'Expense';
+    type_income TEXT := 'Income';
 BEGIN
   -- 1. Create the public user profile
   INSERT INTO public.users (id, email)
@@ -39,10 +42,10 @@ BEGIN
   -- 2. Create the default categories for this user
   INSERT INTO public.categories (user_id, name, type, color, icon)
   VALUES
-    (NEW.id, 'Food & Dining', 'Expense', '#f43f5e', 'utensils'),
-    (NEW.id, 'Transportation', 'Expense', '#f59e0b', 'car'),
-    (NEW.id, 'Shopping', 'Expense', '#3b82f6', 'shopping-bag'),
-    (NEW.id, 'Salary', 'Income', '#10b981', 'banknote');
+    (NEW.id, 'Food & Dining', type_expense, '#f43f5e', 'utensils'),
+    (NEW.id, 'Transportation', type_expense, '#f59e0b', 'car'),
+    (NEW.id, 'Shopping', type_expense, '#3b82f6', 'shopping-bag'),
+    (NEW.id, 'Salary', type_income, '#10b981', 'banknote');
     
   RETURN NEW;
 END;

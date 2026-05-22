@@ -85,13 +85,16 @@ ON public.budgets FOR ALL USING (auth.uid() = user_id);
 -- Automatically create standard categories when a new user signs up
 CREATE OR REPLACE FUNCTION public.create_default_categories()
 RETURNS trigger AS $$
+DECLARE
+    type_expense TEXT := 'Expense';
+    type_income TEXT := 'Income';
 BEGIN
   INSERT INTO public.categories (user_id, name, type, color, icon)
   VALUES
-    (NEW.id, 'Food & Dining', 'Expense', '#f43f5e', 'utensils'),
-    (NEW.id, 'Transportation', 'Expense', '#f59e0b', 'car'),
-    (NEW.id, 'Shopping', 'Expense', '#3b82f6', 'shopping-bag'),
-    (NEW.id, 'Salary', 'Income', '#10b981', 'banknote');
+    (NEW.id, 'Food & Dining', type_expense, '#f43f5e', 'utensils'),
+    (NEW.id, 'Transportation', type_expense, '#f59e0b', 'car'),
+    (NEW.id, 'Shopping', type_expense, '#3b82f6', 'shopping-bag'),
+    (NEW.id, 'Salary', type_income, '#10b981', 'banknote');
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
